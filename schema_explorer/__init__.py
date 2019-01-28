@@ -10,6 +10,29 @@ class SchemaExplorer():
         self.load_default_schema()
         print('Preloaded with BioLink schema. Upload your own schema using "load_schema" function.')
 
+    def expand_curies_in_schema(self):
+        context = self.schema["@context"]
+        graph = self.schema["@graph"]
+        new_schema = {"@context": context,
+                      "@graph": [],
+                      "@id": self.schema["@id"]}
+        for record in graph:
+            new_record = {}
+            for k, v in record.items():
+                if type(v) == str:
+                    new_record[expand_curie_to_uri(k, context)] =  expand_curie_to_uri(v, context)
+                elif type(v) == list:
+                    if type(v[0]) == dict:
+                        new_record[expand_curie_to_uri(k, context)] = []
+                        for _item in v:
+                            new_record[expand_curie_to_uri(k, context)].append({"@id": expand_curie_to_uri(_item["@id"], context)})
+                    else:
+                        new_record[expand_curie_to_uri(k, context)] = [expand_curie_to_uri(_item, context) for _item in v]
+                elif type(v) == dict and "@id" in v:
+                    new_record[expand_curie_to_uri(k, context)] = {"@id": expand_curie_to_uri(v["@id"], context)}
+            new_schema["@graph"].append(new_record)
+        return new_schema
+
     def curie2uri(self, curie):
         prefix, value = curie.split(':')
         uri = self.schema["@context"][prefix] + value
@@ -20,11 +43,11 @@ class SchemaExplorer():
         """
         return [record["rdfs:label"] for record in self.schema["@graph"] if record['@id'] == uri][0]
 
-    def load_schema(schema):
+    def load_schema(self, schema):
         """Load schema and convert it to networkx graph
         """
         self.schema = load_json(schema)
-        validate(self.schema)
+        validate_schema(self.schema)
         self.schema_nx = load_schema_into_networkx(self.schema)
 
     def load_default_schema(self):
