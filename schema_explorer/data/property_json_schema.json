@@ -79,7 +79,7 @@
         }
       ]
     },
-    "schema:domainIncludes": {
+    "http://schema.org/domainIncludes": {
       "anyOf": [
         {
           "type": "object",
@@ -108,7 +108,7 @@
         }
       ]
     },
-    "schema:rangeIncludes": {
+    "http://schema.org/rangeIncludes": {
       "anyOf": [
         {
           "type": "object",
@@ -238,7 +238,7 @@
         }
       ]
     },
-    "schema:isPartOf": {
+    "http://schema.org/isPartOf": {
       "type": "object",
       "properties": {
         "@id": {
@@ -266,7 +266,7 @@
     "@type",
     "rdfs:comment",
     "rdfs:label",
-    "schema:domainIncludes",
-    "schema:rangeIncludes"
+    "http://schema.org/domainIncludes",
+    "http://schema.org/rangeIncludes"
   ]
 }
