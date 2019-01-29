@@ -921,7 +921,7 @@
             "@id": "bts:refseq",
             "@type": "rdf:Property",
             "rdfs:comment": "Refseq ID for gene, protein or transcript",
-            "rdfs:label": "entrez",
+            "rdfs:label": "refseq",
             "schema:domainIncludes": [{
                 "@id": "bts:GeneOrGeneProduct",
                 "@id": "bts:Transcript"
@@ -937,7 +937,7 @@
             "@id": "bts:omim",
             "@type": "rdf:Property",
             "rdfs:comment": "Refseq ID for gene, protein or transcript",
-            "rdfs:label": "entrez",
+            "rdfs:label": "omim",
             "schema:domainIncludes": [{
                 "@id": "bts:Gene",
                 "@id": "bts:Disease"
@@ -953,7 +953,7 @@
             "@id": "bts:umls",
             "@type": "rdf:Property",
             "rdfs:comment": "Refseq ID for gene, protein or transcript",
-            "rdfs:label": "entrez",
+            "rdfs:label": "umls",
             "schema:domainIncludes": {
                 "@id": "bts:Disease"
             },
@@ -962,21 +962,6 @@
             },
             "schema:rangeIncludes": {
                 "@id": "schema:Text"
-            }
-        },
-        {
-            "@id": "bts:homologousTo",
-            "@type": "rdf:Property",
-            "rdfs:comment": "Shared ancestry between protein or gene",
-            "rdfs:label": "homologousTo",
-            "schema:domainIncludes": {
-                "@id": "bts:GeneOrGeneProduct"
-            },
-            "schema:isPartOf": {
-                "@id": "http://schema.biothings.io"
-            },
-            "schema:rangeIncludes": {
-                "@id": "bts:GeneOrGeneProduct"
             }
         },
         {
