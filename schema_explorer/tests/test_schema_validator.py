@@ -1,6 +1,7 @@
 import unittest
 import os
 import sys
+from jsonschema import ValidationError
 
 _CURRENT = os.path.abspath(os.path.dirname(__file__))
 _ROOT = os.path.join(_CURRENT, os.pardir, os.pardir)
@@ -137,6 +138,23 @@ class TestSchemaValidator(unittest.TestCase):
             self.sv.check_duplicate_labels()
         except ValueError:
             self.fail("check_duplicate_labels raises Exception unexpectly")
+
+    def test_validate_property_schema(self):
+        """ Test validate_property_schema function
+        """
+        property_missing_domain = os.path.join(_CURRENT,
+                                               'data',
+                                               'property_schema_missing_domain.json')
+        property_missing_domain_json = load_json(property_missing_domain)
+        with self.assertRaises(ValidationError):
+            self.sv.validate_property_schema(property_missing_domain_json)
+        property_missing_range = os.path.join(_CURRENT,
+                                              'data',
+                                              'property_schema_missing_range.json')
+        property_missing_range_json = load_json(property_missing_range)
+        with self.assertRaises(ValidationError):
+            self.sv.validate_property_schema(property_missing_range_json)
+
 
 
 if __name__ == '__main__':
