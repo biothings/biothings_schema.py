@@ -20,7 +20,7 @@ biothings_schema.py python package provides simple-to-use functions for users to
         In [2]: explorer = biothings_schema.SchemaExplorer()
         In [3]: partial_schema = explorer.sub_schema_graph(source="ChemicalSubstance")
 
-
+* image
 .. figure::  images/partial_schema.png
    :align:   center
 
