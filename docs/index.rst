@@ -18,7 +18,7 @@ biothings_schema.py python package provides simple-to-use functions for users to
 
     .. code-block:: python
 
-        In [1]: import biothings_schema
+        In [2]: explorer = biothings_schema.SchemaExplorer()
 
 * image
 .. figure::  images/partial_schema.png
