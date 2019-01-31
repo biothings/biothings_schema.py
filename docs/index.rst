@@ -17,8 +17,8 @@ biothings_schema.py python package provides simple-to-use functions for users to
 * Visualize Schema
 
     .. code-block:: python
-        In [2]: explorer = biothings_schema.SchemaExplorer()
-        In [3]: partial_schema = explorer.sub_schema_graph(source="ChemicalSubstance")
+
+        In [1]: import biothings_schema
 
 * image
 .. figure::  images/partial_schema.png
