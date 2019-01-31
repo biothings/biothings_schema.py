@@ -5,29 +5,26 @@
 
 Welcome to biothings_schema.py's documentation!
 ===============================================
-biothings_schema.py_ python package provides simple-to-use functions for users to visualize, edit and validate schemas defined using `Schema.org <http://schema.org/>`_ standard.
-It's designed with simplicity and performance emphasized. *myvariant*, is an easy-to-use Python wrapper
-to access MyVariant.Info_ services.
+biothings_schema.py python package provides simple-to-use functions for users to visualize, edit and validate schemas defined using `Schema.org <http://schema.org/>`_ standard.
 
-.. Note::
-    As of v1.0.0, myvariant_ Python package is now a thin wrapper of underlying biothings_client_ package,
-    a universal Python client for all `BioThings APIs <http://biothings.io>`_, including MyVariant.info_.
-    The installation of myvariant_ will install biothings_client_ automatically. The following code snippets
-    are essentially equivalent:
 
-    * Continue using myvariant_ package
+* Import biothings_schema.py package
 
-        .. code-block:: python
+    .. code-block:: python
 
-            In [1]: import myvariant
-            In [2]: mv = myvariant.MyVariantInfo()
+        In [1]: import biothings_schema
 
-    * Use biothings_client_ package directly
+* Visualize Schema
 
-        .. code-block:: python
+    .. code-block:: python
+        In [2]: explorer = biothings_schema.SchemaExplorer()
+        # visualize a portion of the Schema containing "ChemicalSubstance"
+        In [3]: partial_schema = explorer.sub_schema_graph(source="ChemicalSubstance",
+                                                           direction="both")
+.. figure::  images/partial_schema.png
+   :align:   center
 
-            In [1]: from biothings_client import get_client
-            In [2]: mv = get_client('variant')
+   Partial schema containing "ChemicalSubstance"
 
     After that, the use of ``mv`` instance is exactly the same.
 .. toctree::
