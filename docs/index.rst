@@ -5,7 +5,7 @@
 
 Welcome to biothings_schema.py's documentation!
 ===============================================
-biothings_schema.py_ python package provides simple-to-use functions for users to visualize, edit and validate schemas defined using 'Schema.Org<http://schema.org>' standard.
+biothings_schema.py_ python package provides simple-to-use functions for users to visualize, edit and validate schemas defined using `Schema.org <http://schema.org/>`_ standard.
 It's designed with simplicity and performance emphasized. *myvariant*, is an easy-to-use Python wrapper
 to access MyVariant.Info_ services.
 
