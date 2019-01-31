@@ -21,13 +21,19 @@ biothings_schema.py python package provides simple-to-use functions for users to
         In [2]: explorer = biothings_schema.SchemaExplorer()
         In [3]: partial_schema = explorer.sub_schema_graph(source="ChemicalSubstance", direction="both")
 
-* image
 .. figure::  images/partial_schema.png
    :align:   center
 
    Partial schema containing "ChemicalSubstance"
 
-    After that, the use of ``mv`` instance is exactly the same.
+
+* Validate Schema
+    
+    .. code-block:: python
+
+        In [4]: validator = biothings_schema.SchemaValidator(explorer.schema)
+        In [5]: validator.validate_full_schema()
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
