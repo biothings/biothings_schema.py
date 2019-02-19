@@ -103,3 +103,4 @@ schema_env/
 
 # mypy
 .mypy_cache/
+.DS_Store
