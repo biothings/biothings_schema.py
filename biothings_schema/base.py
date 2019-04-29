@@ -8,11 +8,6 @@ from jsonschema import validate
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-
-
-
-
-
 def load_json(file_path):
     """Load json document from file path or url
 

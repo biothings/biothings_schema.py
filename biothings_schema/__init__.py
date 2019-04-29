@@ -197,11 +197,6 @@ class Schema():
                     edges.append((_path[i], _path[i + 1]))
             return visualize(edges, size=size)
 
-class SchemaExplorer():
-    """Class for exploring schema
-    """
-
-
     def find_parent_classes(self, schema_class):
         """Find all parents of the class
         """
@@ -292,7 +287,7 @@ class SchemaExplorer():
                 if record["rdfs:label"] == schema_property:
                     property_info["id"] = record["rdfs:label"]
                     property_info["description"] = record["rdfs:comment"]
-                    property_info["uri"] = self.curie2uri(record["@id"])
+                    #property_info["uri"] = self.curie2uri(record["@id"])
                     p_domain = dict2list(record["schema:domainIncludes"])
                     property_info["domain"] = unlist([self.uri2label(record["@id"]) for record in p_domain])
                     p_range = dict2list(record["schema:rangeIncludes"])
