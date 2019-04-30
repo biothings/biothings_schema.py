@@ -162,7 +162,7 @@ class Schema():
     def load_schema(self, schema):
         """Load schema and convert it to networkx graph
         """
-        self.schema = load_json(schema)
+        self.schema = expand_curies_in_schema(load_json(schema))
         validate_schema(self.schema)
         self.schema_nx = load_schema_into_networkx(self.schema)
 
@@ -213,10 +213,12 @@ class Schema():
         properties = []
         for record in self.schema["@graph"]:
             if record['@type'] == "rdf:Property":
-                if type(record["schema:domainIncludes"]) == dict and record["schema:domainIncludes"]["@id"] == schema_uri:
-                    properties.append(record["rdfs:label"])
-                elif type(record["schema:domainIncludes"]) == list and [item for item in record["schema:domainIncludes"] if item["@id"] == schema_uri] != []:
-                    properties.append(record["rdfs:label"])
+                # some property doesn't have domainInclude/rangeInclude parameter
+                if "http://schema.org/domainIncludes" in record:
+                    if type(record["http://schema.org/domainIncludes"]) == dict and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
+                        properties.append(record["rdfs:label"])
+                    elif type(record["http://schema.org/domainIncludes"]) == list and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
+                        properties.append(record["rdfs:label"])
         return properties
 
     def find_all_class_properties(self, schema_class, display_as_table=False):
@@ -251,13 +253,14 @@ class Schema():
         for record in self.schema["@graph"]:
             usage = {}
             if record["@type"] == "rdf:Property":
-                p_range = dict2list(record["schema:rangeIncludes"])
-                for _doc in p_range:
-                    if _doc['@id'] == schema_uri:
-                        usage["property"] = record["rdfs:label"]
-                        p_domain = dict2list(record["schema:domainIncludes"])
-                        usage["property_used_on_class"] = unlist([self.uri2label(record["@id"]) for record in p_domain])
-                        usage["description"] = record["rdfs:comment"]
+                if "http://schema.org/rangeIncludes" in record:
+                    p_range = dict2list(record["http://schema.org/rangeIncludes"])
+                    for _doc in p_range:
+                        if _doc['@id'] == schema_uri:
+                            usage["property"] = record["rdfs:label"]
+                            p_domain = dict2list(record["http://schema.org/domainIncludes"])
+                            usage["property_used_on_class"] = unlist([record["@id"] for record in p_domain])
+                            usage["description"] = record["rdfs:comment"]
             if usage:
                 usages.append(usage)
         return usages
@@ -288,9 +291,11 @@ class Schema():
                     property_info["id"] = record["rdfs:label"]
                     property_info["description"] = record["rdfs:comment"]
                     #property_info["uri"] = self.curie2uri(record["@id"])
-                    p_domain = dict2list(record["schema:domainIncludes"])
+                    if "http://schema.org/domainIncludes" in record:
+                        p_domain = dict2list(record["http://schema.org/domainIncludes"])
                     property_info["domain"] = unlist([self.uri2label(record["@id"]) for record in p_domain])
-                    p_range = dict2list(record["schema:rangeIncludes"])
+                    if "http://schema.org/rangeIncludes" in record:
+                        p_range = dict2list(record["http://schema.org/rangeIncludes"])
                     property_info["range"] = unlist([self.uri2label(record["@id"]) for record in p_range])
         return property_info
 

@@ -84,19 +84,27 @@ def extract_name_from_uri_or_curie(item):
 
 def load_schema_into_networkx(schema):
     G = nx.DiGraph()
+    CLASS_REMOVE = ["http://schema.org/Number",
+                    "http://schema.org/Integer",
+                    "http://schema.org/Float",
+                    "http://schema.org/Text",
+                    "http://schema.org/CssSelectorType",
+                    "http://schema.org/URL",
+                    "http://schema.org/XPathType"]
     for record in schema["@graph"]:
-        if record["@type"] == "rdfs:Class":
-            G.add_node(record['rdfs:label'], uri=record["@id"],
+        if record["@type"] == "rdfs:Class" and record["@id"] not in CLASS_REMOVE:
+            G.add_node(extract_name_from_uri_or_curie(record["@id"]),
+                       uri=record["@id"],
                        description=record["rdfs:comment"])
             if "rdfs:subClassOf" in record:
                 parents = record["rdfs:subClassOf"]
                 if type(parents) == list:
                     for _parent in parents:
                         G.add_edge(extract_name_from_uri_or_curie(_parent["@id"]),
-                                   record["rdfs:label"])
+                                   extract_name_from_uri_or_curie(record["@id"]))
                 elif type(parents) == dict:
                     G.add_edge(extract_name_from_uri_or_curie(parents["@id"]),
-                               record["rdfs:label"])
+                               extract_name_from_uri_or_curie(record["@id"]))
     return G
 
 
@@ -129,6 +137,3 @@ def visualize(edges, size=None):
     for _item in edges:
         d.edge(_item[0], _item[1])
     return d
-
-
-
