@@ -1,7 +1,7 @@
 from .base import *
 from .utils import *
 import networkx as nx
-import tabletext
+# import tabletext
 import os
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -241,7 +241,7 @@ class Schema():
                     content.append([_property, property_info['range'],
                                     property_info['description'],
                                     record['class']])
-            print(tabletext.to_text(content))
+            # print(tabletext.to_text(content))
 
     def find_class_usages(self, schema_class):
         """Find where a given class is used as a value of a property

@@ -1,4 +1,3 @@
 graphviz==0.10.1
 jsonschema==3.0.1
 networkx==2.3
-tabletext==0.1
