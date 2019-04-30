@@ -1,4 +1,4 @@
-decorator==4.3.2
 graphviz==0.10.1
-jsonschema==2.6.0
-networkx==2.2
+jsonschema==3.0.1
+networkx==2.3
+tabletext==0.1
