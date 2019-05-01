@@ -155,9 +155,12 @@ class SchemaValidator():
 class Schema():
     """Class representing schema
     """
-    def __init__(self):
-        self.load_default_schema()
-        print('Preloaded with BioLink schema. Upload your own schema using "load_schema" function.')
+    def __init__(self, path=None):
+        if not path:
+            self.load_default_schema()
+            print('Preloaded with BioLink schema. Upload your own schema using "load_schema" function.')
+        else:
+            self.load_schema(path)
 
     def load_schema(self, schema):
         """Load schema and convert it to networkx graph
@@ -196,6 +199,11 @@ class Schema():
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
             return visualize(edges, size=size)
+
+    def fetch_all_classes(self):
+        """Find all classes defined in the schema
+        """
+        return list(self.schema_nx.nodes())
 
     def find_parent_classes(self, schema_class):
         """Find all parents of the class
