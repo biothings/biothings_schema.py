@@ -3,6 +3,7 @@ import urllib.request
 import os
 from functools import wraps
 
+import yaml
 import networkx as nx
 from jsonschema import validate
 
@@ -24,6 +25,33 @@ def load_json(file_path):
         with open(file_path) as f:
             data = json.load(f)
             return data
+
+
+def load_json_or_yaml(file_path):
+    """Load either json or yaml document from file path or url
+
+    :arg str file_path: The path of the url doc, could be url or file path
+    """
+    # handle url
+    if file_path.startswith("http"):
+        with urllib.request.urlopen(file_path) as url:
+            _data = url.read().decode()
+
+    # handle file path
+    else:
+        with open(file_path) as f:
+            _data = f.read()
+
+    try:
+        data = json.loads(_data)
+    except json.JSONDecodeError:   # for py>=3.5
+    # except ValueError:               # for py<3.5
+        try:
+            data = yaml.load(_data, Loader=yaml.FullLoader)
+        except (yaml.scanner.ScannerError,
+                yaml.parser.ParserError):
+            raise ValueError("Not a valid JSON or YAML format.")
+    return data
 
 
 def export_json(json_doc, file_path):
