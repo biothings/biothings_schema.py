@@ -33,18 +33,18 @@ def expand_curies_in_schema(schema):
     for record in graph:
         new_record = {}
         for k, v in record.items():
-            if type(v) == str:
-                new_record[expand_curie_to_uri(k, context)] =  expand_curie_to_uri(v, context)
-            elif type(v) == list:
-                if type(v[0]) == dict:
+            if isinstance(v, str):
+                new_record[expand_curie_to_uri(k, context)] = expand_curie_to_uri(v, context)
+            elif isinstance(v, list):
+                if isinstance(v[0], dict):
                     new_record[expand_curie_to_uri(k, context)] = []
                     for _item in v:
                         new_record[expand_curie_to_uri(k, context)].append({"@id": expand_curie_to_uri(_item["@id"], context)})
                 else:
                     new_record[expand_curie_to_uri(k, context)] = [expand_curie_to_uri(_item, context) for _item in v]
-            elif type(v) == dict and "@id" in v:
+            elif isinstance(v, dict) and "@id" in v:
                 new_record[expand_curie_to_uri(k, context)] = {"@id": expand_curie_to_uri(v["@id"], context)}
-            elif v == None:
+            elif v is None:
                 new_record[expand_curie_to_uri(k, context)] = None
         new_schema["@graph"].append(new_record)
     return new_schema
