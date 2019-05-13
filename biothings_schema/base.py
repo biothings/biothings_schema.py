@@ -1,5 +1,5 @@
 import json
-import urllib.request
+import requests
 import os
 from functools import wraps
 
@@ -17,8 +17,8 @@ def load_json(file_path):
     """
     # handle url
     if file_path.startswith("http"):
-        with urllib.request.urlopen(file_path) as url:
-            data = json.loads(url.read().decode())
+        with requests.get(file_path) as url:
+            data = url.json()
             return data
     # handle file path
     else:
@@ -34,9 +34,8 @@ def load_json_or_yaml(file_path):
     """
     # handle url
     if file_path.startswith("http"):
-        with urllib.request.urlopen(file_path) as url:
-            _data = url.read().decode()
-
+        with requests.get(file_path) as url:
+            _data = url.content
     # handle file path
     else:
         with open(file_path) as f:
