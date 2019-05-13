@@ -90,7 +90,9 @@ def load_schema_into_networkx(schema):
                     "http://schema.org/Text",
                     "http://schema.org/CssSelectorType",
                     "http://schema.org/URL",
-                    "http://schema.org/XPathType"]
+                    "http://schema.org/XPathType",
+                    "http://schema.org/Class",
+                    "http://schema.org/DataType"]
     for record in schema["@graph"]:
         if record["@type"] == "rdfs:Class" and record["@id"] not in CLASS_REMOVE:
             G.add_node(extract_name_from_uri_or_curie(record["@id"]),
