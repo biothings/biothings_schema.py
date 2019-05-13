@@ -1,8 +1,10 @@
 import json
 import urllib.request
 import os
+from functools import wraps
+
+import yaml
 import networkx as nx
-import graphviz
 from jsonschema import validate
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -23,6 +25,33 @@ def load_json(file_path):
         with open(file_path) as f:
             data = json.load(f)
             return data
+
+
+def load_json_or_yaml(file_path):
+    """Load either json or yaml document from file path or url
+
+    :arg str file_path: The path of the url doc, could be url or file path
+    """
+    # handle url
+    if file_path.startswith("http"):
+        with urllib.request.urlopen(file_path) as url:
+            _data = url.read().decode()
+
+    # handle file path
+    else:
+        with open(file_path) as f:
+            _data = f.read()
+
+    try:
+        data = json.loads(_data)
+    except json.JSONDecodeError:   # for py>=3.5
+    # except ValueError:               # for py<3.5
+        try:
+            data = yaml.load(_data, Loader=yaml.FullLoader)
+        except (yaml.scanner.ScannerError,
+                yaml.parser.ParserError):
+            raise ValueError("Not a valid JSON or YAML format.")
+    return data
 
 
 def export_json(json_doc, file_path):
@@ -100,28 +129,30 @@ def load_schema_into_networkx(schema):
                        description=record["rdfs:comment"])
             if "rdfs:subClassOf" in record:
                 parents = record["rdfs:subClassOf"]
-                if type(parents) == list:
+                if isinstance(parents, list):
                     for _parent in parents:
                         G.add_edge(extract_name_from_uri_or_curie(_parent["@id"]),
                                    extract_name_from_uri_or_curie(record["@id"]))
-                elif type(parents) == dict:
+                elif isinstance(parents, dict):
                     G.add_edge(extract_name_from_uri_or_curie(parents["@id"]),
                                extract_name_from_uri_or_curie(record["@id"]))
     return G
 
 
 def dict2list(dictionary):
-    if type(dictionary) == list:
+    if isinstance(dictionary, list):
         return dictionary
-    elif type(dictionary) == dict:
+    elif isinstance(dictionary, dict):
         return [dictionary]
 
 
 def str2list(_str):
-    if type(_str) == str:
+    if isinstance(_str, str):
         return [_str]
-    elif type(_str) == list:
+    elif isinstance(_str, list):
         return _str
+    else:
+        raise ValueError('"_str" input is not a str or list')
 
 
 def unlist(_list):
@@ -131,11 +162,39 @@ def unlist(_list):
         return _list
 
 
+def require_optional(*module_list):
+    """ A decorator to make sure an optional module(s) is imported,
+        otherwise, print out proper error msg.
+
+            @require_optional('graphviz')
+            def a_func(): pass
+        or
+            @require_optional('graphviz', 'pkg2', 'pkg3.mod1')
+            def a_func(): pass
+    """
+    def _inner_require_optional(func):
+        import importlib
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            missing_module = False
+            for mod in module_list:
+                try:
+                    func.__globals__[mod] = importlib.import_module(mod)
+                except ImportError:
+                    print("Error: This func requires module \"{}\" to run.".format(mod))
+                    missing_module = True
+            if not missing_module:
+                return func(*args, **kwargs)
+        return wrapper
+    return _inner_require_optional
+
+
+@require_optional("graphviz")
 def visualize(edges, size=None):
     if size:
-        d = graphviz.Digraph(graph_attr=[('size', size)])
+        d = graphviz.Digraph(graph_attr=[('size', size)])    # pylint: disable=undefined-variable
     else:
-        d = graphviz.Digraph()
+        d = graphviz.Digraph()                               # pylint: disable=undefined-variable
     for _item in edges:
         d.edge(_item[0], _item[1])
     return d

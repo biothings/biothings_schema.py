@@ -1,8 +1,16 @@
-from .base import *
-from .utils import *
-import networkx as nx
-# import tabletext
 import os
+import json
+
+import networkx as nx
+from jsonschema import validate
+# import tabletext
+
+from .base import (str2list, dict2list, load_json_or_yaml, load_schemaorg,
+                   extract_name_from_uri_or_curie, load_default, load_schema_into_networkx,
+                   visualize, unlist, validate_class_schema, validate_schema,
+                   validate_property_schema)
+from .utils import expand_curie_to_uri, expand_curies_in_schema, find_duplicates
+
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -16,22 +24,22 @@ class SchemaValidator():
       > Each element in "@graph" should contain "@id", "@type", "rdfs:comment",
       "rdfs:label"
       > validate against JSON Schema
-      > Should validate the whole structure, and also validate property and 
+      > Should validate the whole structure, and also validate property and
       value separately
     2. Data Content wise:
       > "@id" field should match with "rdfs:label" field
       > all prefixes used in the file should be defined in "@context"
       > There should be no duplicate "@id"
       > Class specific
-        > rdfs:label field should be capitalize the first character of each 
+        > rdfs:label field should be capitalize the first character of each
           word
-        > the value of "rdfs:subClassOf" should be present in the schema or in 
+        > the value of "rdfs:subClassOf" should be present in the schema or in
           the core vocabulary
       > Property specific
         > rdfs:label field should be carmelCase
-        > the value of "schema:domainIncludes" should be present in the schema 
+        > the value of "schema:domainIncludes" should be present in the schema
           or in the core vocabulary
-        > the value of "schema:rangeIncludes" should be present in the schema 
+        > the value of "schema:rangeIncludes" should be present in the schema
           or in the core vocabulary
     """
     def __init__(self, schema):
@@ -109,14 +117,14 @@ class SchemaValidator():
         """
         labels = [_record['rdfs:label'] for _record in self.extension_schema["schema"]["@graph"]]
         duplicates = find_duplicates(labels)
-        if len(duplicates) != 0:
+        if duplicates:
             raise ValueError('Duplicates detected in graph: {}'.format(duplicates))
 
     def validate_schema(self, schema):
         """Validate schema against SchemaORG standard
         """
         json_schema_path = os.path.join(_ROOT, 'data', 'schema.json')
-        json_schema = load_json(json_schema_path)
+        json_schema = load_json_or_yaml(json_schema_path)
         return validate(schema, json_schema)
 
     def validate_property_schema(self, schema):
@@ -125,7 +133,7 @@ class SchemaValidator():
         json_schema_path = os.path.join(_ROOT,
                                         'data',
                                         'property_json_schema.json')
-        json_schema = load_json(json_schema_path)
+        json_schema = load_json_or_yaml(json_schema_path)
         return validate(schema, json_schema)
 
     def validate_class_schema(self, schema):
@@ -134,7 +142,7 @@ class SchemaValidator():
         json_schema_path = os.path.join(_ROOT,
                                         'data',
                                         'class_json_schema.json')
-        json_schema = load_json(json_schema_path)
+        json_schema = load_json_or_yaml(json_schema_path)
         return validate(schema, json_schema)
 
     def validate_full_schema(self):
@@ -165,7 +173,7 @@ class Schema():
     def load_schema(self, schema):
         """Load schema and convert it to networkx graph
         """
-        self.schema = expand_curies_in_schema(load_json(schema))
+        self.schema = expand_curies_in_schema(load_json_or_yaml(schema))
         validate_schema(self.schema)
         self.schema_nx = load_schema_into_networkx(self.schema)
 
@@ -223,9 +231,9 @@ class Schema():
             if record['@type'] == "rdf:Property":
                 # some property doesn't have domainInclude/rangeInclude parameter
                 if "http://schema.org/domainIncludes" in record:
-                    if type(record["http://schema.org/domainIncludes"]) == dict and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
+                    if isinstance(record["http://schema.org/domainIncludes"], dict) and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
                         properties.append(record["rdfs:label"])
-                    elif type(record["http://schema.org/domainIncludes"]) == list and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
+                    elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
                         properties.append(record["rdfs:label"])
         return properties
 
@@ -239,8 +247,10 @@ class Schema():
         for path in parents:
             path.reverse()
             for _parent in path:
-                properties.append({"class": _parent,
-                                    "properties": self.find_class_specific_properties(_parent)})
+                properties.append({
+                    "class": _parent,
+                    "properties": self.find_class_specific_properties(_parent)
+                })
         if not display_as_table:
             return properties
         else:
@@ -351,7 +361,7 @@ class Schema():
         self.schema["@graph"].append(class_info)
         validate_schema(self.schema)
         print("Updated the class {} successfully!".format(class_info["rdfs:label"]))
-        self.schema_nx = load_schema_into_networkx(self.schema)
+        self.schema_nx = load_schema_into_networkx(self.schema)         # pylint: disable=attribute-defined-outside-init
 
     def update_property(self, property_info):
         """Add a new property into schema
@@ -363,5 +373,5 @@ class Schema():
 
     def export_schema(self, file_path):
         with open(file_path, 'w') as f:
-            json.dump(self.schema, f, sort_keys = True, indent = 4,
-               ensure_ascii = False)
+            json.dump(self.schema, f, sort_keys=True, indent=4,
+                      ensure_ascii=False)

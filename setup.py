@@ -1,5 +1,15 @@
-import os
 from setuptools import setup
+
+
+install_requires = [
+    'jsonschema>=3.0.1',
+    'networkx>=2.3',
+    'PyYAML>=5.1'
+]
+
+extra_requires = [
+    'graphviz>=0.10.1'
+]
 
 setup(
     name="biothings_schema",
@@ -30,9 +40,8 @@ setup(
         "Topic :: Utilities",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
-    install_requires=[
-        'graphviz==0.10.1',
-        'jsonschema==3.0.1',
-        'networkx==2.3'
-    ],
+    install_requires=install_requires,
+    extras_require={
+        'extra': extra_requires
+    }
 )
