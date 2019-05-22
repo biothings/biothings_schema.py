@@ -44,5 +44,6 @@ setup(
     install_requires=install_requires,
     extras_require={
         'extra': extra_requires
-    }
+    },
+    include_package_data=True
 )
