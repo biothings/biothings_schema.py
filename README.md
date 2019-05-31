@@ -1,8 +1,7 @@
-schema_explorer
+biothings_schema
 ==========================
 
-
-Schema Explorer is a Python Package to help you view, analyze and edit schemas defined in schema.org way
+biothings_schema is a Python Package to help you view, analyze and edit schemas defined in [schema.org](http://schema.org) way
 
 ``` {.sourceCode .python}
 >>> from biothings_schema import Schema
@@ -43,7 +42,6 @@ Schema Explorer is a Python Package to help you view, analyze and edit schemas d
 See [detailed jupyter notebook demo](https://github.com/biothings/biothings_schema.py/blob/master/Schema%20Explorer%20Demo.ipynb).
 
 
-
 Feature Support
 ---------------
 
@@ -51,7 +49,7 @@ Feature Support
 Installation
 ------------
 
-To install schema_explorer, simply use pip:
+To install biothings_schema, simply use pip:
 
 ``` {.sourceCode .bash}
 $ pip install git+https://github.com/biothings/biothings_schema.py#egg=biothings_schema.py
