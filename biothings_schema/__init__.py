@@ -9,7 +9,7 @@ from .base import (str2list, dict2list, load_json_or_yaml, load_schemaorg,
                    extract_name_from_uri_or_curie, load_default, load_schema_into_networkx,
                    visualize, unlist, validate_class_schema, validate_schema,
                    validate_property_schema)
-from .utils import expand_curie_to_uri, expand_curies_in_schema, find_duplicates
+from .utils import expand_curies_in_schema, find_duplicates
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
