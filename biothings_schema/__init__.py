@@ -5,11 +5,8 @@ import networkx as nx
 from jsonschema import validate
 # import tabletext
 
-from .base import (str2list, dict2list, load_json_or_yaml, load_schemaorg,
-                   extract_name_from_uri_or_curie, load_default, load_schema_into_networkx,
-                   visualize, unlist, validate_class_schema, validate_schema,
-                   validate_property_schema)
-from .utils import expand_curies_in_schema, find_duplicates, uri2label
+from .base import *
+from .utils import *
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -176,7 +173,11 @@ class Schema():
         """Load schema and convert it to networkx graph"""
         self.schema = expand_curies_in_schema(load_json_or_yaml(schema))
         validate_schema(self.schema)
-        self.schema_nx = load_schema_into_networkx(self.schema)
+        self.schemaorg_schema = expand_curies_in_schema(load_schemaorg())
+        self.schema_nx = load_schema_into_networkx(self.schemaorg_schema,
+                                                   self.schema)
+        # merge together the given schema and the schema defined by schemaorg
+        self.schema = merge_schema(self.schema, self.schemaorg_schema)
 
     def load_default_schema(self):
         """Load default schema, either schema.org or biothings"""

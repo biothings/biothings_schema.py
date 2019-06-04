@@ -2,7 +2,6 @@ import json
 import requests
 import os
 from functools import wraps
-
 import yaml
 import networkx as nx
 from jsonschema import validate
@@ -71,8 +70,8 @@ def load_default():
 def load_schemaorg():
     """Load SchemOrg vocabulary
     """
-    schemaorg_path = os.path.join(_ROOT, 'data', 'all_layer.jsonld')
-    return load_json(schemaorg_path)
+    schemaorg_path = 'https://schema.org/version/latest/schema.jsonld'
+    return load_json_or_yaml(schemaorg_path)
 
 
 def validate_schema(schema):
@@ -110,8 +109,14 @@ def extract_name_from_uri_or_curie(item):
         print("error")
 
 
-def load_schema_into_networkx(schema):
-    G = nx.DiGraph()
+def load_schema_into_networkx(schema, preload_schemaorg=False):
+    """Constuct networkx DiGraph based on Schema provided"""
+    # preload all schema from schemaorg latest version
+    if preload_schemaorg:
+        G = load_schema_into_networkx(preload_schemaorg,
+                                      preload_schemaorg=False)
+    else:
+        G = nx.DiGraph()
     CLASS_REMOVE = ["http://schema.org/Number",
                     "http://schema.org/Integer",
                     "http://schema.org/Float",

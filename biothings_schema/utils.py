@@ -49,6 +49,16 @@ def expand_curies_in_schema(schema):
         new_schema["@graph"].append(new_record)
     return new_schema
 
+def merge_schema(schema1, schema2):
+    """Merge two schemas together"""
+    new_schema = {"@context": {},
+                  "@graph": [],
+                  "@id": "merged"}
+    new_schema["@context"] = schema1["@context"]
+    new_schema["@context"].update(schema2["@context"])
+    new_schema["@graph"] = schema1["@graph"] + schema2["@graph"]
+    return new_schema
+
 
 def uri2label(uri, schema=None):
     """Given a URI, return the label
