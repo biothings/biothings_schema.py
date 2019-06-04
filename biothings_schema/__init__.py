@@ -39,18 +39,17 @@ class SchemaValidator():
         > the value of "schema:rangeIncludes" should be present in the schema
           or in the core vocabulary
     """
-    def __init__(self, schema):
+    def __init__(self, schema, schema_nx):
         self.schemaorg = {'schema': load_schemaorg(),
                           'classes': [],
                           'properties': []}
-        for _schema in self.schemaorg['schema']['@graph']:
-            for _record in _schema["@graph"]:
-                if "@type" in _record:
-                    _type = str2list(_record["@type"])
-                    if "rdfs:Property" in _type:
-                        self.schemaorg['properties'].append(_record["@id"])
-                    elif "rdfs:Class" in _type:
-                        self.schemaorg['classes'].append(_record["@id"])
+        for _record in self.schemaorg['schema']['@graph']:
+            if "@type" in _record:
+                _type = str2list(_record["@type"])
+                if "rdfs:Property" in _type:
+                    self.schemaorg['properties'].append(_record["@id"])
+                elif "rdfs:Class" in _type:
+                    self.schemaorg['classes'].append(_record["@id"])
         self.extension_schema = {'schema': expand_curies_in_schema(schema),
                                  'classes': [],
                                  'properties': []}
@@ -61,6 +60,8 @@ class SchemaValidator():
             elif "rdfs:Class" in _type:
                 self.extension_schema['classes'].append(_record["@id"])
         self.all_classes = self.schemaorg['classes'] + self.extension_schema['classes']
+        self.all_schemas = self.schemaorg['schema']['@graph'] + self.extension_schema["schema"]["@graph"]
+        self.schema_nx = schema_nx
 
     def validate_class_label(self, label_uri):
         """ Check if the first character of class label is capitalized
@@ -142,20 +143,57 @@ class SchemaValidator():
         json_schema = load_json_or_yaml(json_schema_path)
         return validate(schema, json_schema)
 
+    def validate_validation_field(self, schema):
+        """Validate the $validation field
+        Validation creteria:
+        Make sure all properties specified are documented in schema
+        """
+        if "$validation" in schema:
+            if 'properties' not in schema["$validation"]:
+                raise KeyError('properties not in $validation field')
+            else:
+                properties = schema["$validation"]["properties"].keys()
+                # find all parents of the class
+                paths = nx.all_simple_paths(self.schema_nx,
+                                            source='Thing',
+                                            target=schema["rdfs:label"])
+                parent_classes = set()
+                for _path in paths:
+                    for _item in _path:
+                        parent_classes.add(_item)
+                # loop through all properties and check if the value of
+                # domainIncludes belong to one of the parent_classes
+                for _property in properties:
+                    matched = False
+                    for _record in self.all_schemas:
+                        if _record["rdfs:label"] == _property:
+                            domainincludes_value = dict2list(_record["http://schema.org/domainIncludes"])
+                            for record in domainincludes_value:
+                                if uri2label(record["@id"]) in parent_classes:
+                                    matched = True
+                    if not matched:
+                        raise ValueError('field {} in $validation is not correctly documented'.format(_property))
+                    
+        else:
+            pass
+
     def validate_full_schema(self):
         """ Main function to validate schema
         """
         self.check_duplicate_labels()
         for record in self.extension_schema['schema']['@graph']:
             self.check_whether_atid_and_label_match(record)
-            if record['@type'] == "rdf:Class":
+            if record['@type'] == "rdfs:Class":
                 self.validate_class_schema(record)
                 self.validate_class_label(record["@id"])
+                self.validate_validation_field(record)
             elif record['@type'] == "rdf:Property":
                 self.validate_property_schema(record)
                 self.validate_property_label(record["@id"])
                 self.validate_domainIncludes_field(record["http://schema.org/domainIncludes"])
                 self.validate_rangeIncludes_field(record["http://schema.org/rangeIncludes"])
+            else:
+                raise ValueError('wrong @type value found: {}'.format(record))
 
 
 class Schema():
@@ -172,10 +210,10 @@ class Schema():
     def load_schema(self, schema):
         """Load schema and convert it to networkx graph"""
         self.schema = expand_curies_in_schema(load_json_or_yaml(schema))
-        validate_schema(self.schema)
         self.schemaorg_schema = expand_curies_in_schema(load_schemaorg())
         self.schema_nx = load_schema_into_networkx(self.schemaorg_schema,
                                                    self.schema)
+        SchemaValidator(self.schema, self.schema_nx).validate_full_schema()
         # merge together the given schema and the schema defined by schemaorg
         self.schema = merge_schema(self.schema, self.schemaorg_schema)
 
