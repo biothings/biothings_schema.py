@@ -28,12 +28,13 @@ def expand_curies_in_schema(schema):
     context = schema["@context"]
     graph = schema["@graph"]
     new_schema = {"@context": context,
-                  "@graph": [],
-                  "@id": schema["@id"]}
+                  "@graph": []}
     for record in graph:
         new_record = {}
         for k, v in record.items():
-            if isinstance(v, str):
+            if k == "$validation":
+                new_record[k] = v
+            elif isinstance(v, str):
                 new_record[expand_curie_to_uri(k, context)] = expand_curie_to_uri(v, context)
             elif isinstance(v, list):
                 if isinstance(v[0], dict):
@@ -48,6 +49,7 @@ def expand_curies_in_schema(schema):
                 new_record[expand_curie_to_uri(k, context)] = None
         new_schema["@graph"].append(new_record)
     return new_schema
+
 
 def merge_schema(schema1, schema2):
     """Merge two schemas together"""
@@ -67,8 +69,12 @@ def uri2label(uri, schema=None):
     if schema:
         return [record["rdfs:label"] for record in schema["@graph"] if record['@id'] == uri][0]
     # otherwise, extract the last element after "/"
-    else:
+    elif '/' in uri:
         return uri.split('/')[-1]
+    elif ':' in uri:
+        return uri.split(':')[-1]
+    else:
+        return uri
 
 
 def find_duplicates(_list):
