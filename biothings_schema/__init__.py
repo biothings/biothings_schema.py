@@ -9,7 +9,7 @@ from .base import (str2list, dict2list, load_json_or_yaml, load_schemaorg,
                    extract_name_from_uri_or_curie, load_default, load_schema_into_networkx,
                    visualize, unlist, validate_class_schema, validate_schema,
                    validate_property_schema)
-from .utils import expand_curies_in_schema, find_duplicates
+from .utils import expand_curies_in_schema, find_duplicates, uri2label
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -218,6 +218,8 @@ class Schema():
     def find_parent_classes(self, schema_class):
         """Find all parents of a specific class"""
         root_node = list(nx.topological_sort(self.schema_nx))
+        # When a schema is not a tree with only one root node
+        # Set "Thing" as the root node by default
         if 'Thing' in root_node:
             root_node = 'Thing'
         else:
@@ -270,7 +272,7 @@ class Schema():
                         if _doc['@id'] == schema_uri:
                             usage["property"] = record["rdfs:label"]
                             p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                            usage["property_used_on_class"] = unlist([record["@id"] for record in p_domain])
+                            usage["property_used_on_class"] = unlist([uri2label(record["@id"], self.schema) for record in p_domain])
                             usage["description"] = record["rdfs:comment"]
             if usage:
                 usages.append(usage)
@@ -304,10 +306,10 @@ class Schema():
                     #property_info["uri"] = self.curie2uri(record["@id"])
                     if "http://schema.org/domainIncludes" in record:
                         p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                    property_info["domain"] = unlist([self.uri2label(record["@id"]) for record in p_domain])
+                    property_info["domain"] = unlist([uri2label(record["@id"], self.schema) for record in p_domain])
                     if "http://schema.org/rangeIncludes" in record:
                         p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                    property_info["range"] = unlist([self.uri2label(record["@id"]) for record in p_range])
+                    property_info["range"] = unlist([uri2label(record["@id"], self.schema) for record in p_range])
         return property_info
 
     def generate_class_template(self):
