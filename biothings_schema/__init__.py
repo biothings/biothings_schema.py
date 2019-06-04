@@ -160,34 +160,37 @@ class SchemaValidator():
                 self.validate_domainIncludes_field(record["http://schema.org/domainIncludes"])
                 self.validate_rangeIncludes_field(record["http://schema.org/rangeIncludes"])
 
+
 class Schema():
     """Class representing schema
     """
+
     def __init__(self, path=None):
         if not path:
             self.load_default_schema()
-            print('Preloaded with BioLink schema. Upload your own schema using "load_schema" function.')
+            print('Preloaded with BioLink schema.')
         else:
             self.load_schema(path)
 
     def load_schema(self, schema):
-        """Load schema and convert it to networkx graph
-        """
+        """Load schema and convert it to networkx graph"""
         self.schema = expand_curies_in_schema(load_json_or_yaml(schema))
         validate_schema(self.schema)
         self.schema_nx = load_schema_into_networkx(self.schema)
 
     def load_default_schema(self):
-        """Load default schema, either schema.org or biothings
-        """
+        """Load default schema, either schema.org or biothings"""
         self.schema = load_default()
         self.schema_nx = load_schema_into_networkx(self.schema)
 
     def full_schema_graph(self, size=None):
+        """Visualize the full schema loaded using graphviz"""
         edges = self.schema_nx.edges()
         return visualize(edges, size=size)
 
     def sub_schema_graph(self, source, direction, size=None):
+        """Visualize a sub-graph of the schema based on a specific node
+        """
         if direction == 'down':
             edges = list(nx.edge_bfs(self.schema_nx, [source]))
             return visualize(edges, size=size)
@@ -209,22 +212,23 @@ class Schema():
             return visualize(edges, size=size)
 
     def fetch_all_classes(self):
-        """Find all classes defined in the schema
-        """
+        """Find all classes defined in the schema"""
         return list(self.schema_nx.nodes())
 
     def find_parent_classes(self, schema_class):
-        """Find all parents of the class
-        """
-        root_node = list(nx.topological_sort(self.schema_nx))[0]
+        """Find all parents of a specific class"""
+        root_node = list(nx.topological_sort(self.schema_nx))
+        if 'Thing' in root_node:
+            root_node = 'Thing'
+        else:
+            root_node = root_node[0]
         paths = nx.all_simple_paths(self.schema_nx,
                                     source=root_node,
                                     target=schema_class)
         return [_path[:-1] for _path in paths]
 
     def find_class_specific_properties(self, schema_class):
-        """Find properties specifically associated with a given class
-        """
+        """Find properties specifically associated with a given class"""
         schema_uri = self.schema_nx.node[schema_class]["uri"]
         properties = []
         for record in self.schema["@graph"]:
@@ -237,7 +241,7 @@ class Schema():
                         properties.append(record["rdfs:label"])
         return properties
 
-    def find_all_class_properties(self, schema_class, display_as_table=False):
+    def find_all_class_properties(self, schema_class):
         """Find all properties associated with a given class
         # TODO : need to deal with recursive paths
         """
@@ -251,21 +255,10 @@ class Schema():
                     "class": _parent,
                     "properties": self.find_class_specific_properties(_parent)
                 })
-        if not display_as_table:
-            return properties
-        else:
-            content = [['Property', 'Expected Type', 'Description', 'Class']]
-            for record in properties:
-                for _property in record['properties']:
-                    property_info = self.explore_property(_property)
-                    content.append([_property, property_info['range'],
-                                    property_info['description'],
-                                    record['class']])
-            # print(tabletext.to_text(content))
+        return properties
 
     def find_class_usages(self, schema_class):
-        """Find where a given class is used as a value of a property
-        """
+        """Find where a given class is used as a value of a property"""
         usages = []
         schema_uri = self.schema_nx.node[schema_class]["uri"]
         for record in self.schema["@graph"]:
@@ -293,7 +286,7 @@ class Schema():
         """
         class_info = {'properties': self.find_all_class_properties(schema_class),
                       'description': self.schema_nx.node[schema_class]['description'],
-                      'uri': self.curie2uri(self.schema_nx.node[schema_class]["uri"]),
+                      'uri': self.schema_nx.node[schema_class]["uri"],
                       'usage': self.find_class_usages(schema_class),
                       'child_classes': self.find_child_classes(schema_class),
                       'parent_classes': self.find_parent_classes(schema_class)}
