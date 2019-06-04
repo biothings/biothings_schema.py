@@ -50,10 +50,15 @@ def expand_curies_in_schema(schema):
     return new_schema
 
 
-def uri2label(uri, schema):
+def uri2label(uri, schema=None):
     """Given a URI, return the label
     """
-    return [record["rdfs:label"] for record in schema["@graph"] if record['@id'] == uri][0]
+    # if schema is provided, look into the schema for the label
+    if schema:
+        return [record["rdfs:label"] for record in schema["@graph"] if record['@id'] == uri][0]
+    # otherwise, extract the last element after "/"
+    else:
+        return uri.split('/')[-1]
 
 
 def find_duplicates(_list):
