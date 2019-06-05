@@ -1,4 +1,3 @@
-
 def expand_curie_to_uri(curie, context_info):
     """Expand curie to uri based on the context given
 
