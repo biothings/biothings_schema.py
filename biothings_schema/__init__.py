@@ -3,6 +3,7 @@ import json
 
 import networkx as nx
 from jsonschema import validate
+from jsonschema import validators
 # import tabletext
 
 from .base import *
@@ -38,6 +39,8 @@ class SchemaValidator():
           or in the core vocabulary
         > the value of "schema:rangeIncludes" should be present in the schema
           or in the core vocabulary
+      # TODO: Check if value of inverseof field is defined in the schema
+      # TODO: Check inverseof from both properties
     """
     def __init__(self, schema, schema_nx):
         self.schemaorg = {'schema': load_schemaorg(),
@@ -143,19 +146,27 @@ class SchemaValidator():
         json_schema = load_json_or_yaml(json_schema_path)
         return validate(schema, json_schema)
 
+    def validate_json_schema(self, json_schema):
+        """Make sure the json schema provided in the $validation field is valid
+
+        source code from: https://python-jsonschema.readthedocs.io/en/stable/_modules/jsonschema/validators/#validate
+        TODO: Maybe add additional check,e.g. fields in "required" should appear in "properties"
+        """
+        cls = validators.validator_for(json_schema)
+        cls.check_schema(json_schema)
+
     def validate_validation_field(self, schema):
         """Validate the $validation field
         Validation creteria:
         Make sure all properties specified are documented in schema
-        # TODO: 1. CREATE A DICTIONARY WITH KEY(@ID), VALUE($VALIDATION)
-          TODO: 2. MAKE SURE THE JSON SCHEMA IS VALID USING JSON-SCHEMA PACKAGE
-          TODO: 3. ADD METHOD TO DO THE ACTUAL VALIDATION
           TODO: 4. POTENTIALLY, VALUE OF $VALIDATION IS A URL
         """
         if "$validation" in schema:
             if 'properties' not in schema["$validation"]:
                 raise KeyError('properties not in $validation field')
             else:
+                # validate the json schema
+                self.validate_json_schema(schema["$validation"])
                 properties = schema["$validation"]["properties"].keys()
                 # find all parents of the class
                 paths = nx.all_simple_paths(self.schema_nx,
@@ -210,9 +221,24 @@ class Schema():
         else:
             self.load_schema(path)
 
+    def extract_validation_info(self, schema=None, return_results=True):
+        """Extract the $validation field and organize into self.validation"""
+        self.validation = {}
+        # if no schema is provided, try self.schema
+        if not schema:
+            schema = self.schema
+        if "@graph" not in schema:
+            raise ValueError('No valid schmea provided')
+        for _doc in schema['@graph']:
+            if "$validation" in _doc:
+                self.validation[_doc['@id']] = _doc['$validation']
+        if return_results:
+            return self.validation
+
     def load_schema(self, schema):
         """Load schema and convert it to networkx graph"""
         self.schema = expand_curies_in_schema(load_json_or_yaml(schema))
+        self.extract_validation_info(schema=self.schema, return_results=False)
         self.schemaorg_schema = expand_curies_in_schema(load_schemaorg())
         self.schema_nx = load_schema_into_networkx(self.schemaorg_schema,
                                                    self.schema)
@@ -359,6 +385,21 @@ class Schema():
                         p_range = dict2list(record["http://schema.org/rangeIncludes"])
                     property_info["range"] = unlist([uri2label(record["@id"], self.schema) for record in p_range])
         return property_info
+
+    def validate_against_schema(self, json_doc, class_uri):
+        """Validate a json document against it's JSON schema defined in Schema
+
+        :arg dict json_doc: The JSON Document to be validated
+        :arg str class_uri: The URI of the class which has JSON schema
+        """
+        if not self.validation:
+            raise RuntimeError("The Schema File doesn't contain any validation field")
+        elif class_uri not in self.validation:
+            raise KeyError("{} not in the the list of URIs [{}] which has JSON-Schema embed".format(class_uri,
+                                          list(self.validation.keys())))
+        else:
+            validate(json_doc, self.validation[class_uri])
+            print('The JSON document is valid')
 
     def generate_class_template(self):
         """Generate a template for schema class
