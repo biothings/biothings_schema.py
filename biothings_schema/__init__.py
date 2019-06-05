@@ -214,12 +214,12 @@ class Schema():
     """Class representing schema
     """
     # TODO: change path to schema, JSON/YAML/FILE PATH/HTTP URL
-    def __init__(self, path=None):
-        if not path:
+    def __init__(self, schema=None):
+        if not schema:
             self.load_default_schema()
             print('Preloaded with BioLink schema.')
         else:
-            self.load_schema(path)
+            self.load_schema(schema)
 
     def extract_validation_info(self, schema=None, return_results=True):
         """Extract the $validation field and organize into self.validation"""
