@@ -39,7 +39,7 @@ biothings_schema is a Python Package to help you view, analyze and edit schemas 
     'geneAssociatedWithCondition']
 ```
 
-See [detailed jupyter notebook demo](https://github.com/biothings/biothings_schema.py/blob/master/Schema%20Explorer%20Demo.ipynb).
+See [detailed jupyter notebook demo](https://github.com/biothings/biothings_schema.py/tree/master/jupyter%20notebooks).
 
 
 Feature Support
