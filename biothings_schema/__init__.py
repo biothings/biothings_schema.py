@@ -147,6 +147,10 @@ class SchemaValidator():
         """Validate the $validation field
         Validation creteria:
         Make sure all properties specified are documented in schema
+        # TODO: 1. CREATE A DICTIONARY WITH KEY(@ID), VALUE($VALIDATION)
+          TODO: 2. MAKE SURE THE JSON SCHEMA IS VALID USING JSON-SCHEMA PACKAGE
+          TODO: 3. ADD METHOD TO DO THE ACTUAL VALIDATION
+          TODO: 4. POTENTIALLY, VALUE OF $VALIDATION IS A URL
         """
         if "$validation" in schema:
             if 'properties' not in schema["$validation"]:
@@ -173,7 +177,6 @@ class SchemaValidator():
                                     matched = True
                     if not matched:
                         raise ValueError('field {} in $validation is not correctly documented'.format(_property))
-                    
         else:
             pass
 
@@ -199,7 +202,7 @@ class SchemaValidator():
 class Schema():
     """Class representing schema
     """
-
+    # TODO: change path to schema, JSON/YAML/FILE PATH/HTTP URL
     def __init__(self, path=None):
         if not path:
             self.load_default_schema()
@@ -230,9 +233,11 @@ class Schema():
     def sub_schema_graph(self, source, direction, size=None):
         """Visualize a sub-graph of the schema based on a specific node
         """
+        # handle cases where user want to get all children
         if direction == 'down':
             edges = list(nx.edge_bfs(self.schema_nx, [source]))
             return visualize(edges, size=size)
+        # handle cases where user want to get all parents
         elif direction == 'up':
             paths = self.find_parent_classes(source)
             edges = []
@@ -241,6 +246,7 @@ class Schema():
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
             return visualize(edges, size=size)
+        # handle cases where user want to get both parents and children
         elif direction == "both":
             paths = self.find_parent_classes(source)
             edges = list(nx.edge_bfs(self.schema_nx, [source]))
@@ -273,6 +279,7 @@ class Schema():
         schema_uri = self.schema_nx.node[schema_class]["uri"]
         properties = []
         for record in self.schema["@graph"]:
+            # look for record which is property only
             if record['@type'] == "rdf:Property":
                 # some property doesn't have domainInclude/rangeInclude parameter
                 if "http://schema.org/domainIncludes" in record:
@@ -284,11 +291,13 @@ class Schema():
 
     def find_all_class_properties(self, schema_class):
         """Find all properties associated with a given class
-        # TODO : need to deal with recursive paths
         """
+        # find all parent classes
         parents = self.find_parent_classes(schema_class)
         properties = [{'class': schema_class,
                        'properties': self.find_class_specific_properties(schema_class)}]
+        # update properties, each dict represent properties associated with
+        # the class
         for path in parents:
             path.reverse()
             for _parent in path:
