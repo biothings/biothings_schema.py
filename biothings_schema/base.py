@@ -27,12 +27,15 @@ def load_json(file_path):
 
 
 def load_json_or_yaml(file_path):
-    """Load either json or yaml document from file path or url
+    """Load either json or yaml document from file path or url or JSON doc
 
     :arg str file_path: The path of the url doc, could be url or file path
     """
+    # handle json doc
+    if type(file_path) == dict:
+        return file_path
     # handle url
-    if file_path.startswith("http"):
+    elif file_path.startswith("http"):
         with requests.get(file_path) as url:
             _data = url.content
     # handle file path
@@ -140,6 +143,10 @@ def load_schema_into_networkx(schema, preload_schemaorg=False):
                 elif isinstance(parents, dict):
                     G.add_edge(extract_name_from_uri_or_curie(parents["@id"]),
                                extract_name_from_uri_or_curie(record["@id"]))
+                else:
+                    raise ValueError('"dictionary" input is not a list or dict')
+            else:
+                pass
     return G
 
 
