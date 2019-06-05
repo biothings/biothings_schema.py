@@ -265,7 +265,6 @@ class Schema():
         # handle cases where user want to get all children
         if direction == 'down':
             edges = list(nx.edge_bfs(self.schema_nx, [source]))
-            return visualize(edges, size=size)
         # handle cases where user want to get all parents
         elif direction == 'up':
             paths = self.find_parent_classes(source)
@@ -274,7 +273,6 @@ class Schema():
                 _path.append(source)
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
-            return visualize(edges, size=size)
         # handle cases where user want to get both parents and children
         elif direction == "both":
             paths = self.find_parent_classes(source)
@@ -283,9 +281,9 @@ class Schema():
                 _path.append(source)
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
-            return visualize(edges, size=size)
         else:
             raise ValueError("The value of direction parameter could only be down, up or both")
+        return visualize(edges, size=size)
 
     def fetch_all_classes(self):
         """Find all classes defined in the schema"""
