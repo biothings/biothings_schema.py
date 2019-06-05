@@ -237,14 +237,17 @@ class Schema():
 
     def load_schema(self, schema):
         """Load schema and convert it to networkx graph"""
-        self.schema = expand_curies_in_schema(load_json_or_yaml(schema))
-        self.extract_validation_info(schema=self.schema, return_results=False)
+        self.schema_extension_only = expand_curies_in_schema(load_json_or_yaml(schema))
+        self.extract_validation_info(schema=self.schema_extension_only,
+                                     return_results=False)
         self.schemaorg_schema = expand_curies_in_schema(load_schemaorg())
         self.schema_nx = load_schema_into_networkx(self.schemaorg_schema,
-                                                   self.schema)
-        SchemaValidator(self.schema, self.schema_nx).validate_full_schema()
+                                                   self.schema_extension_only)
+        self.schema_nx_extension_only = load_schema_into_networkx(self.schema_extension_only)
+        SchemaValidator(self.schema_extension_only, self.schema_nx).validate_full_schema()
         # merge together the given schema and the schema defined by schemaorg
-        self.schema = merge_schema(self.schema, self.schemaorg_schema)
+        self.schema = merge_schema(self.schema_extension_only,
+                                   self.schemaorg_schema)
 
     def load_default_schema(self):
         """Load default schema, either schema.org or biothings"""
@@ -253,7 +256,7 @@ class Schema():
 
     def full_schema_graph(self, size=None):
         """Visualize the full schema loaded using graphviz"""
-        edges = self.schema_nx.edges()
+        edges = self.schema_nx_extension_only.edges()
         return visualize(edges, size=size)
 
     def sub_schema_graph(self, source, direction, size=None):
@@ -284,7 +287,7 @@ class Schema():
 
     def fetch_all_classes(self):
         """Find all classes defined in the schema"""
-        return list(self.schema_nx.nodes())
+        return list(self.schema_nx_extension_only.nodes())
 
     def find_parent_classes(self, schema_class):
         """Find all parents of a specific class"""
@@ -353,7 +356,7 @@ class Schema():
         return usages
 
     def find_child_classes(self, schema_class):
-        """Find schema classes that inherit from the given class
+        """Find schema classes that directly inherit from the given class
         """
         return unlist(list(self.schema_nx.successors(schema_class)))
 
