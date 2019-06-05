@@ -148,6 +148,8 @@ def dict2list(dictionary):
         return dictionary
     elif isinstance(dictionary, dict):
         return [dictionary]
+    else:
+        raise ValueError('"dictionary" input is not a list or dict')
 
 
 def str2list(_str):
