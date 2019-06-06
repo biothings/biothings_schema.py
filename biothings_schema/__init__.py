@@ -213,7 +213,6 @@ class SchemaValidator():
 class Schema():
     """Class representing schema
     """
-    # TODO: change path to schema, JSON/YAML/FILE PATH/HTTP URL
     def __init__(self, schema=None):
         if not schema:
             self.load_default_schema()
@@ -259,14 +258,16 @@ class Schema():
         edges = self.schema_nx_extension_only.edges()
         return visualize(edges, size=size)
 
-    def sub_schema_graph(self, source, direction, size=None):
+    def sub_schema_graph(self, source, include_parents=True, include_children=True, size=None):
         """Visualize a sub-graph of the schema based on a specific node
+
+        # TODO: (cls, include_parents=True, include_children=True, )
         """
         # handle cases where user want to get all children
-        if direction == 'down':
+        if include_parents is False and include_children:
             edges = list(nx.edge_bfs(self.schema_nx, [source]))
         # handle cases where user want to get all parents
-        elif direction == 'up':
+        elif include_parents and include_children is False:
             paths = self.find_parent_classes(source)
             edges = []
             for _path in paths:
@@ -274,7 +275,7 @@ class Schema():
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
         # handle cases where user want to get both parents and children
-        elif direction == "both":
+        elif include_parents and include_children:
             paths = self.find_parent_classes(source)
             edges = list(nx.edge_bfs(self.schema_nx, [source]))
             for _path in paths:
@@ -282,112 +283,33 @@ class Schema():
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
         else:
-            raise ValueError("The value of direction parameter could only be down, up or both")
+            raise ValueError("At least one of include_parents and include_children parameter need to be set to True")
         return visualize(edges, size=size)
 
-    def fetch_all_classes(self):
+    def list_all_classes(self):
         """Find all classes defined in the schema"""
         return list(self.schema_nx_extension_only.nodes())
 
-    def find_parent_classes(self, schema_class):
-        """Find all parents of a specific class"""
-        root_node = list(nx.topological_sort(self.schema_nx))
-        # When a schema is not a tree with only one root node
-        # Set "Thing" as the root node by default
-        if 'Thing' in root_node:
-            root_node = 'Thing'
-        else:
-            root_node = root_node[0]
-        paths = nx.all_simple_paths(self.schema_nx,
-                                    source=root_node,
-                                    target=schema_class)
-        return [_path[:-1] for _path in paths]
+    def get_class(self, class_name):
+        return SchemaClass(class_name, self)
 
-    def find_class_specific_properties(self, schema_class):
-        """Find properties specifically associated with a given class"""
-        schema_uri = self.schema_nx.node[schema_class]["uri"]
-        properties = []
-        for record in self.schema["@graph"]:
-            # look for record which is property only
-            if record['@type'] == "rdf:Property":
-                # some property doesn't have domainInclude/rangeInclude parameter
-                if "http://schema.org/domainIncludes" in record:
-                    if isinstance(record["http://schema.org/domainIncludes"], dict) and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
-                        properties.append(record["rdfs:label"])
-                    elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
-                        properties.append(record["rdfs:label"])
-        return properties
-
-    def find_all_class_properties(self, schema_class):
-        """Find all properties associated with a given class
-        """
-        # find all parent classes
-        parents = self.find_parent_classes(schema_class)
-        properties = [{'class': schema_class,
-                       'properties': self.find_class_specific_properties(schema_class)}]
-        # update properties, each dict represent properties associated with
-        # the class
-        for path in parents:
-            path.reverse()
-            for _parent in path:
-                properties.append({
-                    "class": _parent,
-                    "properties": self.find_class_specific_properties(_parent)
-                })
-        return properties
-
-    def find_class_usages(self, schema_class):
-        """Find where a given class is used as a value of a property"""
-        usages = []
-        schema_uri = self.schema_nx.node[schema_class]["uri"]
-        for record in self.schema["@graph"]:
-            usage = {}
-            if record["@type"] == "rdf:Property":
-                if "http://schema.org/rangeIncludes" in record:
-                    p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                    for _doc in p_range:
-                        if _doc['@id'] == schema_uri:
-                            usage["property"] = record["rdfs:label"]
+        def explore_property(self, schema_property):
+            """Find details about a specific property
+            """
+            property_info = {}
+            for record in self.schema["@graph"]:
+                if record["@type"] == "rdf:Property":
+                    if record["rdfs:label"] == schema_property:
+                        property_info["id"] = record["rdfs:label"]
+                        property_info["description"] = record["rdfs:comment"]
+                        #property_info["uri"] = self.curie2uri(record["@id"])
+                        if "http://schema.org/domainIncludes" in record:
                             p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                            usage["property_used_on_class"] = unlist([uri2label(record["@id"], self.schema) for record in p_domain])
-                            usage["description"] = record["rdfs:comment"]
-            if usage:
-                usages.append(usage)
-        return usages
-
-    def find_child_classes(self, schema_class):
-        """Find schema classes that directly inherit from the given class
-        """
-        return unlist(list(self.schema_nx.successors(schema_class)))
-
-    def explore_class(self, schema_class):
-        """Find details about a specific schema class
-        """
-        class_info = {'properties': self.find_all_class_properties(schema_class),
-                      'description': self.schema_nx.node[schema_class]['description'],
-                      'uri': self.schema_nx.node[schema_class]["uri"],
-                      'usage': self.find_class_usages(schema_class),
-                      'child_classes': self.find_child_classes(schema_class),
-                      'parent_classes': self.find_parent_classes(schema_class)}
-        return class_info
-
-    def explore_property(self, schema_property):
-        """Find details about a specific property
-        """
-        property_info = {}
-        for record in self.schema["@graph"]:
-            if record["@type"] == "rdf:Property":
-                if record["rdfs:label"] == schema_property:
-                    property_info["id"] = record["rdfs:label"]
-                    property_info["description"] = record["rdfs:comment"]
-                    #property_info["uri"] = self.curie2uri(record["@id"])
-                    if "http://schema.org/domainIncludes" in record:
-                        p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                    property_info["domain"] = unlist([uri2label(record["@id"], self.schema) for record in p_domain])
-                    if "http://schema.org/rangeIncludes" in record:
-                        p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                    property_info["range"] = unlist([uri2label(record["@id"], self.schema) for record in p_range])
-        return property_info
+                        property_info["domain"] = unlist([uri2label(record["@id"], self.schema) for record in p_domain])
+                        if "http://schema.org/rangeIncludes" in record:
+                            p_range = dict2list(record["http://schema.org/rangeIncludes"])
+                        property_info["range"] = unlist([uri2label(record["@id"], self.schema) for record in p_range])
+            return property_info
 
     def validate_against_schema(self, json_doc, class_uri):
         """Validate a json document against it's JSON schema defined in Schema
@@ -462,3 +384,101 @@ class Schema():
         with open(file_path, 'w') as f:
             json.dump(self.schema, f, sort_keys=True, indent=4,
                       ensure_ascii=False)
+
+
+class SchemaClass():
+    """Class representing an individual class in Schema
+    """
+    def __init__(self, class_name, schema):
+        self.schema_class = class_name
+        self.se = schema
+
+    @property
+    def parent_classes(self):
+        """Find all parents of a specific class"""
+        root_node = list(nx.topological_sort(self.se.schema_nx))
+        # When a schema is not a tree with only one root node
+        # Set "Thing" as the root node by default
+        if 'Thing' in root_node:
+            root_node = 'Thing'
+        else:
+            root_node = root_node[0]
+        paths = nx.all_simple_paths(self.se.schema_nx,
+                                    source=root_node,
+                                    target=self.schema_class)
+        return [_path[:-1] for _path in paths]
+
+    def list_properties(self, class_specific=True):
+        """Find properties of a class
+
+        :arg boolean class_specific: specify whether only to return class specific properties or not
+        """
+        def find_class_specific_properties(schema_class):
+            """Find properties specifically associated with a given class"""
+            schema_uri = self.se.schema_nx.node[schema_class]["uri"]
+            properties = []
+            for record in self.se.schema["@graph"]:
+                # look for record which is property only
+                if record['@type'] == "rdf:Property":
+                    # some property doesn't have domainInclude/rangeInclude parameter
+                    if "http://schema.org/domainIncludes" in record:
+                        if isinstance(record["http://schema.org/domainIncludes"], dict) and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
+                            properties.append(record["rdfs:label"])
+                        elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
+                            properties.append(record["rdfs:label"])
+            return properties
+        if class_specific:
+            properties = [{'class': self.schema_class,
+                           'properties': find_class_specific_properties(self.schema_class)}]
+            return properties
+        else:
+            # find all parent classes
+            parents = self.parent_classes
+            properties = [{'class': self.schema_class,
+                           'properties': find_class_specific_properties(self.schema_class)}]
+            # update properties, each dict represent properties associated with
+            # the class
+            for path in parents:
+                path.reverse()
+                for _parent in path:
+                    properties.append({
+                        "class": _parent,
+                        "properties": find_class_specific_properties(_parent)
+                    })
+            return properties
+
+    def used_by(self):
+        """Find where a given class is used as a value of a property"""
+        usages = []
+        schema_uri = self.se.schema_nx.node[self.schema_class]["uri"]
+        for record in self.se.schema["@graph"]:
+            usage = {}
+            if record["@type"] == "rdf:Property":
+                if "http://schema.org/rangeIncludes" in record:
+                    p_range = dict2list(record["http://schema.org/rangeIncludes"])
+                    for _doc in p_range:
+                        if _doc['@id'] == schema_uri:
+                            usage["property"] = record["rdfs:label"]
+                            p_domain = dict2list(record["http://schema.org/domainIncludes"])
+                            usage["property_used_on_class"] = unlist([uri2label(record["@id"], self.se.schema) for record in p_domain])
+                            usage["description"] = record["rdfs:comment"]
+            if usage:
+                usages.append(usage)
+        return usages
+
+    @property
+    def children_classes(self):
+        """Find schema classes that directly inherit from the given class
+        """
+        return unlist(list(self.se.schema_nx.successors(self.schema_class)))
+
+    def describe(self):
+        """Find details about a specific schema class
+        """
+        class_info = {'properties': self.list_properties(class_specific=False),
+                      'description': self.se.schema_nx.node[self.schema_class]['description'],
+                      'uri': self.se.schema_nx.node[self.schema_class]["uri"],
+                      'usage': self.used_by(),
+                      'children_classes': self.children_classes,
+                      'parent_classes': self.parent_classes}
+        return class_info
