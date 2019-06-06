@@ -261,14 +261,14 @@ class Schema():
     def sub_schema_graph(self, source, include_parents=True, include_children=True, size=None):
         """Visualize a sub-graph of the schema based on a specific node
 
-        # TODO: (cls, include_parents=True, include_children=True, )
         """
+        scls = SchemaClass(source, self)
         # handle cases where user want to get all children
         if include_parents is False and include_children:
             edges = list(nx.edge_bfs(self.schema_nx, [source]))
         # handle cases where user want to get all parents
         elif include_parents and include_children is False:
-            paths = self.find_parent_classes(source)
+            paths = scls.parent_classes
             edges = []
             for _path in paths:
                 _path.append(source)
@@ -276,7 +276,7 @@ class Schema():
                     edges.append((_path[i], _path[i + 1]))
         # handle cases where user want to get both parents and children
         elif include_parents and include_children:
-            paths = self.find_parent_classes(source)
+            paths = scls.parent_classes
             edges = list(nx.edge_bfs(self.schema_nx, [source]))
             for _path in paths:
                 _path.append(source)
@@ -366,18 +366,18 @@ class Schema():
     def update_class(self, class_info):
         """Add a new class into schema
         """
-        validate_class_schema(class_info)
+        SchemaValidator(self.schema_extension_only, self.schema_nx).validate_class_schema(class_info)
         self.schema["@graph"].append(class_info)
-        validate_schema(self.schema)
+        SchemaValidator(self.schema_extension_only, self.schema_nx).validate_full_schema()
         print("Updated the class {} successfully!".format(class_info["rdfs:label"]))
         self.schema_nx = load_schema_into_networkx(self.schema)         # pylint: disable=attribute-defined-outside-init
 
     def update_property(self, property_info):
         """Add a new property into schema
         """
-        validate_property_schema(property_info)
+        SchemaValidator(self.schema_extension_only, self.schema_nx).validate_property_schema(property_info)
         self.schema["@graph"].append(property_info)
-        validate_schema(self.schema)
+        SchemaValidator(self.schema_extension_only, self.schema_nx).validate_schema(self.schema)
         print("Updated the property {} successfully!".format(property_info["rdfs:label"]))
 
     def export_schema(self, file_path):
