@@ -26,9 +26,13 @@ Installation
 ------------
 
 To install biothings_schema, simply use pip:
-.. code-block:: bash
 
-    pip install git+https://github.com/biothings/biothings_schema.py#egg=biothings_schema.py
+    Option 1
+          install the latest code directly from the repository::
+
+            pip install git+https://github.com/biothings/biothings_schema.py#egg=biothings_schema.py
+
+
 Indices and tables
 ==================
 
