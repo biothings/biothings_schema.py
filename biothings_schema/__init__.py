@@ -293,23 +293,23 @@ class Schema():
     def get_class(self, class_name):
         return SchemaClass(class_name, self)
 
-        def explore_property(self, schema_property):
-            """Find details about a specific property
-            """
-            property_info = {}
-            for record in self.schema["@graph"]:
-                if record["@type"] == "rdf:Property":
-                    if record["rdfs:label"] == schema_property:
-                        property_info["id"] = record["rdfs:label"]
-                        property_info["description"] = record["rdfs:comment"]
-                        #property_info["uri"] = self.curie2uri(record["@id"])
-                        if "http://schema.org/domainIncludes" in record:
-                            p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                        property_info["domain"] = unlist([uri2label(record["@id"], self.schema) for record in p_domain])
-                        if "http://schema.org/rangeIncludes" in record:
-                            p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                        property_info["range"] = unlist([uri2label(record["@id"], self.schema) for record in p_range])
-            return property_info
+    def explore_property(self, schema_property):
+        """Find details about a specific property
+        """
+        property_info = {}
+        for record in self.schema["@graph"]:
+            if record["@type"] == "rdf:Property":
+                if record["rdfs:label"] == schema_property:
+                    property_info["id"] = record["rdfs:label"]
+                    property_info["description"] = record["rdfs:comment"]
+                    #property_info["uri"] = self.curie2uri(record["@id"])
+                    if "http://schema.org/domainIncludes" in record:
+                        p_domain = dict2list(record["http://schema.org/domainIncludes"])
+                    property_info["domain"] = unlist([uri2label(record["@id"], self.schema) for record in p_domain])
+                    if "http://schema.org/rangeIncludes" in record:
+                        p_range = dict2list(record["http://schema.org/rangeIncludes"])
+                    property_info["range"] = unlist([uri2label(record["@id"], self.schema) for record in p_range])
+        return property_info
 
     def validate_against_schema(self, json_doc, class_uri):
         """Validate a json document against it's JSON schema defined in Schema
