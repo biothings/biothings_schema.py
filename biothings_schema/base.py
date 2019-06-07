@@ -112,11 +112,11 @@ def extract_name_from_uri_or_curie(item):
         print("error")
 
 
-def load_schema_into_networkx(schema, preload_schemaorg=False):
+def load_schema_class_into_networkx(schema, preload_schemaorg=False):
     """Constuct networkx DiGraph based on Schema provided"""
     # preload all schema from schemaorg latest version
     if preload_schemaorg:
-        G = load_schema_into_networkx(preload_schemaorg,
+        G = load_schema_class_into_networkx(preload_schemaorg,
                                       preload_schemaorg=False)
     else:
         G = nx.DiGraph()

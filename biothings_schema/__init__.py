@@ -240,9 +240,9 @@ class Schema():
         self.extract_validation_info(schema=self.schema_extension_only,
                                      return_results=False)
         self.schemaorg_schema = expand_curies_in_schema(load_schemaorg())
-        self.schema_nx = load_schema_into_networkx(self.schemaorg_schema,
+        self.schema_nx = load_schema_class_into_networkx(self.schemaorg_schema,
                                                    self.schema_extension_only)
-        self.schema_nx_extension_only = load_schema_into_networkx(self.schema_extension_only)
+        self.schema_nx_extension_only = load_schema_class_into_networkx(self.schema_extension_only)
         SchemaValidator(self.schema_extension_only, self.schema_nx).validate_full_schema()
         # merge together the given schema and the schema defined by schemaorg
         self.schema = merge_schema(self.schema_extension_only,
@@ -251,7 +251,7 @@ class Schema():
     def load_default_schema(self):
         """Load default schema, either schema.org or biothings"""
         self.schema = load_default()
-        self.schema_nx = load_schema_into_networkx(self.schema)
+        self.schema_nx = load_schema_class_into_networkx(self.schema)
 
     def full_schema_graph(self, size=None):
         """Visualize the full schema loaded using graphviz"""
@@ -370,7 +370,7 @@ class Schema():
         self.schema["@graph"].append(class_info)
         SchemaValidator(self.schema_extension_only, self.schema_nx).validate_full_schema()
         print("Updated the class {} successfully!".format(class_info["rdfs:label"]))
-        self.schema_nx = load_schema_into_networkx(self.schema)         # pylint: disable=attribute-defined-outside-init
+        self.schema_nx = load_schema_class_into_networkx(self.schema)         # pylint: disable=attribute-defined-outside-init
 
     def update_property(self, property_info):
         """Add a new property into schema
