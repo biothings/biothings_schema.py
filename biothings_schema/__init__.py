@@ -243,6 +243,7 @@ class Schema():
         self.schema_nx = load_schema_class_into_networkx(self.schemaorg_schema,
                                                    self.schema_extension_only)
         self.schema_nx_extension_only = load_schema_class_into_networkx(self.schema_extension_only)
+        self.schema_property_nx = load_schema_property_into_networkx(self.schemaorg_schema, self.schema_extension_only)
         SchemaValidator(self.schema_extension_only, self.schema_nx).validate_full_schema()
         # merge together the given schema and the schema defined by schemaorg
         self.schema = merge_schema(self.schema_extension_only,

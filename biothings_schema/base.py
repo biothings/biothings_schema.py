@@ -149,6 +149,34 @@ def load_schema_class_into_networkx(schema, preload_schemaorg=False):
                 pass
     return G
 
+def load_schema_property_into_networkx(schema, preload_schemaorg=False):
+    """Constuct networkx DiGraph based on Schema provided"""
+    # preload all schema from schemaorg latest version
+    if preload_schemaorg:
+        G = load_schema_property_into_networkx(preload_schemaorg,
+                                      preload_schemaorg=False)
+    else:
+        G = nx.DiGraph()
+    for record in schema["@graph"]:
+        if record["@type"] == "rdf:Property":
+            G.add_node(extract_name_from_uri_or_curie(record["@id"]),
+                       uri=record["@id"],
+                       description=record["rdfs:comment"])
+            if "rdfs:subPropertyOf" in record:
+                parents = record["rdfs:subPropertyOf"]
+                if isinstance(parents, list):
+                    for _parent in parents:
+                        G.add_edge(extract_name_from_uri_or_curie(_parent["@id"]),
+                                   extract_name_from_uri_or_curie(record["@id"]))
+                elif isinstance(parents, dict):
+                    G.add_edge(extract_name_from_uri_or_curie(parents["@id"]),
+                               extract_name_from_uri_or_curie(record["@id"]))
+                else:
+                    raise ValueError('"dictionary" input is not a list or dict')
+            else:
+                pass
+    return G
+
 
 def dict2list(dictionary):
     if isinstance(dictionary, list):
