@@ -149,12 +149,13 @@ def load_schema_class_into_networkx(schema, preload_schemaorg=False):
                 pass
     return G
 
+
 def load_schema_property_into_networkx(schema, preload_schemaorg=False):
     """Constuct networkx DiGraph based on Schema provided"""
     # preload all schema from schemaorg latest version
     if preload_schemaorg:
         G = load_schema_property_into_networkx(preload_schemaorg,
-                                      preload_schemaorg=False)
+                                               preload_schemaorg=False)
     else:
         G = nx.DiGraph()
     for record in schema["@graph"]:

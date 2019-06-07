@@ -294,23 +294,8 @@ class Schema():
     def get_class(self, class_name):
         return SchemaClass(class_name, self)
 
-    def explore_property(self, schema_property):
-        """Find details about a specific property
-        """
-        property_info = {}
-        for record in self.schema["@graph"]:
-            if record["@type"] == "rdf:Property":
-                if record["rdfs:label"] == schema_property:
-                    property_info["id"] = record["rdfs:label"]
-                    property_info["description"] = record["rdfs:comment"]
-                    #property_info["uri"] = self.curie2uri(record["@id"])
-                    if "http://schema.org/domainIncludes" in record:
-                        p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                    property_info["domain"] = unlist([uri2label(record["@id"], self.schema) for record in p_domain])
-                    if "http://schema.org/rangeIncludes" in record:
-                        p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                    property_info["range"] = unlist([uri2label(record["@id"], self.schema) for record in p_range])
-        return property_info
+    def get_property(self, property_name):
+        return SchemaProperty(property_name, self)
 
     def validate_against_schema(self, json_doc, class_uri):
         """Validate a json document against it's JSON schema defined in Schema
@@ -477,8 +462,8 @@ class SchemaClass():
     def descendant_classes(self):
         """Find schema classes that inherit from the given class
         """
-        return unlist(list(nx.descendants(self.se.schema_nx,
-                                          self.schema_class)))
+        return list(nx.descendants(self.se.schema_nx,
+                                   self.schema_class))
 
     def describe(self):
         """Find details about a specific schema class
@@ -490,3 +475,50 @@ class SchemaClass():
                       'children_classes': self.children_classes,
                       'parent_classes': self.parent_classes}
         return class_info
+
+
+class SchemaProperty():
+    """Class representing an individual property in Schema
+    """
+    def __init__(self, property_name, schema):
+        self.schema_property = property_name
+        self.se = schema
+
+    @property
+    def parent_properties(self):
+        """Find all parents of a specific class"""
+        return list(nx.ancestors(self.se.schema_property_nx,
+                                 self.schema_property))
+
+    @property
+    def children_properties(self):
+        """Find schema properties that directly inherit from the given property
+        """
+        return unlist(list(self.se.schema_property_nx.successors(self.schema_property)))
+
+    @property
+    def descendant_properties(self):
+        """Find schema properties that inherit from the given property
+        """
+        return list(nx.descendants(self.se.schema_property_nx,
+                                   self.schema_property))
+
+    def describe(self):
+        """Find details about a specific property
+        """
+        property_info = {'children_properties': self.children_properties,
+                         'descendant_properties': self.descendant_properties,
+                         'parent_properties': self.parent_properties}
+        for record in self.se.schema["@graph"]:
+            if record["@type"] == "rdf:Property":
+                if record["rdfs:label"] == self.schema_property:
+                    property_info["id"] = record["rdfs:label"]
+                    property_info["description"] = record["rdfs:comment"]
+                    #property_info["uri"] = self.curie2uri(record["@id"])
+                    if "http://schema.org/domainIncludes" in record:
+                        p_domain = dict2list(record["http://schema.org/domainIncludes"])
+                    property_info["domain"] = unlist([uri2label(record["@id"], self.se.schema) for record in p_domain])
+                    if "http://schema.org/rangeIncludes" in record:
+                        p_range = dict2list(record["http://schema.org/rangeIncludes"])
+                    property_info["range"] = unlist([uri2label(record["@id"], self.se.schema) for record in p_range])
+        return property_info
