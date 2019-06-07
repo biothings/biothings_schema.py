@@ -472,6 +472,13 @@ class SchemaClass():
         """
         return unlist(list(self.se.schema_nx.successors(self.schema_class)))
 
+    @property
+    def descendant_classes(self):
+        """Find schema classes that inherit from the given class
+        """
+        return unlist(list(nx.descendants(self.se.schema_nx,
+                                          self.schema_class)))
+
     def describe(self):
         """Find details about a specific schema class
         """
