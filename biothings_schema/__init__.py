@@ -558,8 +558,8 @@ class SchemaProperty():
                     #property_info["uri"] = self.curie2uri(record["@id"])
                     if "http://schema.org/domainIncludes" in record:
                         p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                    property_info["domain"] = unlist([uri2label(record["@id"], self.se.schema) for record in p_domain])
+                    property_info["domain"] = unlist([SchemaClass(uri2label(record["@id"], self.se.schema), self.se) for record in p_domain])
                     if "http://schema.org/rangeIncludes" in record:
                         p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                    property_info["range"] = unlist([uri2label(record["@id"], self.se.schema) for record in p_range])
+                    property_info["range"] = unlist([SchemaClass(uri2label(record["@id"], self.se.schema), self.se) for record in p_range])
         return property_info
