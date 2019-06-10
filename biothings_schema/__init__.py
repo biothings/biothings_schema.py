@@ -437,7 +437,7 @@ class SchemaClass():
             return properties
         else:
             # find all parent classes
-            parents = [_cls.name for _cls in self.parent_classes]
+            parents = [[_item.name for _item in _cls] for _cls in self.parent_classes]
             properties = [{'class': self.name,
                            'properties': find_class_specific_properties(self.name)}]
             # update properties, each dict represent properties associated with
