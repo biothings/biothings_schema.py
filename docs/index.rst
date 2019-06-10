@@ -17,6 +17,8 @@ Beloved Features
 - Edit your schema
 
 
+Tutorials
+---------
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

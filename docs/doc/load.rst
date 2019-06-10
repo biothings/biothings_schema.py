@@ -4,6 +4,7 @@ Load External Schema
 ********************
 
 Currently, biothings_schema pyton package can handle 3 types of input:
+
 1. A JSON document represented as a python dict
 
 2. A URL to the JSON/YAML document
