@@ -289,7 +289,9 @@ class Schema():
 
     def list_all_classes(self):
         """Find all classes defined in the schema"""
-        return list(self.schema_nx_extension_only.nodes())
+        classes = list(self.schema_nx_extension_only.nodes())
+        classes = [SchemaClass(_cls, self) for _cls in classes]
+        return classes
 
     def get_class(self, class_name):
         return SchemaClass(class_name, self)
@@ -374,10 +376,19 @@ class Schema():
 
 class SchemaClass():
     """Class representing an individual class in Schema
+
+    TODO:  def __str__
+           def __repr__
     """
     def __init__(self, class_name, schema):
-        self.schema_class = class_name
+        self.name = class_name
         self.se = schema
+
+    def __repr__(self):
+        return 'SchemaClass(name=' + self.name + ')'
+
+    def __str__(self):
+        return 'SchemaClass(name=' + self.name + ')'
 
     @property
     def parent_classes(self):
@@ -391,8 +402,15 @@ class SchemaClass():
             root_node = root_node[0]
         paths = nx.all_simple_paths(self.se.schema_nx,
                                     source=root_node,
-                                    target=self.schema_class)
-        return [_path[:-1] for _path in paths]
+                                    target=self.name)
+        paths =  [_path[:-1] for _path in paths]
+        parents = []
+        for _path in paths:
+            elements = []
+            for _ele in _path:
+                elements.append(SchemaClass(_ele, self.se))
+            parents.append(elements)
+        return parents
 
     def list_properties(self, class_specific=True):
         """Find properties of a class
@@ -409,19 +427,19 @@ class SchemaClass():
                     # some property doesn't have domainInclude/rangeInclude parameter
                     if "http://schema.org/domainIncludes" in record:
                         if isinstance(record["http://schema.org/domainIncludes"], dict) and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
-                            properties.append(record["rdfs:label"])
+                            properties.append(SchemaProperty(record["rdfs:label"], self.se))
                         elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
-                            properties.append(record["rdfs:label"])
+                            properties.append(SchemaProperty(record["rdfs:label"], self.se))
             return properties
         if class_specific:
-            properties = [{'class': self.schema_class,
-                           'properties': find_class_specific_properties(self.schema_class)}]
+            properties = [{'class': self.name,
+                           'properties': find_class_specific_properties(self.name)}]
             return properties
         else:
             # find all parent classes
             parents = self.parent_classes
-            properties = [{'class': self.schema_class,
-                           'properties': find_class_specific_properties(self.schema_class)}]
+            properties = [{'class': self.name,
+                           'properties': find_class_specific_properties(self.name)}]
             # update properties, each dict represent properties associated with
             # the class
             for path in parents:
@@ -436,7 +454,7 @@ class SchemaClass():
     def used_by(self):
         """Find where a given class is used as a value of a property"""
         usages = []
-        schema_uri = self.se.schema_nx.node[self.schema_class]["uri"]
+        schema_uri = self.se.schema_nx.node[self.name]["uri"]
         for record in self.se.schema["@graph"]:
             usage = {}
             if record["@type"] == "rdf:Property":
@@ -453,26 +471,30 @@ class SchemaClass():
         return usages
 
     @property
-    def children_classes(self):
+    def child_classes(self):
         """Find schema classes that directly inherit from the given class
         """
-        return unlist(list(self.se.schema_nx.successors(self.schema_class)))
+        children = unlist(list(self.se.schema_nx.successors(self.name)))
+        children = [SchemaClass(_child, self.se) for _child in children]
+        return children
 
     @property
     def descendant_classes(self):
         """Find schema classes that inherit from the given class
         """
-        return list(nx.descendants(self.se.schema_nx,
-                                   self.schema_class))
+        descendants = list(nx.descendants(self.se.schema_nx,
+                                          self.name))
+        descendants = [SchemaClass(_des, self.se) for _des in descendants]
+        return descendants
 
     def describe(self):
         """Find details about a specific schema class
         """
         class_info = {'properties': self.list_properties(class_specific=False),
-                      'description': self.se.schema_nx.node[self.schema_class]['description'],
-                      'uri': self.se.schema_nx.node[self.schema_class]["uri"],
+                      'description': self.se.schema_nx.node[self.name]['description'],
+                      'uri': self.se.schema_nx.node[self.name]["uri"],
                       'usage': self.used_by(),
-                      'children_classes': self.children_classes,
+                      'child_classes': self.child_classes,
                       'parent_classes': self.parent_classes}
         return class_info
 
@@ -480,38 +502,51 @@ class SchemaClass():
 class SchemaProperty():
     """Class representing an individual property in Schema
     """
+
     def __init__(self, property_name, schema):
-        self.schema_property = property_name
+        self.name = property_name
         self.se = schema
+
+    def __repr__(self):
+        return 'SchemaProperty(name=' + self.name + ')'
+
+    def __str__(self):
+        return 'SchemaProperty(name=' + self.name + ')'
 
     @property
     def parent_properties(self):
         """Find all parents of a specific class"""
-        return list(nx.ancestors(self.se.schema_property_nx,
-                                 self.schema_property))
+        parents = list(nx.ancestors(self.se.schema_property_nx,
+                                    self.name))
+        parents = [SchemaClass(_parent, self.se) for _parent in parents]
+        return parents
 
     @property
-    def children_properties(self):
+    def child_properties(self):
         """Find schema properties that directly inherit from the given property
         """
-        return unlist(list(self.se.schema_property_nx.successors(self.schema_property)))
+        children =  unlist(list(self.se.schema_property_nx.successors(self.name)))
+        children = [SchemaClass(_child, self.se) for _child in children]
+        return childen
 
     @property
     def descendant_properties(self):
         """Find schema properties that inherit from the given property
         """
-        return list(nx.descendants(self.se.schema_property_nx,
-                                   self.schema_property))
+        descendants = list(nx.descendants(self.se.schema_property_nx,
+                                          self.name))
+        descendants = [SchemaClass(_descendant, self.se) for _descendant in descendants]
+        return descendants
 
     def describe(self):
         """Find details about a specific property
         """
-        property_info = {'children_properties': self.children_properties,
+        property_info = {'child_properties': self.child_properties,
                          'descendant_properties': self.descendant_properties,
                          'parent_properties': self.parent_properties}
         for record in self.se.schema["@graph"]:
             if record["@type"] == "rdf:Property":
-                if record["rdfs:label"] == self.schema_property:
+                if record["rdfs:label"] == self.name:
                     property_info["id"] = record["rdfs:label"]
                     property_info["description"] = record["rdfs:comment"]
                     #property_info["uri"] = self.curie2uri(record["@id"])
