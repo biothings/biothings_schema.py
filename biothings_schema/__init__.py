@@ -264,22 +264,27 @@ class Schema():
 
         """
         scls = SchemaClass(source, self)
+        paths = scls.parent_classes
+        parents = []
+        for _path in paths:
+            elements = []
+            for _ele in _path:
+                elements.append(_ele.name)
+            parents.append(elements)
         # handle cases where user want to get all children
         if include_parents is False and include_children:
             edges = list(nx.edge_bfs(self.schema_nx, [source]))
         # handle cases where user want to get all parents
         elif include_parents and include_children is False:
-            paths = scls.parent_classes
             edges = []
-            for _path in paths:
+            for _path in parents:
                 _path.append(source)
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
         # handle cases where user want to get both parents and children
         elif include_parents and include_children:
-            paths = scls.parent_classes
             edges = list(nx.edge_bfs(self.schema_nx, [source]))
-            for _path in paths:
+            for _path in parents:
                 _path.append(source)
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
