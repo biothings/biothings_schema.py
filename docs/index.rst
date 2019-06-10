@@ -21,6 +21,8 @@ Beloved Features
    :maxdepth: 2
    :caption: Contents:
 
+   doc/load
+
 
 Installation
 ------------
