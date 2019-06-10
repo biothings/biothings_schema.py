@@ -527,7 +527,7 @@ class SchemaProperty():
         """
         children =  unlist(list(self.se.schema_property_nx.successors(self.name)))
         children = [SchemaClass(_child, self.se) for _child in children]
-        return childen
+        return children
 
     @property
     def descendant_properties(self):
