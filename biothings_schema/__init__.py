@@ -462,9 +462,10 @@ class SchemaClass():
                     p_range = dict2list(record["http://schema.org/rangeIncludes"])
                     for _doc in p_range:
                         if _doc['@id'] == schema_uri:
-                            usage["property"] = record["rdfs:label"]
+                            usage["property"] = SchemaProperty(record["rdfs:label"])
                             p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                            usage["property_used_on_class"] = unlist([uri2label(record["@id"], self.se.schema) for record in p_domain])
+                            cls_using_property = unlist([uri2label(record["@id"], self.se.schema) for record in p_domain])
+                            usage["property_used_on_class"] = [SchemaClass(_cls, self.se) for _cls in cls_using_property]
                             usage["description"] = record["rdfs:comment"]
             if usage:
                 usages.append(usage)
