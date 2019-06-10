@@ -24,6 +24,7 @@ Tutorials
    :caption: Contents:
 
    doc/load
+   doc/visualize
 
 
 Installation
