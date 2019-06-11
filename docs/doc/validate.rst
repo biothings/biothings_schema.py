@@ -1,0 +1,201 @@
+.. How to validate your schema
+
+Validate Schema
+***************
+
+biothings_schema pyton package allows you to validate your JSON document against the JSON schema defined in schema file.
+
+.. _validate_schema:
+
+Validate schema against JSON schema
+-----------------------------------
+
+.. code-block:: python
+
+    In [1]: from biothings_schema import Schema
+
+    # load schema
+    In [2]: schema = {
+                "@context": {
+                    "schema": "http://schema.org/",
+                    "bibo": "http://purl.org/ontology/bibo/",
+                    "dc": "http://purl.org/dc/elements/1.1/",
+                    "dcat": "http://www.w3.org/ns/dcat#",
+                    "dct": "http://purl.org/dc/terms/",
+                    "dcterms": "http://purl.org/dc/terms/",
+                    "dctype": "http://purl.org/dc/dcmitype/",
+                    "eli": "http://data.europa.eu/eli/ontology#",
+                    "foaf": "http://xmlns.com/foaf/0.1/",
+                    "owl": "http://www.w3.org/2002/07/owl#",
+                    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+                    "rdfa": "http://www.w3.org/ns/rdfa#",
+                    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+                    "skos": "http://www.w3.org/2004/02/skos/core#",
+                    "snomed": "http://purl.bioontology.org/ontology/SNOMEDCT/",
+                    "void": "http://rdfs.org/ns/void#",
+                    "xsd": "http://www.w3.org/2001/XMLSchema#",
+                    "xsd1": "hhttp://www.w3.org/2001/XMLSchema#",
+                    "cvisb": "https://data.cvisb.org/schema/"
+                },
+                "@graph": [
+                    {
+                        "@id": "cvisb:CvisbDataset",
+                        "@type": "rdfs:Class",
+                        "rdfs:comment": "A schema describing Dataset in the Center for Viral Systems Biology",
+                        "rdfs:label": "CvisbDataset",
+                        "rdfs:subClassOf": {
+                            "@id": "schema:Dataset"
+                        },
+                        "$validation": {
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                            "title": "Dataset",
+                            "description": "A schema describing Dataset in the Center for Viral Systems Biology",
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "//": "the starting of inherented fields from schema:Dataset",
+                                    "description": "The name of the Cvisb Dataset",
+                                    "type": "string"
+                                },
+                                "description": {
+                                    "description": "A description of the Cvisb Dataset",
+                                    "type": "string"
+                                },
+                                "url": {
+                                    "description": "URL of the item.",
+                                    "type": "string"
+                                },
+                                "sameAs": {
+                                    "description": "URL of a reference Web page that unambiguously indicates the item's identity. E.g. the URL of the item's Wikipedia page, Wikidata entry, or official website.",
+                                    "type": "string"
+                                },
+                                "keywords": {
+                                    "description": "Keywords or tags used to describe this content. Multiple entries in a keywords list are typically delimited by commas.",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "datePublished": {
+                                    "description": "Date of first broadcast/publication.",
+                                    "oneOf": [
+                                        {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        {
+                                            "type": "string",
+                                            "format": "date"
+                                        }
+                                    ]
+                                },
+                                "dateModified": {
+                                    "description": "The date on which the CreativeWork was most recently modified or when the item's entry was modified within a DataFeed.",
+                                    "oneOf": [
+                                        {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        {
+                                            "type": "string",
+                                            "format": "date"
+                                        }
+                                    ]
+                                },
+                                "author": {
+                                    "description": "The author of this content or rating. Please note that author is special in that HTML 5 provides a special mechanism for indicating authorship via the rel tag. That is equivalent to this and may be used interchangeably.",
+                                    "type": "string"
+                                },
+                                "publisher": {
+                                    "description": "The publisher of the creative work.",
+                                    "type": "string"
+                                },
+                                "version": {
+                                    "description": "The version of the CreativeWork embodied by a specified resource.",
+                                    "type": "string"
+                                },
+                                "identifier": {
+                                    "description": "The identifier property represents any kind of identifier for any kind of <a class=\"localLink\" href=\"http://schema.org/Thing\">Thing</a>, such as ISBNs, GTIN codes, UUIDs etc. Schema.org provides dedicated properties for representing many of these, either as textual strings or as URL (URI) links. See <a href=\"/docs/datamodel.html#identifierBg\">background notes</a> for more details.",
+                                    "type": "string"
+                                },
+                                "temporalCoverage": {
+                                    "description": "The temporalCoverage of a CreativeWork indicates the period that the content applies to, i.e. that it describes, either as a DateTime or as a textual string indicating a time period in <a href=\"https://en.wikipedia.org/wiki/ISO_8601#Time_intervals\">ISO 8601 time interval format</a>. In\n      the case of a Dataset it will typically indicate the relevant time period in a precise notation (e.g. for a 2011 census dataset, the year 2011 would be written \"2011/2012\"). Other forms of content e.g. ScholarlyArticle, Book, TVSeries or TVEpisode may indicate their temporalCoverage in broader terms - textually or via well-known URL.\n      Written works such as books may sometimes have precise temporal coverage too, e.g. a work set in 1939 - 1945 can be indicated in ISO 8601 interval format format via \"1939/1945\".<br/><br/>\n\nOpen-ended date ranges can be written with \"..\" in place of the end date. For example, \"2015-11/..\" indicates a range beginning in November 2015 and with no specified final date. This is tentative and might be updated in future when ISO 8601 is officially updated.",
+                                    "type": "string",
+                                    "oneOf": [
+                                        {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        {
+                                            "type": "string",
+                                            "format": "uri"
+                                        },
+                                        {
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "spatialCoverage": {
+                                    "description": "The spatialCoverage of a CreativeWork indicates the place(s) which are the focus of the content. It is a subproperty of\n      contentLocation intended primarily for more technical and detailed materials. For example with a Dataset, it indicates\n      areas that the dataset describes: a dataset of New York weather would have spatialCoverage which was the place: the state of New York.",
+                                    "type": "string"
+                                },
+                                "schemaVersion": {
+                                    "description": "Indicates (by URL or string) a particular version of a schema used in some CreativeWork. For example, a document could declare a schemaVersion using an URL such as http://schema.org/version/2.0/ if precise indication of schema version was required by some application.",
+                                    "type": "string"
+                                },
+                                "sourceCode": {
+                                    "//": "the starting of new fields added to schema:Dataset",
+                                    "type": "object",
+                                    "properties": {
+                                        "codeRepository": {
+                                            "type": "string",
+                                            "format": "uri"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "distribution",
+                                "measurementTechnique",
+                                "version",
+                                "author",
+                                "description",
+                                "name",
+                                "identifier",
+                            ]
+                        }
+                    },
+                    {
+                        "@id": "cvisb:sourceCode",
+                        "@type": "rdf:Property",
+                        "rdfs:comment": "Computer programming source code. Example: Full (compile ready) solutions, code snippet samples, scripts, templates.",
+                        "rdfs:label": "sourceCode",
+                        "schema:domainIncludes": [
+                            {
+                                "@id": "cvisb:CvisbDataset"
+                            }
+                        ],
+                        "schema:rangeIncludes": [
+                            {
+                                "@id": "schema:SoftwareSourceCode"
+                            }
+                        ]
+                    }
+                ]
+            }
+
+    In [3]: se = Schema(schema=schema)
+
+    In [4]: json_doc = {'name': "aa",
+                       'description': "bb",
+                       'url': "http://ddd.com",
+                       'author': "kevin",
+                       'publisher': "kevin",
+                       'version': "1",
+                        "distribution": "33",
+                        "measurementTechnique":  "11",
+                       'identifier': "kk"}
+
+    In [5]: se.validate_against_schema(sample2, "https://data.cvisb.org/schema/CvisbDataset")
+
+    Out [5]: The JSON document is valid
