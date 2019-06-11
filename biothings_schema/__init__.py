@@ -530,6 +530,9 @@ class SchemaProperty():
     def __init__(self, property_name, schema):
         self.name = property_name
         self.se = schema
+        # if property is not defined in schema, raise ValueError
+        if self.name not in self.se.schema_property_nx.nodes():
+            raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
 
     def __repr__(self):
         return 'SchemaProperty(name=' + self.name + ')'
