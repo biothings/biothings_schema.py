@@ -74,7 +74,8 @@ class TestSchemaClassClass(unittest.TestCase):
         properties = scls.list_properties()
         # the output should be a list with one dictionary
         self.assertEqual(1, len(properties))
-        property_names = [_item.name for _item in properties[0]['properties']]
+        property_names = scls.list_properties(group_by_class=False)
+        property_names = [_item.name for _item in property_names]
         # type of properties shouldbe a SchemaProperty class
         self.assertEqual(SchemaProperty, type(properties[0]['properties'][0]))
         self.assertIn('mgi', property_names)
@@ -83,9 +84,27 @@ class TestSchemaClassClass(unittest.TestCase):
         # properties for other classes should not be there
         self.assertNotIn('treats', property_names)
         # second: test all class related properties
-        scls = self.se.get_class("Gene")
+        scls = self.se.get_class("MolecularEntity")
         properties = scls.list_properties(class_specific=False)
+        property_names = scls.list_properties(class_specific=False,
+                                              group_by_class=False)
+        property_names = [_item.name for _item in property_names]
         self.assertTrue(len(properties) > 1)
+        # check properties belonging to its own classes should be there
+        self.assertIn('affectsAbundanceOf', property_names)
+        # check properties belong to its parent classes should be there
+        self.assertIn('name', property_names)
+        # properties for child classes should not be there
+        self.assertNotIn('ensembl', property_names)
+        # properties for other classes should not be there
+        self.assertNotIn('treats', property_names)
+
+    def test_used_by(self):
+        """ Test used_by function"""
+        scls = self.se.get_class("GenomicEntity")
+        usage = scls.used_by()
+        self.assertTrue(len(usage) > 1)
+        self.assertEqual(list, type(usage))
 
 
 if __name__ == '__main__':
