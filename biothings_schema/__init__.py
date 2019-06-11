@@ -445,7 +445,6 @@ class SchemaClass():
         if class_specific:
             properties = [{'class': self.name,
                            'properties': find_class_specific_properties(self.name)}]
-            return properties
         else:
             # find all parent classes
             parents = [[_item.name for _item in _cls] for _cls in self.parent_classes]
@@ -460,7 +459,7 @@ class SchemaClass():
                         "class": _parent,
                         "properties": find_class_specific_properties(_parent)
                     })
-            return properties
+        return properties
 
     def used_by(self):
         """Find where a given class is used as a value of a property"""
