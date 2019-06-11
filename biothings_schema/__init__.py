@@ -299,9 +299,11 @@ class Schema():
         return classes
 
     def get_class(self, class_name):
+        """Return a SchemaClass instance of the class"""
         return SchemaClass(class_name, self)
 
     def get_property(self, property_name):
+        """Return a SchemaProperty instance of the property"""
         return SchemaProperty(property_name, self)
 
     def validate_against_schema(self, json_doc, class_uri):
@@ -381,19 +383,23 @@ class Schema():
 
 class SchemaClass():
     """Class representing an individual class in Schema
-
-    TODO:  def __str__
-           def __repr__
     """
     def __init__(self, class_name, schema):
         self.name = class_name
         self.se = schema
+        # if class is not defined in schema, raise ValueError
+        if self.name not in self.se.schema_nx_extension_only.nodes():
+            raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
 
     def __repr__(self):
         return 'SchemaClass(name=' + self.name + ')'
 
     def __str__(self):
         return 'SchemaClass(name=' + self.name + ')'
+
+    @property
+    def ancestor_classes(self):
+        return list(nx.ancestors(self.se.schema_nx, self.name))
 
     @property
     def parent_classes(self):
