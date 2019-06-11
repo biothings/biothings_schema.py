@@ -298,6 +298,12 @@ class Schema():
         classes = [SchemaClass(_cls, self) for _cls in classes]
         return classes
 
+    def list_all_properties(self):
+        """Find all properties defined in the schema"""
+        properties = list(self.schema_property_nx.nodes())
+        properties = [SchemaProperty(_prop, self) for _prop in properteis]
+        return properties
+
     def get_class(self, class_name):
         """Return a SchemaClass instance of the class"""
         return SchemaClass(class_name, self)
