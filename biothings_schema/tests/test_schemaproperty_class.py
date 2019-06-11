@@ -24,19 +24,19 @@ class TestSchemaPropertyClass(unittest.TestCase):
         """ Test parent_properties function
         """
         sp = self.se.get_property("ensembl")
-        parents = sp.parent_classes
+        parents = sp.parent_properties
         # check the first item of should be 'Thing'
         self.assertIn("identifier", [_item.name for _item in parents])
         # check negative cases
         self.assertNotIn("sgd", [_item.name for _item in parents])
         # if input doesn't have parent properties, should return empty list
         sp = self.se.get_property("identifier")
-        parents = sp.parent_classes
+        parents = sp.parent_properties
         self.assertEqual(parents, [])
 
     def test_child_properties(self):
         """ Test child_properties function"""
-        sp = self.se.get_class("identifier")
+        sp = self.se.get_property("identifier")
         children = sp.child_properties
         child_names = [_item.name for _item in children]
         # check if ensembl is in descendants
@@ -46,8 +46,8 @@ class TestSchemaPropertyClass(unittest.TestCase):
         # check itself should not in descendants
         self.assertNotIn('identifier', child_names)
         # test if input property is the leaf property
-        sp = self.se.get_class("ensembl")
-        children = sp.child_classes
+        sp = self.se.get_property("ensembl")
+        children = sp.child_properties
         self.assertEqual(children, [])
 
 
