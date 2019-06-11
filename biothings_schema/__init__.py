@@ -301,7 +301,7 @@ class Schema():
     def list_all_properties(self):
         """Find all properties defined in the schema"""
         properties = list(self.schema_property_nx.nodes())
-        properties = [SchemaProperty(_prop, self) for _prop in properteis]
+        properties = [SchemaProperty(_prop, self) for _prop in properties]
         return properties
 
     def get_class(self, class_name):
