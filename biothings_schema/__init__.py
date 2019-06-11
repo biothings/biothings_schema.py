@@ -423,10 +423,11 @@ class SchemaClass():
             parents.append(elements)
         return parents
 
-    def list_properties(self, class_specific=True):
+    def list_properties(self, class_specific=True, group_by_class=True):
         """Find properties of a class
 
         :arg boolean class_specific: specify whether only to return class specific properties or not
+        :arg boolean group_by_class: specify whether the output should be grouped by class or not
         """
         def find_class_specific_properties(schema_class):
             """Find properties specifically associated with a given class"""
@@ -459,7 +460,13 @@ class SchemaClass():
                         "class": _parent,
                         "properties": find_class_specific_properties(_parent)
                     })
-        return properties
+        if group_by_class:
+            return properties
+        else:
+            ungrouped_properties = []
+            for _item in properties:
+                ungrouped_properties += _item['properties']
+            return list(set(ungrouped_properties))
 
     def used_by(self):
         """Find where a given class is used as a value of a property"""
