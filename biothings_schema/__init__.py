@@ -545,7 +545,7 @@ class SchemaProperty():
         """Find all parents of a specific class"""
         parents = list(nx.ancestors(self.se.schema_property_nx,
                                     self.name))
-        parents = [SchemaClass(_parent, self.se) for _parent in parents]
+        parents = [SchemaProperty(_parent, self.se) for _parent in parents]
         return parents
 
     @property
@@ -553,7 +553,7 @@ class SchemaProperty():
         """Find schema properties that directly inherit from the given property
         """
         children =  unlist(list(self.se.schema_property_nx.successors(self.name)))
-        children = [SchemaClass(_child, self.se) for _child in children]
+        children = [SchemaProperty(_child, self.se) for _child in children]
         return children
 
     @property
