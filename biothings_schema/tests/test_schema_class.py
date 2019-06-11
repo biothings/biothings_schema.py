@@ -26,6 +26,17 @@ class TestSchemaClass(unittest.TestCase):
         # assert type of the class is SchemaClass
         self.assertEqual(SchemaClass, type(all_cls[0]))
 
+    def test_list_all_properties(self):
+        """ Test list_all_properties function"""
+        all_props = self.se.list_all_properties()
+        all_prop_names = [_prop.name for _prop in all_props]
+        # assert "name" in all props
+        self.assertIn('name', all_prop_names)
+        # assert "ffff" should not be one of the props
+        self.assertNotIn('ffff', all_prop_names)
+        # assert type of the property is SchemaProperty
+        self.assertEqual(SchemaProperty, type(all_props[0]))
+
     def test_get_class(self):
         """ Test get_class function"""
         scls = self.se.get_class("Gene")
