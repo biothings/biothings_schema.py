@@ -2,6 +2,7 @@ import unittest
 
 from biothings_schema import Schema
 from biothings_schema import SchemaClass
+from biothings_schema import SchemaProperty
 
 
 class TestSchemaClassClass(unittest.TestCase):
@@ -63,11 +64,28 @@ class TestSchemaClassClass(unittest.TestCase):
         self.assertNotIn('MolecularEntity', children_names)
         # test if input class is the leaf class
         scls = self.se.get_class("Gene")
-        children = scls.children_classes
+        children = scls.child_classes
         self.assertEqual(children, [])
 
-
-
+    def test_list_properties(self):
+        """ Test list_properties function"""
+        # first: test class specific properties
+        scls = self.se.get_class("Gene")
+        properties = scls.list_properties()
+        # the output should be a list with one dictionary
+        self.assertEqual(1, len(properties))
+        property_names = [_item.name for _item in properties[0]['properties']]
+        # type of properties shouldbe a SchemaProperty class
+        self.assertEqual(SchemaProperty, type(properties[0]['properties'][0]))
+        self.assertIn('mgi', property_names)
+        # properties for parents should not be there
+        self.assertNotIn('ensembl', property_names)
+        # properties for other classes should not be there
+        self.assertNotIn('treats', property_names)
+        # second: test all class related properties
+        scls = self.se.get_class("Gene")
+        properties = scls.list_properties(class_specific=False)
+        self.assertTrue(len(properties) > 1)
 
 
 if __name__ == '__main__':
