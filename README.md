@@ -3,10 +3,7 @@ biothings_schema
 
 [![image](https://raw.githubusercontent.com/biothings/biothings_schema.py/master/docs/images/descendant_classes.png)](https://github.com/biothings/biothings_schema.py)
 
-biothings_schema is a Python Package to help you view, analyze and edit schemas defined in [schema.org](http://schema.org) way
-
-
-See [detailed jupyter notebook demo](https://github.com/biothings/biothings_schema.py/tree/master/jupyter%20notebooks).
+biothings_schema is a Python package for the creation, extension and exploration of the schemas defined using the [schema.org](http://schema.org) standard.
 
 
 Feature Support
@@ -20,11 +17,11 @@ In [1]: from biothings_schema import Schema
 
 In [2]: schema_file_path = "https://raw.githubusercontent.com/data2health/schemas/biothings/biothings/biothings_curie_kevin.jsonld"
 
-In [3] se = Schema(schema_file_path)
+In [3]: se = Schema(schema_file_path)
 
-In [4] scls = se.get_class("Gene")
+In [4]: scls = se.get_class("Gene")
 
-In [5] scls.parent_classes
+In [5]: scls.parent_classes
 
 Out [5]: 
 [[<SchemaClass "Thing">,
@@ -34,9 +31,9 @@ Out [5]:
   <SchemaClass "MacromolecularMachine">,
   <SchemaClass "GeneOrGeneProduct">]]
 
-In [6] scls = se.get_class("MolecularEntity")
+In [6]: scls = se.get_class("MolecularEntity")
 
-In [7] scls.descendant_classes
+In [7]: scls.descendant_classes
 
 Out [7]:
 [<SchemaClass "Genome">,
@@ -98,6 +95,9 @@ Out [9]:
 4. [Validate your schema against JSON schema](https://github.com/biothings/biothings_schema.py/blob/master/jupyter%20notebooks/Validate%20JSON%20using%20json%20schema%20defined%20in%20Schema%20file.ipynb)
 
 5. Edit/Extend your schema
+
+
+For all features supported by biothings_schema as well as their usage, please see [detailed jupyter notebook demo](https://github.com/biothings/biothings_schema.py/tree/master/jupyter%20notebooks).
 
 Installation
 ------------
