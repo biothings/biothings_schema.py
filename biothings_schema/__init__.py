@@ -186,7 +186,7 @@ class SchemaValidator():
                         if _record["rdfs:label"] == _property:
                             domainincludes_value = dict2list(_record["http://schema.org/domainIncludes"])
                             for record in domainincludes_value:
-                                if uri2label(record["@id"]) in parent_classes:
+                                if extract_name_from_uri_or_curie(record["@id"]) in parent_classes:
                                     matched = True
                     if not matched:
                         raise ValueError('field {} in $validation is not correctly documented'.format(_property))
@@ -497,7 +497,7 @@ class SchemaClass():
                         if _doc['@id'] == schema_uri:
                             usage["property"] = SchemaProperty(record["rdfs:label"], self.se)
                             p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                            cls_using_property = [uri2label(record["@id"], self.se.schema) for record in p_domain]
+                            cls_using_property = [extract_name_from_uri_or_curie(record["@id"], self.se.schema) for record in p_domain]
                             usage["property_used_on_class"] = unlist([SchemaClass(_cls, self.se) for _cls in cls_using_property])
                             usage["description"] = record["rdfs:comment"]
             if usage:
@@ -590,8 +590,8 @@ class SchemaProperty():
                     #property_info["uri"] = self.curie2uri(record["@id"])
                     if "http://schema.org/domainIncludes" in record:
                         p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                    property_info["domain"] = unlist([SchemaClass(uri2label(record["@id"], self.se.schema), self.se) for record in p_domain])
+                    property_info["domain"] = unlist([SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_domain])
                     if "http://schema.org/rangeIncludes" in record:
                         p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                    property_info["range"] = unlist([SchemaClass(uri2label(record["@id"], self.se.schema), self.se) for record in p_range])
+                    property_info["range"] = unlist([SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_range])
         return property_info

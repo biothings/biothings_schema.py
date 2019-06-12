@@ -49,13 +49,17 @@ def expand_curies_in_schema(schema):
     return new_schema
 
 
-def extract_name_from_uri_or_curie(item):
+def extract_name_from_uri_or_curie(item, schema=None):
     """Extract name from uri or curie
 
     :arg str item: an URI or curie
+    :arg dict schema: a JSON-LD representation of schema
     """
+    # if schema is provided, look into the schema for the label
+    if schema:
+        return [record["rdfs:label"] for record in schema["@graph"] if record['@id'] == item][0]
     # handle curie, get the last element after ":"
-    if 'http' not in item and len(item.split(":")) == 2:
+    elif 'http' not in item and len(item.split(":")) == 2:
         return item.split(":")[-1]
     # handle URI, get the last element after "/"
     elif len(item.split("//")[-1].split('/')) > 1:
@@ -63,20 +67,3 @@ def extract_name_from_uri_or_curie(item):
     # otherwise, rsise ValueError
     else:
         raise ValueError('{} should be converted to either URI or curie'.format(item))
-
-
-def uri2label(uri, schema=None):
-    """Given a URI, return the label
-
-    # TODO: This function and extract_name_from_uri_or_curie should be merged
-    """
-    # if schema is provided, look into the schema for the label
-    if schema:
-        return [record["rdfs:label"] for record in schema["@graph"] if record['@id'] == uri][0]
-    # otherwise, extract the last element after "/"
-    elif '/' in uri:
-        return uri.split('/')[-1]
-    elif ':' in uri:
-        return uri.split(':')[-1]
-    else:
-        return uri
