@@ -16,6 +16,7 @@ def find_duplicates(_list):
 
 
 def dict2list(dictionary):
+    """Convert python dict to list of one dictionary"""
     if isinstance(dictionary, list):
         return dictionary
     elif isinstance(dictionary, dict):
@@ -25,6 +26,7 @@ def dict2list(dictionary):
 
 
 def str2list(_str):
+    """Convert string type to list of one string """
     if isinstance(_str, str):
         return [_str]
     elif isinstance(_str, list):
