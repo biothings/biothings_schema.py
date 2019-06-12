@@ -19,12 +19,12 @@ class TestSchemaValidator(unittest.TestCase):
         biothings_jsonld_path = os.path.join(_CURRENT,
                                              'data',
                                              'biothings_test.jsonld')
-        biothings_schema = load_json(biothings_jsonld_path)
+        biothings_schema = load_json_or_yaml(biothings_jsonld_path)
         self.sv = SchemaValidator(biothings_schema)
         biothings_duplicate = os.path.join(_CURRENT,
                                            'data',
                                            'biothings_duplicate_test.jsonld')
-        duplicate_schema = load_json(biothings_duplicate)
+        duplicate_schema = load_json_or_yaml(biothings_duplicate)
         self.sv_duplicate = SchemaValidator(duplicate_schema)
 
     def test_validate_class_label(self):
@@ -145,13 +145,13 @@ class TestSchemaValidator(unittest.TestCase):
         property_missing_domain = os.path.join(_CURRENT,
                                                'data',
                                                'property_schema_missing_domain.json')
-        property_missing_domain_json = load_json(property_missing_domain)
+        property_missing_domain_json = load_json_or_yaml(property_missing_domain)
         with self.assertRaises(ValidationError):
             self.sv.validate_property_schema(property_missing_domain_json)
         property_missing_range = os.path.join(_CURRENT,
                                               'data',
                                               'property_schema_missing_range.json')
-        property_missing_range_json = load_json(property_missing_range)
+        property_missing_range_json = load_json_or_yaml(property_missing_range)
         with self.assertRaises(ValidationError):
             self.sv.validate_property_schema(property_missing_range_json)
 

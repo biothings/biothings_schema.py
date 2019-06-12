@@ -67,7 +67,7 @@ def load_default():
     """Load biolink vocabulary
     """
     biothings_path = os.path.join(_ROOT, 'data', 'biothings.jsonld')
-    return load_json(biothings_path)
+    return load_json_or_yaml(biothings_path)
 
 
 def load_schemaorg():
@@ -81,7 +81,7 @@ def validate_schema(schema):
     """Validate schema against SchemaORG standard
     """
     json_schema_path = os.path.join(_ROOT, 'data', 'schema.json')
-    json_schema = load_json(json_schema_path)
+    json_schema = load_json_or_yaml(json_schema_path)
     return validate(schema, json_schema)
 
 
@@ -89,7 +89,7 @@ def validate_property_schema(schema):
     """Validate schema against SchemaORG property definition standard
     """
     json_schema_path = os.path.join(_ROOT, 'data', 'property_json_schema.json')
-    json_schema = load_json(json_schema_path)
+    json_schema = load_json_or_yaml(json_schema_path)
     return validate(schema, json_schema)
 
 
@@ -97,7 +97,7 @@ def validate_class_schema(schema):
     """Validate schema against SchemaORG class definition standard
     """
     json_schema_path = os.path.join(_ROOT, 'data', 'class_json_schema.json')
-    json_schema = load_json(json_schema_path)
+    json_schema = load_json_or_yaml(json_schema_path)
     return validate(schema, json_schema)
 
 
