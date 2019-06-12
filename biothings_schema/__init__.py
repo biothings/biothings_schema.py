@@ -398,12 +398,13 @@ class SchemaClass():
         # if class is not defined in schema, raise ValueError
         if self.name not in self.se.schema_nx_extension_only.nodes():
             raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
+        self.description = self.se.schema_nx.node[self.name]['description']
 
     def __repr__(self):
-        return 'SchemaClass(name=' + self.name + ')'
+        return '<SchemaClass "' + self.name + '">'
 
     def __str__(self):
-        return 'SchemaClass(name=' + self.name + ')'
+        return str(self.name)
 
     @property
     def ancestor_classes(self):
@@ -535,12 +536,13 @@ class SchemaProperty():
         # if property is not defined in schema, raise ValueError
         if self.name not in self.se.schema_property_nx.nodes():
             raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
+        self.description = self.se.schema_nx.node[self.name]['description']
 
     def __repr__(self):
-        return 'SchemaProperty(name=' + self.name + ')'
+        return '<SchemaProperty "' + self.name + '"">'
 
     def __str__(self):
-        return 'SchemaProperty(name=' + self.name + ')'
+        return str(self.name)
 
     @property
     def parent_properties(self):
