@@ -402,7 +402,10 @@ class SchemaClass():
         # if class is not defined in schema, raise ValueError
         if self.name not in ALL_CLASSES:
             raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
-        self.description = self.se.schema_nx.node[self.name]['description']
+        if self.name not in CLASS_REMOVE:
+            self.description = self.se.schema_nx.node[self.name]['description']
+        else:
+            self.description = None
 
     def __repr__(self):
         return '<SchemaClass "' + self.name + '">'
