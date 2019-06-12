@@ -396,7 +396,7 @@ class SchemaClass():
         self.name = class_name
         self.se = schema
         # if class is not defined in schema, raise ValueError
-        if self.name not in self.se.schema_nx_extension_only.nodes():
+        if self.name not in self.se.schema_nx.nodes():
             raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
         self.description = self.se.schema_nx.node[self.name]['description']
 
