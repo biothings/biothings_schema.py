@@ -398,8 +398,9 @@ class SchemaClass():
         CLASS_REMOVE = ["Number", "Integer", "Float", "Text",
                         "CssSelectorType", "URL", "XPathType", "Class",
                         "DataType"]
+        ALL_CLASSES = CLASS_REMOVE + list(self.se.schema_nx_extension_only.nodes())
         # if class is not defined in schema, raise ValueError
-        if self.name not in self.se.schema_nx_extension_only.nodes() or self.name not in CLASS_REMOVE:
+        if self.name not ALL_CLASSES:
             raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
         self.description = self.se.schema_nx.node[self.name]['description']
 
