@@ -552,7 +552,7 @@ class SchemaProperty():
     def child_properties(self):
         """Find schema properties that directly inherit from the given property
         """
-        children =  unlist(list(self.se.schema_property_nx.successors(self.name)))
+        children =  list(self.se.schema_property_nx.successors(self.name))
         children = [SchemaProperty(_child, self.se) for _child in children]
         return children
 
