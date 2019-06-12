@@ -17,12 +17,18 @@ def load_json_or_yaml(file_path):
     # handle url
     elif file_path.startswith("http"):
         with requests.get(file_path) as url:
-            _data = url.content
+            # check if http requests returns a success status code
+            if url.status_code != 200:
+                raise ValueError("Invalid URL!")
+            else:
+                _data = url.content
     # handle file path
     else:
-        with open(file_path) as f:
-            _data = f.read()
-
+        try:
+            with open(file_path) as f:
+                _data = f.read()
+        except FileNotFoundError:
+            raise ValueError("Invalid File Path!")
     try:
         data = json.loads(_data)
     except json.JSONDecodeError:   # for py>=3.5
@@ -35,10 +41,22 @@ def load_json_or_yaml(file_path):
     return data
 
 
-def load_schemaorg():
-    """Load SchemOrg vocabulary"""
-    schemaorg_path = 'https://schema.org/version/latest/schema.jsonld'
-    return load_json_or_yaml(schemaorg_path)
+def load_schemaorg(version=None):
+    """Load SchemOrg vocabulary
+
+    :arg float version: The schemaorg schema version, e.g 3.7
+    """
+    # if version is not specified, use the latest one by default
+    if not version:
+        schemaorg_path = 'https://schema.org/version/latest/schema.jsonld'
+        return load_json_or_yaml(schemaorg_path)
+    # if version is specified, try query that version
+    else:
+        schemaorg_path = 'https://schema.org/version/' + str(version) + '/schema.jsonld'
+        try:
+            return load_json_or_yaml(schemaorg_path)
+        except ValueError:
+            raise ValueError("version {} is not valid! Example version: 3.6".format(version))
 
 
 def load_schema_class_into_networkx(schema, preload_schemaorg=False):
