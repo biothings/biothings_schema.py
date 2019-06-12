@@ -9,23 +9,6 @@ from jsonschema import validate
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-def load_json(file_path):
-    """Load json document from file path or url
-
-    :arg str file_path: The path of the url doc, could be url or file path
-    """
-    # handle url
-    if file_path.startswith("http"):
-        with requests.get(file_path) as url:
-            data = url.json()
-            return data
-    # handle file path
-    else:
-        with open(file_path) as f:
-            data = json.load(f)
-            return data
-
-
 def load_json_or_yaml(file_path):
     """Load either json or yaml document from file path or url or JSON doc
 
@@ -61,13 +44,6 @@ def export_json(json_doc, file_path):
     with open(file_path, 'w') as f:
         json.dump(json_doc, f, sort_keys=True,
                   indent=4, ensure_ascii=False)
-
-
-def load_default():
-    """Load biolink vocabulary
-    """
-    biothings_path = os.path.join(_ROOT, 'data', 'biothings.jsonld')
-    return load_json_or_yaml(biothings_path)
 
 
 def load_schemaorg():

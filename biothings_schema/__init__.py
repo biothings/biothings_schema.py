@@ -251,7 +251,7 @@ class Schema():
 
     def load_default_schema(self):
         """Load default schema, either schema.org or biothings"""
-        self.schema = load_default()
+        self.schema = load_schemaorg()
         self.schema_nx = load_schema_class_into_networkx(self.schema)
 
     def full_schema_graph(self, size=None):
