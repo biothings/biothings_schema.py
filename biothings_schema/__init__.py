@@ -395,8 +395,11 @@ class SchemaClass():
     def __init__(self, class_name, schema):
         self.name = class_name
         self.se = schema
+        CLASS_REMOVE = ["Number", "Integer", "Float", "Text",
+                        "CssSelectorType", "URL", "XPathType", "Class",
+                        "DataType"]
         # if class is not defined in schema, raise ValueError
-        if self.name not in self.se.schema_nx.nodes():
+        if self.name not in self.se.schema_nx_extension_only.nodes() or self.name not in CLASS_REMOVE:
             raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
         self.description = self.se.schema_nx.node[self.name]['description']
 
