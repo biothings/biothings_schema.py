@@ -1,11 +1,8 @@
 def expand_curie_to_uri(curie, context_info):
     """Expand curie to uri based on the context given
 
-    parmas
-    ======
-    curie: curie to be expanded (e.g. bts:BiologicalEntity)
-    context_info: jsonld context specifying prefix-uri relation (e.g. {"bts":
-    "http://schema.biothings.io/"})
+    :arg str curie: curie to be expanded (e.g. bts:BiologicalEntity)
+    :arg dict context_info: jsonld context specifying prefix-uri relation (e.g. {"bts": "http://schema.biothings.io/"})
     """
     # as suggested in SchemaOrg standard file, these prefixes don't expand
     PREFIXES_NOT_EXPAND = ["rdf", "rdfs", "xsd"]
@@ -54,6 +51,8 @@ def expand_curies_in_schema(schema):
 
 def extract_name_from_uri_or_curie(item):
     """Extract name from uri or curie
+
+    :arg str item: an URI or curie
     """
     # handle curie, get the last element after ":"
     if 'http' not in item and len(item.split(":")) == 2:
@@ -68,6 +67,8 @@ def extract_name_from_uri_or_curie(item):
 
 def uri2label(uri, schema=None):
     """Given a URI, return the label
+
+    # TODO: This function and extract_name_from_uri_or_curie should be merged
     """
     # if schema is provided, look into the schema for the label
     if schema:
