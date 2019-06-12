@@ -113,6 +113,6 @@ Documentation
 
 Fantastic documentation is available at <Coming soon!>.
 
-How to Contribute
------------------
-<Coming soon!>
+The Contributor Guide
+---------------------
+If you want to contribute to the project, please refer to the contribution guidelines [here](https://github.com/biothings/biothings_schema.py/blob/master/CONTRIBUTING.md)
