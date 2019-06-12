@@ -8,13 +8,6 @@ from .dataload import load_json_or_yaml
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-def export_json(json_doc, file_path):
-    """Export JSON doc to file"""
-    with open(file_path, 'w') as f:
-        json.dump(json_doc, f, sort_keys=True,
-                  indent=4, ensure_ascii=False)
-
-
 def validate_schema(schema):
     """Validate schema against SchemaORG standard"""
     json_schema_path = os.path.join(_ROOT, 'data', 'schema.json')
