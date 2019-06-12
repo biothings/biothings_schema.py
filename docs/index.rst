@@ -7,6 +7,11 @@ Welcome to biothings_schema's documentation!
 ============================================
 biothings_schema is a Python package for the creation, extension and exploration of the schemas defined using the `Schema.org <https://www.schema.org/>`_ standard.
 
+.. image:: ./images/all_classes.png
+    :width: 700px
+    :align: center
+    :height: 450px
+    
 Our Beloved Features
 --------------------
 
@@ -31,6 +36,15 @@ biothings_schema python package allows users to easily explore and consume the e
 
 For more information related to schema.org, please refer to `<https://www.schema.org/>`_ 
 
+Schema.org Basics
+-----------------
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   doc/schemaorg/intro
+   doc/schemaorg/basics
+   doc/schemaorg/extend
 
 Tutorials
 ---------
