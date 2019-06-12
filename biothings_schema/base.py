@@ -1,8 +1,9 @@
 import json
 import os
 from functools import wraps
-import networkx as nx
 from jsonschema import validate
+
+from .dataload import load_json_or_yaml
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -33,17 +34,6 @@ def validate_class_schema(schema):
     json_schema_path = os.path.join(_ROOT, 'data', 'class_json_schema.json')
     json_schema = load_json_or_yaml(json_schema_path)
     return validate(schema, json_schema)
-
-
-def extract_name_from_uri_or_curie(item):
-    """Extract name from uri or curie
-    """
-    if 'http' not in item and len(item.split(":")) == 2:
-        return item.split(":")[-1]
-    elif len(item.split("//")[-1].split('/')) > 1:
-        return item.split("//")[-1].split('/')[-1]
-    else:
-        print("error")
 
 
 def require_optional(*module_list):

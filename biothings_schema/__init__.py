@@ -8,6 +8,8 @@ from jsonschema import validators
 
 from .base import *
 from .utils import *
+from .dataload import *
+from .curies import *
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))

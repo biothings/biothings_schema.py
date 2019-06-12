@@ -3,6 +3,8 @@ import json
 import yaml
 import networkx as nx
 
+from .curies import extract_name_from_uri_or_curie
+
 
 def load_json_or_yaml(file_path):
     """Load either json or yaml document from file path or url or JSON doc
@@ -75,6 +77,7 @@ def load_schema_class_into_networkx(schema, preload_schemaorg=False):
             else:
                 pass
     return G
+
 
 def load_schema_property_into_networkx(schema, preload_schemaorg=False):
     """Constuct networkx DiGraph based on Schema provided"""
