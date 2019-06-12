@@ -218,7 +218,7 @@ class Schema():
     def __init__(self, schema=None):
         if not schema:
             self.load_default_schema()
-            print('Preloaded with BioLink schema.')
+            print('Preloaded with SchemaOrg Schema.')
         else:
             self.load_schema(schema)
 
@@ -255,6 +255,8 @@ class Schema():
         """Load default schema, either schema.org or biothings"""
         self.schema = load_schemaorg()
         self.schema_nx = load_schema_class_into_networkx(self.schema)
+        self.schema_nx_extension_only = load_schema_class_into_networkx(self.schema)
+        self.schema_property_nx = load_schema_class_into_networkx(self.schema)
 
     def full_schema_graph(self, size=None):
         """Visualize the full schema loaded using graphviz"""
