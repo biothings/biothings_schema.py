@@ -513,7 +513,7 @@ class SchemaClass():
                         p_range = dict2list(record["http://schema.org/rangeIncludes"])
                         for _doc in p_range:
                             if _doc['@id'] == schema_uri:
-                                usage["property"] = SchemaProperty(record["rdfs:label"], self.se)
+                                usage["property"] = SchemaProperty(extract_name_from_uri_or_curie(record["@id"]), self.se)
                                 p_domain = dict2list(record["http://schema.org/domainIncludes"])
                                 cls_using_property = [extract_name_from_uri_or_curie(record["@id"], self.se.schema) for record in p_domain]
                                 usage["property_used_on_class"] = [SchemaClass(_cls, self.se) for _cls in cls_using_property]
