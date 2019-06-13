@@ -457,18 +457,21 @@ class SchemaClass():
         """
         def find_class_specific_properties(schema_class):
             """Find properties specifically associated with a given class"""
-            schema_uri = self.se.schema_nx.node[schema_class]["uri"]
-            properties = []
-            for record in self.se.schema["@graph"]:
-                # look for record which is property only
-                if record['@type'] == "rdf:Property":
-                    # some property doesn't have domainInclude/rangeInclude parameter
-                    if "http://schema.org/domainIncludes" in record:
-                        if isinstance(record["http://schema.org/domainIncludes"], dict) and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
-                            properties.append(SchemaProperty(record["rdfs:label"], self.se))
-                        elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
-                            properties.append(SchemaProperty(record["rdfs:label"], self.se))
-            return properties
+            if 'uri' not in self.se.schema_nx.node[schema_class]:
+                return []
+            else:
+                schema_uri = self.se.schema_nx.node[schema_class]["uri"]
+                properties = []
+                for record in self.se.schema["@graph"]:
+                    # look for record which is property only
+                    if record['@type'] == "rdf:Property":
+                        # some property doesn't have domainInclude/rangeInclude parameter
+                        if "http://schema.org/domainIncludes" in record:
+                            if isinstance(record["http://schema.org/domainIncludes"], dict) and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
+                                properties.append(SchemaProperty(record["rdfs:label"], self.se))
+                            elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
+                                properties.append(SchemaProperty(record["rdfs:label"], self.se))
+                return properties
         if class_specific:
             properties = [{'class': self.name,
                            'properties': find_class_specific_properties(self.name)}]
