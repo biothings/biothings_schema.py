@@ -256,7 +256,7 @@ class Schema():
         self.schema = load_schemaorg()
         self.schema_nx = load_schema_class_into_networkx(self.schema)
         self.schema_nx_extension_only = load_schema_class_into_networkx(self.schema)
-        self.schema_property_nx = load_schema_class_into_networkx(self.schema)
+        self.schema_property_nx = load_schema_property_into_networkx(self.schema)
 
     def full_schema_graph(self, size=None):
         """Visualize the full schema loaded using graphviz"""
@@ -397,26 +397,30 @@ class SchemaClass():
     def __init__(self, class_name, schema):
         self.name = class_name
         self.se = schema
-        CLASS_REMOVE = ["Number", "Integer", "Float", "Text",
+        self.CLASS_REMOVE = ["Number", "Integer", "Float", "Text",
                         "CssSelectorType", "URL", "XPathType", "Class",
                         "DataType"]
-        ALL_CLASSES = CLASS_REMOVE + list(self.se.schema_nx_extension_only.nodes())
+        self.ALL_CLASSES = self.CLASS_REMOVE + list(self.se.schema_nx_extension_only.nodes())
         # if class is not defined in schema, raise ValueError
-        if self.name not in ALL_CLASSES:
+        if self.name not in self.ALL_CLASSES:
             raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
-        if self.name not in CLASS_REMOVE:
-            if 'description' in self.se.schema_nx.node[self.name]:
-                self.description = self.se.schema_nx.node[self.name]['description']
-            else:
-                self.description = None
-        else:
-            self.description = None
 
     def __repr__(self):
         return '<SchemaClass "' + self.name + '">'
 
     def __str__(self):
         return str(self.name)
+
+    @property
+    def description(self):
+        if self.name not in self.CLASS_REMOVE:
+            # classes might not have descriptions
+            if 'description' in self.se.schema_nx.node[self.name]:
+                return self.se.schema_nx.node[self.name]['description']
+            else:
+                return None
+        else:
+            return None
 
     @property
     def ancestor_classes(self):
@@ -530,7 +534,7 @@ class SchemaClass():
         """Find details about a specific schema class
         """
         class_info = {'properties': self.list_properties(class_specific=False),
-                      'description': self.se.schema_nx.node[self.name]['description'],
+                      'description': self.description,
                       'uri': self.se.schema_nx.node[self.name]["uri"],
                       'usage': self.used_by(),
                       'child_classes': self.child_classes,
@@ -548,16 +552,20 @@ class SchemaProperty():
         # if property is not defined in schema, raise ValueError
         if self.name not in self.se.schema_property_nx.nodes():
             raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
-        if 'description' in self.se.schema_property_nx.node[self.name]:
-            self.description = self.se.schema_property_nx.node[self.name]['description']
-        else:
-            self.description = None
 
     def __repr__(self):
         return '<SchemaProperty "' + self.name + '"">'
 
     def __str__(self):
         return str(self.name)
+
+    @property
+    def description(self):
+        # some properties doesn't have descriptions
+        if 'description' in self.se.schema_property_nx.node[self.name]:
+            return self.se.schema_property_nx.node[self.name]['description']
+        else:
+            return None
 
     @property
     def parent_properties(self):
@@ -581,7 +589,7 @@ class SchemaProperty():
         """
         descendants = list(nx.descendants(self.se.schema_property_nx,
                                           self.name))
-        descendants = [SchemaClass(_descendant, self.se) for _descendant in descendants]
+        descendants = [SchemaProperty(_descendant, self.se) for _descendant in descendants]
         return descendants
 
     def describe(self):
