@@ -540,9 +540,10 @@ class SchemaClass():
     def describe(self):
         """Find details about a specific schema class
         """
+        uri = self.se.schema_nx.node[self.name]["uri"] if 'uri' in self.se.schema_nx.node[self.name] else None
         class_info = {'properties': self.list_properties(class_specific=False),
                       'description': self.description,
-                      'uri': self.se.schema_nx.node[self.name]["uri"],
+                      'uri': uri,
                       'usage': self.used_by(),
                       'child_classes': self.child_classes,
                       'parent_classes': self.parent_classes}
