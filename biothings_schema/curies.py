@@ -57,7 +57,11 @@ def extract_name_from_uri_or_curie(item, schema=None):
     """
     # if schema is provided, look into the schema for the label
     if schema:
-        return [record["rdfs:label"] for record in schema["@graph"] if record['@id'] == item][0]
+        name = [record["rdfs:label"] for record in schema["@graph"] if record['@id'] == item]
+        if name:
+            return name[0]
+        else:
+            return extract_name_from_uri_or_curie(item)
     # handle curie, get the last element after ":"
     elif 'http' not in item and len(item.split(":")) == 2:
         return item.split(":")[-1]
