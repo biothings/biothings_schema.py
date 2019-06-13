@@ -500,22 +500,25 @@ class SchemaClass():
     def used_by(self):
         """Find where a given class is used as a value of a property"""
         usages = []
-        schema_uri = self.se.schema_nx.node[self.name]["uri"]
-        for record in self.se.schema["@graph"]:
-            usage = {}
-            if record["@type"] == "rdf:Property":
-                if "http://schema.org/rangeIncludes" in record:
-                    p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                    for _doc in p_range:
-                        if _doc['@id'] == schema_uri:
-                            usage["property"] = SchemaProperty(record["rdfs:label"], self.se)
-                            p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                            cls_using_property = [extract_name_from_uri_or_curie(record["@id"], self.se.schema) for record in p_domain]
-                            usage["property_used_on_class"] = [SchemaClass(_cls, self.se) for _cls in cls_using_property]
-                            usage["description"] = record["rdfs:comment"]
-            if usage:
-                usages.append(usage)
-        return usages
+        if 'uri' not in self.se.schema_nx.node[self.name]:
+            return usages
+        else:
+            schema_uri = self.se.schema_nx.node[self.name]["uri"]
+            for record in self.se.schema["@graph"]:
+                usage = {}
+                if record["@type"] == "rdf:Property":
+                    if "http://schema.org/rangeIncludes" in record:
+                        p_range = dict2list(record["http://schema.org/rangeIncludes"])
+                        for _doc in p_range:
+                            if _doc['@id'] == schema_uri:
+                                usage["property"] = SchemaProperty(record["rdfs:label"], self.se)
+                                p_domain = dict2list(record["http://schema.org/domainIncludes"])
+                                cls_using_property = [extract_name_from_uri_or_curie(record["@id"], self.se.schema) for record in p_domain]
+                                usage["property_used_on_class"] = [SchemaClass(_cls, self.se) for _cls in cls_using_property]
+                                usage["description"] = record["rdfs:comment"]
+                if usage:
+                    usages.append(usage)
+            return usages
 
     @property
     def child_classes(self):
