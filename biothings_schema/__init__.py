@@ -405,7 +405,10 @@ class SchemaClass():
         if self.name not in ALL_CLASSES:
             raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
         if self.name not in CLASS_REMOVE:
-            self.description = self.se.schema_nx.node[self.name]['description']
+            if 'description' in self.se.schema_nx.node[self.name]:
+                self.description = self.se.schema_nx.node[self.name]['description']
+            else:
+                self.description = None
         else:
             self.description = None
 
@@ -545,7 +548,10 @@ class SchemaProperty():
         # if property is not defined in schema, raise ValueError
         if self.name not in self.se.schema_property_nx.nodes():
             raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
-        self.description = self.se.schema_property_nx.node[self.name]['description']
+        if 'description' in self.se.schema_property_nx.node[self.name]:
+            self.description = self.se.schema_property_nx.node[self.name]['description']
+        else:
+            self.description = None
 
     def __repr__(self):
         return '<SchemaProperty "' + self.name + '"">'
