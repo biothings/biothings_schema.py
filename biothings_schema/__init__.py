@@ -403,7 +403,8 @@ class SchemaClass():
         self.ALL_CLASSES = self.CLASS_REMOVE + list(self.se.schema_nx_extension_only.nodes())
         # if class is not defined in schema, raise ValueError
         if self.name not in self.ALL_CLASSES:
-            raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
+            # raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
+            print('Class {} is not defined in Schema. Could not access it'.format(self.name))
 
     def __repr__(self):
         return '<SchemaClass "' + self.name + '">'
@@ -507,7 +508,7 @@ class SchemaClass():
                             usage["property"] = SchemaProperty(record["rdfs:label"], self.se)
                             p_domain = dict2list(record["http://schema.org/domainIncludes"])
                             cls_using_property = [extract_name_from_uri_or_curie(record["@id"], self.se.schema) for record in p_domain]
-                            usage["property_used_on_class"] = unlist([SchemaClass(_cls, self.se) for _cls in cls_using_property])
+                            usage["property_used_on_class"] = [SchemaClass(_cls, self.se) for _cls in cls_using_property]
                             usage["description"] = record["rdfs:comment"]
             if usage:
                 usages.append(usage)
@@ -551,7 +552,8 @@ class SchemaProperty():
         self.se = schema
         # if property is not defined in schema, raise ValueError
         if self.name not in self.se.schema_property_nx.nodes():
-            raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
+            #raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
+            print('Property {} is not defined in Schema. Could not access it'.format(self.name))
 
     def __repr__(self):
         return '<SchemaProperty "' + self.name + '"">'
@@ -606,8 +608,8 @@ class SchemaProperty():
                     #property_info["uri"] = self.curie2uri(record["@id"])
                     if "http://schema.org/domainIncludes" in record:
                         p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                    property_info["domain"] = unlist([SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_domain])
+                    property_info["domain"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_domain]
                     if "http://schema.org/rangeIncludes" in record:
                         p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                    property_info["range"] = unlist([SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_range])
+                    property_info["range"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_range]
         return property_info
