@@ -399,7 +399,7 @@ class SchemaClass():
         self.se = schema
         self.CLASS_REMOVE = ["Number", "Integer", "Float", "Text",
                         "CssSelectorType", "URL", "XPathType", "Class",
-                        "DataType"]
+                        "DataType", "Boolean", "DateTime", "Date", "Time"]
         self.ALL_CLASSES = self.CLASS_REMOVE + list(self.se.schema_nx_extension_only.nodes())
         # if class is not defined in schema, raise ValueError
         if self.name not in self.ALL_CLASSES:
@@ -425,7 +425,9 @@ class SchemaClass():
 
     @property
     def ancestor_classes(self):
-        return list(nx.ancestors(self.se.schema_nx, self.name))
+        ancestors = list(nx.ancestors(self.se.schema_nx, self.name))
+        ancestors = [SchemaClass(_ancestor, self.se) for _ancestor in ancestors]
+        return ancestors
 
     @property
     def parent_classes(self):
@@ -468,9 +470,9 @@ class SchemaClass():
                         # some property doesn't have domainInclude/rangeInclude parameter
                         if "http://schema.org/domainIncludes" in record:
                             if isinstance(record["http://schema.org/domainIncludes"], dict) and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
-                                properties.append(SchemaProperty(record["rdfs:label"], self.se))
+                                properties.append(SchemaProperty(extract_name_from_uri_or_curie(record["@id"]), self.se))
                             elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
-                                properties.append(SchemaProperty(record["rdfs:label"], self.se))
+                                properties.append(SchemaProperty(extract_name_from_uri_or_curie(record["@id"]), self.se))
                 return properties
         if class_specific:
             properties = [{'class': self.name,
@@ -617,8 +619,8 @@ class SchemaProperty():
                     #property_info["uri"] = self.curie2uri(record["@id"])
                     if "http://schema.org/domainIncludes" in record:
                         p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                        property_info["domain"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_domain]
+                        property_info["domain"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"]), self.se) for record in p_domain]
                     if "http://schema.org/rangeIncludes" in record:
                         p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                        property_info["range"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_range]
+                        property_info["range"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"]), self.se) for record in p_range]
         return property_info

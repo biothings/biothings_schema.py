@@ -48,7 +48,8 @@ def load_schemaorg(version=None):
     """
     # if version is not specified, use the latest one by default
     if not version:
-        schemaorg_path = 'https://schema.org/version/latest/schema.jsonld'
+        # schemaorg_path = 'https://schema.org/version/latest/schema.jsonld'
+        schemaorg_path = 'https://raw.githubusercontent.com/schemaorg/schemaorg/master/data/releases/3.7/all-layers.jsonld'
         return load_json_or_yaml(schemaorg_path)
     # if version is specified, try query that version
     else:
