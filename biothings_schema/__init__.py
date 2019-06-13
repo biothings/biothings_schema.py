@@ -599,7 +599,9 @@ class SchemaProperty():
         """
         property_info = {'child_properties': self.child_properties,
                          'descendant_properties': self.descendant_properties,
-                         'parent_properties': self.parent_properties}
+                         'parent_properties': self.parent_properties,
+                         'domain': [],
+                         'range': []}
         for record in self.se.schema["@graph"]:
             if record["@type"] == "rdf:Property":
                 if record["rdfs:label"] == self.name:
@@ -608,8 +610,8 @@ class SchemaProperty():
                     #property_info["uri"] = self.curie2uri(record["@id"])
                     if "http://schema.org/domainIncludes" in record:
                         p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                    property_info["domain"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_domain]
+                        property_info["domain"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_domain]
                     if "http://schema.org/rangeIncludes" in record:
                         p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                    property_info["range"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_range]
+                        property_info["range"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"], self.se.schema), self.se) for record in p_range]
         return property_info
