@@ -517,7 +517,7 @@ class SchemaClass():
     def child_classes(self):
         """Find schema classes that directly inherit from the given class
         """
-        children = unlist(list(self.se.schema_nx.successors(self.name)))
+        children = list(self.se.schema_nx.successors(self.name))
         children = [SchemaClass(_child, self.se) for _child in children]
         return children
 
