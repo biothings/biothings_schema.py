@@ -13,13 +13,9 @@ class TestSchemaClassClass(unittest.TestCase):
         self.se = Schema(schema_url)
 
     def test_initialization(self):
-        # if input class is not in schema, should raise ValueError
-        with self.assertRaises(ValueError) as cm:
-            SchemaClass('ttt', self.se)
-        self.assertEqual(
-            'Class ttt is not defined in Schema. Could not access it',
-            str(cm.exception)
-        )
+        # if input class is not in schema, defined_in_schema should be False
+        scls = self.se.get_class("dd")
+        self.assertFalse(scls.defined_in_schema)
 
     def test_parent_classes(self):
         """ Test parent_classes function
@@ -30,6 +26,10 @@ class TestSchemaClassClass(unittest.TestCase):
         self.assertEqual(parents[0][0].name, 'Thing')
         # if input is the root class, should return empty list
         scls = self.se.get_class("Thing")
+        parents = scls.parent_classes
+        self.assertEqual(parents, [])
+        # check the response if class not exist
+        scls = self.se.get_class("dd")
         parents = scls.parent_classes
         self.assertEqual(parents, [])
 
@@ -48,6 +48,10 @@ class TestSchemaClassClass(unittest.TestCase):
         scls = self.se.get_class("Gene")
         descendants = scls.descendant_classes
         self.assertEqual(descendants, [])
+        # test if input class not exists
+        scls = self.se.get_class("dd")
+        descendants = scls.descendant_classes
+        self.assertEqual(descendants, [])
 
     def test_child_classes(self):
         """ Test child_classes function"""
@@ -64,6 +68,10 @@ class TestSchemaClassClass(unittest.TestCase):
         self.assertNotIn('MolecularEntity', children_names)
         # test if input class is the leaf class
         scls = self.se.get_class("Gene")
+        children = scls.child_classes
+        self.assertEqual(children, [])
+        # test if input class is not defined
+        scls = self.se.get_class("dd")
         children = scls.child_classes
         self.assertEqual(children, [])
 
@@ -98,6 +106,10 @@ class TestSchemaClassClass(unittest.TestCase):
         self.assertNotIn('ensembl', property_names)
         # properties for other classes should not be there
         self.assertNotIn('treats', property_names)
+        # test if class is not defined
+        scls = self.se.get_class("dd")
+        properties = scls.list_properties()
+        self.assertEqual(properties, [])
 
     def test_used_by(self):
         """ Test used_by function"""
@@ -105,6 +117,16 @@ class TestSchemaClassClass(unittest.TestCase):
         usage = scls.used_by()
         self.assertTrue(len(usage) > 1)
         self.assertEqual(list, type(usage))
+        # test if class is not defined
+        scls = self.se.get_class("dd")
+        usage = scls.used_by()
+        self.assertEqual(usage, [])
+
+    def test_describe(self):
+        """test describe function"""
+        scls = self.se.get_class("dd")
+        describe = scls.describe()
+        self.assertEqual(describe, {})
 
 
 if __name__ == '__main__':
