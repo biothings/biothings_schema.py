@@ -227,10 +227,11 @@ class Schema():
         else:
             self.load_schema(schema)
         self.context = self.CONTEXT
-        if type(context) != dict:
-            raise ValueError("context should be a python dictionary, with URI as key, and the namespace/prefix as value")
-        if context and type(context) == dict:
-            self.context.update(context)
+        if context:
+            if type(context) != dict:
+                raise ValueError("context should be a python dictionary, with URI as key, and the namespace/prefix as value")
+            else:
+                self.context.update(context)
 
     def extract_validation_info(self, schema=None, return_results=True):
         """Extract the $validation field and organize into self.validation"""
