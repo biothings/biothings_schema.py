@@ -414,6 +414,7 @@ class SchemaClass():
     # TODO: option to only display the name, rather than python class as results
     """
     def __init__(self, class_name, schema):
+        self.defined_in_schema = True
         self.name = class_name
         self.se = schema
         self.CLASS_REMOVE = ["Number", "Integer", "Float", "Text",
@@ -424,6 +425,7 @@ class SchemaClass():
         if self.name not in self.ALL_CLASSES:
             # raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
             print('Class {} is not defined in Schema. Could not access it'.format(self.name))
+            self.defined_in_schema = False
 
     def __repr__(self):
         return '<SchemaClass "' + self.name + '">'
@@ -433,10 +435,13 @@ class SchemaClass():
 
     @property
     def description(self):
-        if self.name not in self.CLASS_REMOVE:
-            # classes might not have descriptions
-            if 'description' in self.se.schema_nx.node[self.name]:
-                return self.se.schema_nx.node[self.name]['description']
+        if defined_in_schema:
+            if self.name not in self.CLASS_REMOVE:
+                # classes might not have descriptions
+                if 'description' in self.se.schema_nx.node[self.name]:
+                    return self.se.schema_nx.node[self.name]['description']
+                else:
+                    return None
             else:
                 return None
         else:
@@ -444,31 +449,37 @@ class SchemaClass():
 
     @property
     def ancestor_classes(self):
-        ancestors = list(nx.ancestors(self.se.schema_nx, self.name))
-        ancestors = [SchemaClass(_ancestor, self.se) for _ancestor in ancestors]
-        return ancestors
+        if defined_in_schema:
+            ancestors = list(nx.ancestors(self.se.schema_nx, self.name))
+            ancestors = [SchemaClass(_ancestor, self.se) for _ancestor in ancestors]
+            return ancestors
+        else:
+            return []
 
     @property
     def parent_classes(self):
         """Find all parents of a specific class"""
-        root_node = list(nx.topological_sort(self.se.schema_nx))
-        # When a schema is not a tree with only one root node
-        # Set "Thing" as the root node by default
-        if 'Thing' in root_node:
-            root_node = 'Thing'
+        if defined_in_schema:
+            root_node = list(nx.topological_sort(self.se.schema_nx))
+            # When a schema is not a tree with only one root node
+            # Set "Thing" as the root node by default
+            if 'Thing' in root_node:
+                root_node = 'Thing'
+            else:
+                root_node = root_node[0]
+            paths = nx.all_simple_paths(self.se.schema_nx,
+                                        source=root_node,
+                                        target=self.name)
+            paths =  [_path[:-1] for _path in paths]
+            parents = []
+            for _path in paths:
+                elements = []
+                for _ele in _path:
+                    elements.append(SchemaClass(_ele, self.se))
+                parents.append(elements)
+            return parents
         else:
-            root_node = root_node[0]
-        paths = nx.all_simple_paths(self.se.schema_nx,
-                                    source=root_node,
-                                    target=self.name)
-        paths =  [_path[:-1] for _path in paths]
-        parents = []
-        for _path in paths:
-            elements = []
-            for _ele in _path:
-                elements.append(SchemaClass(_ele, self.se))
-            parents.append(elements)
-        return parents
+            return []
 
     def list_properties(self, class_specific=True, group_by_class=True):
         """Find properties of a class
@@ -493,35 +504,38 @@ class SchemaClass():
                             elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
                                 properties.append(SchemaProperty(extract_name_from_uri_or_curie(record["@id"]), self.se))
                 return properties
-        if class_specific:
-            properties = [{'class': self.name,
-                           'properties': find_class_specific_properties(self.name)}]
+        if defined_in_schema:
+            if class_specific:
+                properties = [{'class': self.name,
+                               'properties': find_class_specific_properties(self.name)}]
+            else:
+                # find all parent classes
+                parents = [[_item.name for _item in _cls] for _cls in self.parent_classes]
+                properties = [{'class': self.name,
+                               'properties': find_class_specific_properties(self.name)}]
+                # update properties, each dict represent properties associated with
+                # the class
+                for path in parents:
+                    path.reverse()
+                    for _parent in path:
+                        properties.append({
+                            "class": _parent,
+                            "properties": find_class_specific_properties(_parent)
+                        })
+            if group_by_class:
+                return properties
+            else:
+                ungrouped_properties = []
+                for _item in properties:
+                    ungrouped_properties += _item['properties']
+                return list(set(ungrouped_properties))
         else:
-            # find all parent classes
-            parents = [[_item.name for _item in _cls] for _cls in self.parent_classes]
-            properties = [{'class': self.name,
-                           'properties': find_class_specific_properties(self.name)}]
-            # update properties, each dict represent properties associated with
-            # the class
-            for path in parents:
-                path.reverse()
-                for _parent in path:
-                    properties.append({
-                        "class": _parent,
-                        "properties": find_class_specific_properties(_parent)
-                    })
-        if group_by_class:
-            return properties
-        else:
-            ungrouped_properties = []
-            for _item in properties:
-                ungrouped_properties += _item['properties']
-            return list(set(ungrouped_properties))
+            return []
 
     def used_by(self):
         """Find where a given class is used as a value of a property"""
         usages = []
-        if 'uri' not in self.se.schema_nx.node[self.name]:
+        if not defined_in_schema:
             return usages
         else:
             schema_uri = self.se.schema_nx.node[self.name]["uri"]
@@ -545,30 +559,39 @@ class SchemaClass():
     def child_classes(self):
         """Find schema classes that directly inherit from the given class
         """
-        children = list(self.se.schema_nx.successors(self.name))
-        children = [SchemaClass(_child, self.se) for _child in children]
-        return children
+        if defined_in_schema:
+            children = list(self.se.schema_nx.successors(self.name))
+            children = [SchemaClass(_child, self.se) for _child in children]
+            return children
+        else:
+            return []
 
     @property
     def descendant_classes(self):
         """Find schema classes that inherit from the given class
         """
-        descendants = list(nx.descendants(self.se.schema_nx,
-                                          self.name))
-        descendants = [SchemaClass(_des, self.se) for _des in descendants]
-        return descendants
+        if defined_in_schema:
+            descendants = list(nx.descendants(self.se.schema_nx,
+                                              self.name))
+            descendants = [SchemaClass(_des, self.se) for _des in descendants]
+            return descendants
+        else:
+            return []
 
     def describe(self):
         """Find details about a specific schema class
         """
-        uri = self.se.schema_nx.node[self.name]["uri"] if 'uri' in self.se.schema_nx.node[self.name] else None
-        class_info = {'properties': self.list_properties(class_specific=False),
-                      'description': self.description,
-                      'uri': uri,
-                      'used_by': self.used_by(),
-                      'child_classes': self.child_classes,
-                      'parent_classes': self.parent_classes}
-        return class_info
+        if defined_in_schema:
+            uri = self.se.schema_nx.node[self.name]["uri"] if 'uri' in self.se.schema_nx.node[self.name] else None
+            class_info = {'properties': self.list_properties(class_specific=False),
+                          'description': self.description,
+                          'uri': uri,
+                          'used_by': self.used_by(),
+                          'child_classes': self.child_classes,
+                          'parent_classes': self.parent_classes}
+            return class_info
+        else:
+            return {}
 
 
 class SchemaProperty():
