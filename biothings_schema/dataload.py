@@ -5,6 +5,7 @@ import networkx as nx
 
 from .curies import extract_name_from_uri_or_curie
 
+SCHEMAORG_PATH = 'https://raw.githubusercontent.com/schemaorg/schemaorg/master/data/releases/3.7/all-layers.jsonld'
 
 def load_json_or_yaml(file_path):
     """Load either json or yaml document from file path or url or JSON doc
@@ -48,9 +49,8 @@ def load_schemaorg(version=None):
     """
     # if version is not specified, use the latest one by default
     if not version:
-        # schemaorg_path = 'https://schema.org/version/latest/schema.jsonld'
-        schemaorg_path = 'https://raw.githubusercontent.com/schemaorg/schemaorg/master/data/releases/3.7/all-layers.jsonld'
-        return load_json_or_yaml(schemaorg_path)
+        print('Schema.org schema is loaded from {}'.format(SCHEMAORG_PATH))
+        return load_json_or_yaml(SCHEMAORG_PATH)
     # if version is specified, try query that version
     else:
         schemaorg_path = 'https://schema.org/version/' + str(version) + '/schema.jsonld'
@@ -58,7 +58,7 @@ def load_schemaorg(version=None):
             return load_json_or_yaml(schemaorg_path)
         except ValueError:
             raise ValueError("version {} is not valid! Example version: 3.6".format(version))
-
+        print("Schema.org schema is loaded from {}".format(schemaorg_path))
 
 def load_schema_class_into_networkx(schema, preload_schemaorg=False):
     """Constuct networkx DiGraph based on Schema provided"""

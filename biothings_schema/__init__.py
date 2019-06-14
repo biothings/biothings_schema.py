@@ -229,7 +229,6 @@ class Schema():
     def __init__(self, schema=None, context=None):
         if not schema:
             self.load_default_schema()
-            print('Preloaded with SchemaOrg Schema.')
         else:
             self.load_schema(schema)
         self.context = CONTEXT
