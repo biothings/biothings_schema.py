@@ -599,12 +599,14 @@ class SchemaProperty():
     """
 
     def __init__(self, property_name, schema):
+        self.defined_in_schema = True
         self.name = property_name
         self.se = schema
         # if property is not defined in schema, raise ValueError
         if self.name not in self.se.schema_property_nx.nodes():
             #raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
             print('Property {} is not defined in Schema. Could not access it'.format(self.name))
+            self.defined_in_schema = False
 
     def __repr__(self):
         return '<SchemaProperty "' + self.name + '"">'
@@ -614,55 +616,70 @@ class SchemaProperty():
 
     @property
     def description(self):
-        # some properties doesn't have descriptions
-        if 'description' in self.se.schema_property_nx.node[self.name]:
-            return self.se.schema_property_nx.node[self.name]['description']
-        else:
+        if not defined_in_schema:
             return None
+        else:
+            # some properties doesn't have descriptions
+            if 'description' in self.se.schema_property_nx.node[self.name]:
+                return self.se.schema_property_nx.node[self.name]['description']
+            else:
+                return None
 
     @property
     def parent_properties(self):
         """Find all parents of a specific class"""
-        parents = list(nx.ancestors(self.se.schema_property_nx,
-                                    self.name))
-        parents = [SchemaProperty(_parent, self.se) for _parent in parents]
-        return parents
+        if defined_in_schema:
+            parents = list(nx.ancestors(self.se.schema_property_nx,
+                                        self.name))
+            parents = [SchemaProperty(_parent, self.se) for _parent in parents]
+            return parents
+        else:
+            return []
 
     @property
     def child_properties(self):
         """Find schema properties that directly inherit from the given property
         """
-        children =  list(self.se.schema_property_nx.successors(self.name))
-        children = [SchemaProperty(_child, self.se) for _child in children]
-        return children
+        if defined_in_schema:
+            children =  list(self.se.schema_property_nx.successors(self.name))
+            children = [SchemaProperty(_child, self.se) for _child in children]
+            return children
+        else:
+            return []
 
     @property
     def descendant_properties(self):
         """Find schema properties that inherit from the given property
         """
-        descendants = list(nx.descendants(self.se.schema_property_nx,
-                                          self.name))
-        descendants = [SchemaProperty(_descendant, self.se) for _descendant in descendants]
-        return descendants
+        if defined_in_schema:
+            descendants = list(nx.descendants(self.se.schema_property_nx,
+                                              self.name))
+            descendants = [SchemaProperty(_descendant, self.se) for _descendant in descendants]
+            return descendants
+        else:
+            return []
 
     def describe(self):
         """Find details about a specific property
         """
-        property_info = {'child_properties': self.child_properties,
-                         'descendant_properties': self.descendant_properties,
-                         'parent_properties': self.parent_properties,
-                         'domain': [],
-                         'range': []}
-        for record in self.se.schema["@graph"]:
-            if record["@type"] == "rdf:Property":
-                if record["rdfs:label"] == self.name:
-                    property_info["id"] = record["rdfs:label"]
-                    property_info["description"] = record["rdfs:comment"]
-                    #property_info["uri"] = self.curie2uri(record["@id"])
-                    if "http://schema.org/domainIncludes" in record:
-                        p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                        property_info["domain"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"]), self.se) for record in p_domain]
-                    if "http://schema.org/rangeIncludes" in record:
-                        p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                        property_info["range"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"]), self.se) for record in p_range]
-        return property_info
+        if defined_in_schema:
+            property_info = {'child_properties': self.child_properties,
+                             'descendant_properties': self.descendant_properties,
+                             'parent_properties': self.parent_properties,
+                             'domain': [],
+                             'range': []}
+            for record in self.se.schema["@graph"]:
+                if record["@type"] == "rdf:Property":
+                    if record["rdfs:label"] == self.name:
+                        property_info["id"] = record["rdfs:label"]
+                        property_info["description"] = record["rdfs:comment"]
+                        #property_info["uri"] = self.curie2uri(record["@id"])
+                        if "http://schema.org/domainIncludes" in record:
+                            p_domain = dict2list(record["http://schema.org/domainIncludes"])
+                            property_info["domain"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"]), self.se) for record in p_domain]
+                        if "http://schema.org/rangeIncludes" in record:
+                            p_range = dict2list(record["http://schema.org/rangeIncludes"])
+                            property_info["range"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"]), self.se) for record in p_range]
+            return property_info
+        else:
+            return {}
