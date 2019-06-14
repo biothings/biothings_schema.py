@@ -214,13 +214,27 @@ class SchemaValidator():
 
 class Schema():
     """Class representing schema
+
+    TODO: CONTEXT = {'http://schema.org/': 'schema'}
+    TODO: User could provide their own user prefix
+    TODO: Add context parameter, which later will merge with CONTEXT
+
     """
-    def __init__(self, schema=None):
+    # URI -> prefix conversion dict
+    CONTEXT = {
+        "http://schema.org/": "schema",
+        "http://schema.biothings.io/": "bts"
+    }
+
+    def __init__(self, schema=None, context=None):
         if not schema:
             self.load_default_schema()
             print('Preloaded with SchemaOrg Schema.')
         else:
             self.load_schema(schema)
+        self.context = CONTEXT
+        if context and type(context) == dict:
+            self.context.update(context)
 
     def extract_validation_info(self, schema=None, return_results=True):
         """Extract the $validation field and organize into self.validation"""
@@ -393,6 +407,15 @@ class Schema():
 
 class SchemaClass():
     """Class representing an individual class in Schema
+
+    # TODO: Add a flag in the class if class is not found in schema
+    # TODO: Every class should have a prefix
+    # TODO: If no prefix is provided, the class/property could only be accessed using URI
+    # TODO: __str__ and __repr__ return curies 
+    # TODO: add prefix as property
+    # TODO: add label as property
+    # TODO: name should be normalized to curie
+    # TODO: option to only display the name, rather than python class as results
     """
     def __init__(self, class_name, schema):
         self.name = class_name
@@ -546,7 +569,7 @@ class SchemaClass():
         class_info = {'properties': self.list_properties(class_specific=False),
                       'description': self.description,
                       'uri': uri,
-                      'usage': self.used_by(),
+                      'used_by': self.used_by(),
                       'child_classes': self.child_classes,
                       'parent_classes': self.parent_classes}
         return class_info
