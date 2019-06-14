@@ -226,7 +226,7 @@ class Schema():
             self.load_default_schema()
         else:
             self.load_schema(schema)
-        self.context = CONTEXT
+        self.context = self.CONTEXT
         if type(context) != dict:
             raise ValueError("context should be a python dictionary, with URI as key, and the namespace/prefix as value")
         if context and type(context) == dict:
@@ -404,7 +404,6 @@ class Schema():
 class SchemaClass():
     """Class representing an individual class in Schema
 
-    # TODO: Add a flag in the class if class is not found in schema
     # TODO: Every class should have a prefix
     # TODO: If no prefix is provided, the class/property could only be accessed using URI
     # TODO: __str__ and __repr__ return curies 
