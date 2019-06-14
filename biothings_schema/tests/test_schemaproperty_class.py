@@ -12,13 +12,9 @@ class TestSchemaPropertyClass(unittest.TestCase):
         self.se = Schema(schema_url)
 
     def test_initialization(self):
-        # if input class is not in schema, should raise ValueError
-        with self.assertRaises(ValueError) as cm:
-            SchemaProperty('ttt', self.se)
-        self.assertEqual(
-            'Property ttt is not defined in Schema. Could not access it',
-            str(cm.exception)
-        )
+        # if input property is not in schema, defined_in_schema should be False
+        sp = SchemaProperty('dd', self.se)
+        self.assertFalse(sp.defined_in_schema)
 
     def test_parent_properties(self):
         """ Test parent_properties function
@@ -31,6 +27,10 @@ class TestSchemaPropertyClass(unittest.TestCase):
         self.assertNotIn("sgd", [_item.name for _item in parents])
         # if input doesn't have parent properties, should return empty list
         sp = self.se.get_property("identifier")
+        parents = sp.parent_properties
+        self.assertEqual(parents, [])
+        # test if input is not defined
+        sp = self.se.get_property('dd')
         parents = sp.parent_properties
         self.assertEqual(parents, [])
 
@@ -49,6 +49,16 @@ class TestSchemaPropertyClass(unittest.TestCase):
         sp = self.se.get_property("ensembl")
         children = sp.child_properties
         self.assertEqual(children, [])
+        # test if input is not defined
+        sp = self.se.get_property("dd")
+        children = sp.child_properties
+        self.assertEqual(children, [])
+
+    def test_describe(self):
+        """test describe function"""
+        sp = self.se.get_property("dd")
+        describe = sp.describe()
+        self.assertEqual(describe, {})
 
 
 if __name__ == '__main__':
