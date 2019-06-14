@@ -214,11 +214,6 @@ class SchemaValidator():
 
 class Schema():
     """Class representing schema
-
-    TODO: CONTEXT = {'http://schema.org/': 'schema'}
-    TODO: User could provide their own user prefix
-    TODO: Add context parameter, which later will merge with CONTEXT
-
     """
     # URI -> prefix conversion dict
     CONTEXT = {
@@ -232,6 +227,8 @@ class Schema():
         else:
             self.load_schema(schema)
         self.context = CONTEXT
+        if type(context) != dict:
+            raise ValueError("context should be a python dictionary, with URI as key, and the namespace/prefix as value")
         if context and type(context) == dict:
             self.context.update(context)
 
