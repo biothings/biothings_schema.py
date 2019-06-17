@@ -217,8 +217,8 @@ class Schema():
     """
     # URI -> prefix conversion dict
     CONTEXT = {
-        "http://schema.org/": "schema",
-        "http://schema.biothings.io/": "bts"
+        "schema": "http://schema.org/",
+        "bts": "http://discovery.biothings.io/bts/"
     }
 
     def __init__(self, schema=None, context=None):
@@ -232,6 +232,9 @@ class Schema():
                 raise ValueError("context should be a python dictionary, with URI as key, and the namespace/prefix as value")
             else:
                 self.context.update(context)
+        # if @context is defined in schema, update it to local context
+        if "@context" in self.schema:
+            self.context.update(self.schema["@context"])
 
     def extract_validation_info(self, schema=None, return_results=True):
         """Extract the $validation field and organize into self.validation"""
@@ -415,14 +418,20 @@ class SchemaClass():
     """
     def __init__(self, class_name, schema):
         self.defined_in_schema = True
-        self.name = class_name
         self.se = schema
+        self._all_uris = list(self.se.schema_nx_extension_only.nodes())
+        self.converter = CurieUriConverter(self.se.context, self._all_uris)
+        self.name = self.converter.get_curie(class_name)
+        self.prefix = self.converter.get_prefix(class_name)
+        self.label = self.converter.get_name(class_name)
+        self.uri = self.converter.get_uri(class_name)
         self.CLASS_REMOVE = ["Number", "Integer", "Float", "Text",
                         "CssSelectorType", "URL", "XPathType", "Class",
                         "DataType", "Boolean", "DateTime", "Date", "Time"]
+        self.CLASS_REMOVE = [('http://schema.org/' + _item) for _item in self.CLASS_REMOVE]
         self.ALL_CLASSES = self.CLASS_REMOVE + list(self.se.schema_nx_extension_only.nodes())
         # if class is not defined in schema, raise ValueError
-        if self.name not in self.ALL_CLASSES:
+        if self.uri not in self.ALL_CLASSES:
             # raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
             print('Class {} is not defined in Schema. Could not access it'.format(self.name))
             self.defined_in_schema = False
@@ -436,10 +445,10 @@ class SchemaClass():
     @property
     def description(self):
         if self.defined_in_schema:
-            if self.name not in self.CLASS_REMOVE:
+            if self.uri not in self.CLASS_REMOVE:
                 # classes might not have descriptions
-                if 'description' in self.se.schema_nx.node[self.name]:
-                    return self.se.schema_nx.node[self.name]['description']
+                if 'description' in self.se.schema_nx.node[self.uri]:
+                    return self.se.schema_nx.node[self.uri]['description']
                 else:
                     return None
             else:
@@ -450,7 +459,7 @@ class SchemaClass():
     @property
     def ancestor_classes(self):
         if self.defined_in_schema:
-            ancestors = list(nx.ancestors(self.se.schema_nx, self.name))
+            ancestors = list(nx.ancestors(self.se.schema_nx, self.uri))
             ancestors = [SchemaClass(_ancestor, self.se) for _ancestor in ancestors]
             return ancestors
         else:
@@ -463,13 +472,13 @@ class SchemaClass():
             root_node = list(nx.topological_sort(self.se.schema_nx))
             # When a schema is not a tree with only one root node
             # Set "Thing" as the root node by default
-            if 'Thing' in root_node:
-                root_node = 'Thing'
+            if 'http://schema.org/Thing' in root_node:
+                root_node = 'http://schema.org/Thing'
             else:
                 root_node = root_node[0]
             paths = nx.all_simple_paths(self.se.schema_nx,
                                         source=root_node,
-                                        target=self.name)
+                                        target=self.uri)
             paths =  [_path[:-1] for _path in paths]
             parents = []
             for _path in paths:
@@ -507,12 +516,12 @@ class SchemaClass():
         if self.defined_in_schema:
             if class_specific:
                 properties = [{'class': self.name,
-                               'properties': find_class_specific_properties(self.name)}]
+                               'properties': find_class_specific_properties(self.uri)}]
             else:
                 # find all parent classes
-                parents = [[_item.name for _item in _cls] for _cls in self.parent_classes]
+                parents = [[_item.uri for _item in _cls] for _cls in self.parent_classes]
                 properties = [{'class': self.name,
-                               'properties': find_class_specific_properties(self.name)}]
+                               'properties': find_class_specific_properties(self.uri)}]
                 # update properties, each dict represent properties associated with
                 # the class
                 for path in parents:
@@ -538,17 +547,16 @@ class SchemaClass():
         if not self.defined_in_schema:
             return usages
         else:
-            schema_uri = self.se.schema_nx.node[self.name]["uri"]
             for record in self.se.schema["@graph"]:
                 usage = {}
                 if record["@type"] == "rdf:Property":
                     if "http://schema.org/rangeIncludes" in record:
                         p_range = dict2list(record["http://schema.org/rangeIncludes"])
                         for _doc in p_range:
-                            if _doc['@id'] == schema_uri:
-                                usage["property"] = SchemaProperty(extract_name_from_uri_or_curie(record["@id"]), self.se)
+                            if _doc['@id'] == self.uri:
+                                usage["property"] = SchemaProperty(record["@id"], self.se)
                                 p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                                cls_using_property = [extract_name_from_uri_or_curie(record["@id"], self.se.schema) for record in p_domain]
+                                cls_using_property = [record["@id"] for record in p_domain]
                                 usage["property_used_on_class"] = [SchemaClass(_cls, self.se) for _cls in cls_using_property]
                                 usage["description"] = record["rdfs:comment"]
                 if usage:
@@ -560,7 +568,7 @@ class SchemaClass():
         """Find schema classes that directly inherit from the given class
         """
         if self.defined_in_schema:
-            children = list(self.se.schema_nx.successors(self.name))
+            children = list(self.se.schema_nx.successors(self.uri))
             children = [SchemaClass(_child, self.se) for _child in children]
             return children
         else:
@@ -572,7 +580,7 @@ class SchemaClass():
         """
         if self.defined_in_schema:
             descendants = list(nx.descendants(self.se.schema_nx,
-                                              self.name))
+                                              self.uri))
             descendants = [SchemaClass(_des, self.se) for _des in descendants]
             return descendants
         else:
@@ -582,10 +590,11 @@ class SchemaClass():
         """Find details about a specific schema class
         """
         if self.defined_in_schema:
-            uri = self.se.schema_nx.node[self.name]["uri"] if 'uri' in self.se.schema_nx.node[self.name] else None
             class_info = {'properties': self.list_properties(class_specific=False),
                           'description': self.description,
-                          'uri': uri,
+                          'uri': self.uri,
+                          'label': self.label,
+                          'curie': self.name,
                           'used_by': self.used_by(),
                           'child_classes': self.child_classes,
                           'parent_classes': self.parent_classes}
@@ -600,10 +609,15 @@ class SchemaProperty():
 
     def __init__(self, property_name, schema):
         self.defined_in_schema = True
-        self.name = property_name
         self.se = schema
+        self._all_uris = list(self.se.schema_property_nx.nodes())
+        self.converter = CurieUriConverter(self.se.context, self._all_uris)
+        self.name = self.converter.get_curie(property_name)
+        self.prefix = self.converter.get_prefix(property_name)
+        self.label = self.converter.get_name(property_name)
+        self.uri = self.converter.get_uri(property_name)
         # if property is not defined in schema, raise ValueError
-        if self.name not in self.se.schema_property_nx.nodes():
+        if self.uri not in self.se.schema_property_nx.nodes():
             #raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
             print('Property {} is not defined in Schema. Could not access it'.format(self.name))
             self.defined_in_schema = False
@@ -620,8 +634,8 @@ class SchemaProperty():
             return None
         else:
             # some properties doesn't have descriptions
-            if 'description' in self.se.schema_property_nx.node[self.name]:
-                return self.se.schema_property_nx.node[self.name]['description']
+            if 'description' in self.se.schema_property_nx.node[self.uri]:
+                return self.se.schema_property_nx.node[self.uri]['description']
             else:
                 return None
 
@@ -630,7 +644,7 @@ class SchemaProperty():
         """Find all parents of a specific class"""
         if self.defined_in_schema:
             parents = list(nx.ancestors(self.se.schema_property_nx,
-                                        self.name))
+                                        self.uri))
             parents = [SchemaProperty(_parent, self.se) for _parent in parents]
             return parents
         else:
@@ -641,7 +655,7 @@ class SchemaProperty():
         """Find schema properties that directly inherit from the given property
         """
         if self.defined_in_schema:
-            children =  list(self.se.schema_property_nx.successors(self.name))
+            children =  list(self.se.schema_property_nx.successors(self.uri))
             children = [SchemaProperty(_child, self.se) for _child in children]
             return children
         else:
@@ -653,7 +667,7 @@ class SchemaProperty():
         """
         if self.defined_in_schema:
             descendants = list(nx.descendants(self.se.schema_property_nx,
-                                              self.name))
+                                              self.uri))
             descendants = [SchemaProperty(_descendant, self.se) for _descendant in descendants]
             return descendants
         else:
@@ -667,19 +681,20 @@ class SchemaProperty():
                              'descendant_properties': self.descendant_properties,
                              'parent_properties': self.parent_properties,
                              'domain': [],
-                             'range': []}
+                             'range': [],
+                             'uri': self.uri,
+                             'label': self.label}
             for record in self.se.schema["@graph"]:
                 if record["@type"] == "rdf:Property":
-                    if record["rdfs:label"] == self.name:
-                        property_info["id"] = record["rdfs:label"]
+                    if record["rdfs:label"] == self.label:
                         property_info["description"] = record["rdfs:comment"]
                         #property_info["uri"] = self.curie2uri(record["@id"])
                         if "http://schema.org/domainIncludes" in record:
                             p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                            property_info["domain"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"]), self.se) for record in p_domain]
+                            property_info["domain"] = [SchemaClass(record["@id"], self.se) for record in p_domain]
                         if "http://schema.org/rangeIncludes" in record:
                             p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                            property_info["range"] = [SchemaClass(extract_name_from_uri_or_curie(record["@id"]), self.se) for record in p_range]
+                            property_info["range"] = [SchemaClass(record["@id"], self.se) for record in p_range]
             return property_info
         else:
             return {}
