@@ -167,5 +167,3 @@ def extract_name_from_uri_or_curie(item, schema=None):
     # otherwise, rsise ValueError
     else:
         raise ValueError('{} should be converted to either URI or curie'.format(item))
-
-def create_curie_from_uri_or_name(item, )
