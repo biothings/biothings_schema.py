@@ -252,10 +252,10 @@ class Schema():
 
     def load_schema(self, schema):
         """Load schema and convert it to networkx graph"""
-        self.schema_extension_only = expand_curies_in_schema(load_json_or_yaml(schema))
+        self.schema_extension_only = normalize_rdfs_label_field(expand_curies_in_schema(load_json_or_yaml(schema)))
         self.extract_validation_info(schema=self.schema_extension_only,
                                      return_results=False)
-        self.schemaorg_schema = expand_curies_in_schema(load_schemaorg())
+        self.schemaorg_schema = normalize_rdfs_label_field(expand_curies_in_schema(load_schemaorg()))
         self.schema_nx = load_schema_class_into_networkx(self.schemaorg_schema,
                                                    self.schema_extension_only)
         self.schema_nx_extension_only = load_schema_class_into_networkx(self.schema_extension_only)
@@ -686,7 +686,7 @@ class SchemaProperty():
                              'label': self.label}
             for record in self.se.schema["@graph"]:
                 if record["@type"] == "rdf:Property":
-                    if record["rdfs:label"] == self.label:
+                    if "rdfs:label" in record and record["rdfs:label"] == self.label:
                         property_info["description"] = record["rdfs:comment"]
                         #property_info["uri"] = self.curie2uri(record["@id"])
                         if "http://schema.org/domainIncludes" in record:

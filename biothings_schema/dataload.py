@@ -43,6 +43,17 @@ def load_json_or_yaml(file_path):
     return data
 
 
+def normalize_rdfs_label_field(schema):
+    """schemaorg file has some discrepancy, fix them"""
+    graph = []
+    for _record in schema["@graph"]:
+        if "rdfs:label" in _record and type(_record["rdfs:label"]) == dict:
+            _record["rdfs:label"] = _record["rdfs:label"]["@value"]
+        graph.append(_record)
+    schema["@graph"] = graph
+    return schema
+
+
 def load_schemaorg(version=None):
     """Load SchemOrg vocabulary
 
