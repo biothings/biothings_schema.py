@@ -18,11 +18,13 @@ class TestSchemaClass(unittest.TestCase):
         all_cls = self.se.list_all_classes()
         all_cls_names = [_cls.name for _cls in all_cls]
         # assert root level Class in all classes
-        self.assertIn('Thing', all_cls_names)
+        self.assertIn('schema:Thing', all_cls_names)
         # assert class "Gene" in all classes
-        self.assertIn('Gene', all_cls_names)
+        self.assertIn('bts:Gene', all_cls_names)
         # class 'ffff' should not be one of the classes
-        self.assertNotIn('ffff', all_cls_names)
+        self.assertNotIn('bts:ffff', all_cls_names)
+        # class name should be curie
+        self.assertNotIn('Thing', all_cls_names)
         # assert type of the class is SchemaClass
         self.assertEqual(SchemaClass, type(all_cls[0]))
 
@@ -31,9 +33,11 @@ class TestSchemaClass(unittest.TestCase):
         all_props = self.se.list_all_properties()
         all_prop_names = [_prop.name for _prop in all_props]
         # assert "name" in all props
-        self.assertIn('name', all_prop_names)
+        self.assertIn('schema:name', all_prop_names)
+        # property name should be curie
+        self.assertNotIn('name', all_prop_names)
         # assert "ffff" should not be one of the props
-        self.assertNotIn('ffff', all_prop_names)
+        self.assertNotIn('bts:ffff', all_prop_names)
         # assert type of the property is SchemaProperty
         self.assertEqual(SchemaProperty, type(all_props[0]))
 

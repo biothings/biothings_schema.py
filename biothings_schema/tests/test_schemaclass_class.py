@@ -15,6 +15,21 @@ class TestSchemaClassClass(unittest.TestCase):
         # if input class is not in schema, defined_in_schema should be False
         scls = self.se.get_class("dd")
         self.assertFalse(scls.defined_in_schema)
+        # test response if input is NAME only
+        scls = self.se.get_class("Gene")
+        self.assertEqual(scls.name, "bts:Gene")
+        self.assertEqual(scls.uri, "http://schema.biothings.io/Gene")
+        self.assertEqual(scls.label, "Gene")
+        # test response if input is CURIE only
+        scls = self.se.get_class("bts:Gene")
+        self.assertEqual(scls.name, "bts:Gene")
+        self.assertEqual(scls.uri, "http://schema.biothings.io/Gene")
+        self.assertEqual(scls.label, "Gene")
+        # test response if input is URI only
+        scls = self.se.get_class("http://schema.biothings.io/Gene")
+        self.assertEqual(scls.name, "bts:Gene")
+        self.assertEqual(scls.uri, "http://schema.biothings.io/Gene")
+        self.assertEqual(scls.label, "Gene")
 
     def test_parent_classes(self):
         """ Test parent_classes function
@@ -22,7 +37,7 @@ class TestSchemaClassClass(unittest.TestCase):
         scls = self.se.get_class("Gene")
         parents = scls.parent_classes
         # check the first item of should be 'Thing'
-        self.assertEqual(parents[0][0].name, 'Thing')
+        self.assertEqual(parents[0][0].name, 'schema:Thing')
         # if input is the root class, should return empty list
         scls = self.se.get_class("Thing")
         parents = scls.parent_classes
@@ -38,11 +53,11 @@ class TestSchemaClassClass(unittest.TestCase):
         descendants = scls.descendant_classes
         descendant_names = [_item.name for _item in descendants]
         # check if gene is in descendants
-        self.assertIn('Gene', descendant_names)
+        self.assertIn('bts:Gene', descendant_names)
         # check if Thing is in descendants (Thing is its parent classs)
-        self.assertNotIn('Thing', descendant_names)
+        self.assertNotIn('schema:Thing', descendant_names)
         # check itself should not in descendants
-        self.assertNotIn('MolecularEntity', descendant_names)
+        self.assertNotIn('bts:MolecularEntity', descendant_names)
         # test if input class is the leaf class
         scls = self.se.get_class("Gene")
         descendants = scls.descendant_classes
@@ -58,13 +73,13 @@ class TestSchemaClassClass(unittest.TestCase):
         children = scls.child_classes
         children_names = [_item.name for _item in children]
         # check if GeneFamily is in children
-        self.assertIn('GeneFamily', children_names)
+        self.assertIn('bts:GeneFamily', children_names)
         # check if gene is in children (gene is descendant)
-        self.assertNotIn('Gene', children_names)
+        self.assertNotIn('bts:Gene', children_names)
         # check if Thing is in children (Thing is its parent classs)
-        self.assertNotIn('Thing', children_names)
+        self.assertNotIn('schema:Thing', children_names)
         # check itself should not in children
-        self.assertNotIn('MolecularEntity', children_names)
+        self.assertNotIn('bts:MolecularEntity', children_names)
         # test if input class is the leaf class
         scls = self.se.get_class("Gene")
         children = scls.child_classes
@@ -85,26 +100,26 @@ class TestSchemaClassClass(unittest.TestCase):
         property_names = [_item.name for _item in property_names]
         # type of properties shouldbe a SchemaProperty class
         self.assertEqual(SchemaProperty, type(properties[0]['properties'][0]))
-        self.assertIn('mgi', property_names)
+        self.assertIn('bts:mgi', property_names)
         # properties for parents should not be there
-        self.assertNotIn('ensembl', property_names)
+        self.assertNotIn('bts:ensembl', property_names)
         # properties for other classes should not be there
-        self.assertNotIn('treats', property_names)
+        self.assertNotIn('bts:treats', property_names)
         # second: test all class related properties
-        scls = self.se.get_class("MolecularEntity")
+        scls = self.se.get_class("bts:MolecularEntity")
         properties = scls.list_properties(class_specific=False)
         property_names = scls.list_properties(class_specific=False,
                                               group_by_class=False)
         property_names = [_item.name for _item in property_names]
         self.assertTrue(len(properties) > 1)
         # check properties belonging to its own classes should be there
-        self.assertIn('affectsAbundanceOf', property_names)
+        self.assertIn('bts:affectsAbundanceOf', property_names)
         # check properties belong to its parent classes should be there
-        self.assertIn('name', property_names)
+        self.assertIn('schema:name', property_names)
         # properties for child classes should not be there
-        self.assertNotIn('ensembl', property_names)
+        self.assertNotIn('bts:ensembl', property_names)
         # properties for other classes should not be there
-        self.assertNotIn('treats', property_names)
+        self.assertNotIn('bts:treats', property_names)
         # test if class is not defined
         scls = self.se.get_class("dd")
         properties = scls.list_properties()
