@@ -1,3 +1,99 @@
+import re
+from collections import defaultdict
+
+from .utils import unlist
+
+
+class CurieUriConverter():
+    """Converte between Curies, URIs and names"""
+
+    def __init__(self, context, uri_list=[]):
+        self.context = context
+        self.uri_list = uri_list
+        # map URI to its corresponding names
+        self.name_dict = defaultdict(list)
+        for _uri in uri_dict:
+            _name = self.get_name(_uri)
+            self.name_dict[_name].append(_uri)
+
+    def determine_id_type(self, _id):
+        """Determine whether an ID is a curie or URI or none of them"""
+        regex_url = re.compile(
+                r'^(?:http|ftp)s?://' # http:// or https://
+                r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+                r'localhost|' #localhost...
+                r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+                r'(?::\d+)?' # optional port
+                r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        if re.match(regex_url, _id):
+            return 'url'
+        elif len(_id.split(":")) == 2 and type(_id.split(":")[0]) == str:
+            return 'curie'
+        else:
+            return 'name'
+
+    def get_uri(self, _input):
+        """Convert input to URI format"""
+        # first determine the type of input, e.g. URI, CURIE, or Name
+        _type = self.determine_id_type(_input)
+        # if input type is URL, return itself
+        if _type == "url":
+            return _input
+        # if input type is curie, try convert to URI, if not, return curie
+        elif _type == "curie":
+            prefix, suffix = _input.split(':')
+            if prefix in self.context:
+                return self.context[prefix] + suffix
+            else:
+                return _input
+        # if input type is name, try convert to URI, if not, return name
+        else:
+            if _input in self.name_dict:
+                return unlist(self.name_dict[_input])
+            else:
+                return _input
+
+    def get_curie(self, _input):
+        """Convert input to CURIE format"""
+        # first determine the type of input, e.g. URI, CURIE, or Name
+        _type = self.determine_id_type(_input)
+        # if input type is CURIE, return itself
+        if _type == "curie":
+            return _input
+        # if input type is URI, try convert to CUIRE, if not, return URI
+        elif _type == "url":
+            uri, name = _input.rsplit('/', 1)
+            uri += '/'
+            prefix = None
+            for k, v in self.context.items():
+                if v == uri:
+                    prefix = k
+            if prefix:
+                return prefix + ':' + name
+            else:
+                return _input
+        else:
+            if _input in self.name_dict:
+                uris = self.name_dict[_input]
+                curies = []
+                for _uri in uris:
+                    curies.append(self.get_curie(_uri))
+                return unlist(curies)
+            else:
+                return _input
+
+    def get_name(self, _input):
+        """Convert input to CURIE format"""
+        # first determine the type of input, e.g. URI, CURIE, or Name
+        _type = self.determine_id_type(_input)
+        if _type == 'name':
+            return _input
+        elif _type == 'url':
+            return _type.split('/')[-1]
+        else:
+            return _type.split(':')[-1]
+
+
 def expand_curie_to_uri(curie, context_info):
     """Expand curie to uri based on the context given
 
@@ -71,3 +167,5 @@ def extract_name_from_uri_or_curie(item, schema=None):
     # otherwise, rsise ValueError
     else:
         raise ValueError('{} should be converted to either URI or curie'.format(item))
+
+def create_curie_from_uri_or_name(item, )
