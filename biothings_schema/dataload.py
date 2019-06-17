@@ -81,18 +81,18 @@ def load_schema_class_into_networkx(schema, preload_schemaorg=False):
                     "http://schema.org/DataType"]
     for record in schema["@graph"]:
         if record["@type"] == "rdfs:Class" and record["@id"] not in CLASS_REMOVE:
-            G.add_node(extract_name_from_uri_or_curie(record["@id"]),
+            G.add_node(record["@id"],
                        uri=record["@id"],
                        description=record["rdfs:comment"])
             if "rdfs:subClassOf" in record:
                 parents = record["rdfs:subClassOf"]
                 if isinstance(parents, list):
                     for _parent in parents:
-                        G.add_edge(extract_name_from_uri_or_curie(_parent["@id"]),
-                                   extract_name_from_uri_or_curie(record["@id"]))
+                        G.add_edge(_parent["@id"],
+                                   record["@id"])
                 elif isinstance(parents, dict):
-                    G.add_edge(extract_name_from_uri_or_curie(parents["@id"]),
-                               extract_name_from_uri_or_curie(record["@id"]))
+                    G.add_edge(parents["@id"],
+                               record["@id"])
                 else:
                     raise ValueError('"dictionary" input is not a list or dict')
             else:
@@ -110,18 +110,18 @@ def load_schema_property_into_networkx(schema, preload_schemaorg=False):
         G = nx.DiGraph()
     for record in schema["@graph"]:
         if record["@type"] == "rdf:Property":
-            G.add_node(extract_name_from_uri_or_curie(record["@id"]),
+            G.add_node(record["@id"],
                        uri=record["@id"],
                        description=record["rdfs:comment"])
             if "rdfs:subPropertyOf" in record:
                 parents = record["rdfs:subPropertyOf"]
                 if isinstance(parents, list):
                     for _parent in parents:
-                        G.add_edge(extract_name_from_uri_or_curie(_parent["@id"]),
-                                   extract_name_from_uri_or_curie(record["@id"]))
+                        G.add_edge(_parent["@id"],
+                                   record["@id"])
                 elif isinstance(parents, dict):
-                    G.add_edge(extract_name_from_uri_or_curie(parents["@id"]),
-                               extract_name_from_uri_or_curie(record["@id"]))
+                    G.add_edge(parents["@id"],
+                               record["@id"])
                 else:
                     raise ValueError('"dictionary" input is not a list or dict')
             else:
