@@ -12,7 +12,7 @@ class CurieUriConverter():
         self.uri_list = uri_list
         # map URI to its corresponding names
         self.name_dict = defaultdict(list)
-        for _uri in uri_dict:
+        for _uri in self.uri_list:
             _name = self.get_name(_uri)
             self.name_dict[_name].append(_uri)
 
@@ -43,7 +43,10 @@ class CurieUriConverter():
         elif _type == "curie":
             prefix, suffix = _input.split(':')
             if prefix in self.context:
-                return self.context[prefix] + suffix
+                namespace_url = self.context[prefix]
+                if not namespace_url.endswith('/'):
+                    namespace_url += '/'
+                return namespace_url + suffix
             else:
                 return _input
         # if input type is name, try convert to URI, if not, return name
@@ -89,9 +92,9 @@ class CurieUriConverter():
         if _type == 'name':
             return _input
         elif _type == 'url':
-            return _type.split('/')[-1]
+            return _input.split('/')[-1]
         else:
-            return _type.split(':')[-1]
+            return _input.split(':')[-1]
 
 
 def expand_curie_to_uri(curie, context_info):
