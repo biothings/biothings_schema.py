@@ -85,6 +85,35 @@ class CurieUriConverter():
             else:
                 return _input
 
+    def get_prefix(self, _input):
+        """Get prefix from input"""
+        # first determine the type of input, e.g. URI, CURIE, or Name
+        _type = self.determine_id_type(_input)
+        # if input type is CURIE, return itself
+        if _type == "curie":
+            return _input.split(':')[0]
+        # if input type is URI, try convert to CUIRE, if not, return URI
+        elif _type == "url":
+            uri, name = _input.rsplit('/', 1)
+            uri += '/'
+            prefix = None
+            for k, v in self.context.items():
+                if v == uri:
+                    prefix = k
+            if prefix:
+                return prefix
+            else:
+                return None
+        else:
+            if _input in self.name_dict:
+                uris = self.name_dict[_input]
+                prefixes = []
+                for _uri in uris:
+                    prefixes.append(self.get_prefix(_uri))
+                return unlist(prefixes)
+            else:
+                return None
+
     def get_name(self, _input):
         """Convert input to CURIE format"""
         # first determine the type of input, e.g. URI, CURIE, or Name
