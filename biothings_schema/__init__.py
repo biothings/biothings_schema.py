@@ -344,11 +344,21 @@ class Schema():
 
     def get_class(self, class_name):
         """Return a SchemaClass instance of the class"""
-        return SchemaClass(class_name, self)
+        uris = self.cls_converter.get_uri(class_name)
+        if type(uris) == list:
+            warnings.warn("Found more than 1 classes defined within schema using label {}".format(class_name))
+            return [SchemaClass(_item, self) for _item in uris]
+        else:
+            return SchemaClass(class_name, self)
 
     def get_property(self, property_name):
         """Return a SchemaProperty instance of the property"""
-        return SchemaProperty(property_name, self)
+        uris = self.prop_converter.get_uri(property_name)
+        if type(uris) == list:
+            warnings.warn("Found more than 1 properties defined within schema using label {}".format(property_name))
+            return [SchemaProperty(_item, self) for _item in uris]
+        else:
+            return SchemaProperty(property_name, self)
 
     def validate_against_schema(self, json_doc, class_uri):
         """Validate a json document against it's JSON schema defined in Schema
