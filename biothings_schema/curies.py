@@ -13,7 +13,7 @@ class CurieUriConverter():
         # map URI to its corresponding names
         self.name_dict = defaultdict(list)
         for _uri in self.uri_list:
-            _name = self.get_name(_uri)
+            _name = self.get_label(_uri)
             self.name_dict[_name].append(_uri)
 
     def determine_id_type(self, _id):
@@ -114,7 +114,7 @@ class CurieUriConverter():
             else:
                 return None
 
-    def get_name(self, _input):
+    def get_label(self, _input):
         """Convert input to CURIE format"""
         # first determine the type of input, e.g. URI, CURIE, or Name
         _type = self.determine_id_type(_input)

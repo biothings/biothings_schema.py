@@ -58,13 +58,13 @@ class TestCurieUriConverter(unittest.TestCase):
         self.assertEqual(self.converter.get_curie("Person"),
                          "schema:Person")
 
-    def test_get_name(self):
-        """Test get_name function"""
-        self.assertEqual(self.converter.get_name("http://schema.org/Thing"),
+    def test_get_label(self):
+        """Test get_label function"""
+        self.assertEqual(self.converter.get_label("http://schema.org/Thing"),
                          "Thing")
-        self.assertEqual(self.converter.get_name("Thing"),
+        self.assertEqual(self.converter.get_label("Thing"),
                          "Thing")
-        self.assertEqual(self.converter.get_name("schema:Thing"),
+        self.assertEqual(self.converter.get_label("schema:Thing"),
                          "Thing")
 
 

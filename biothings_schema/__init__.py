@@ -287,8 +287,8 @@ class Schema():
         edges = self.schema_nx_extension_only.edges()
         curie_edges = []
         for _edge in edges:
-            curie_edges.append((self.cls_converter.get_name(_edge[0]),
-                                self.cls_converter.get_name(_edge[1])))
+            curie_edges.append((self.cls_converter.get_label(_edge[0]),
+                                self.cls_converter.get_label(_edge[1])))
         return visualize(curie_edges, size=size)
 
     def sub_schema_graph(self, source, include_parents=True, include_children=True, size=None):
@@ -311,7 +311,7 @@ class Schema():
         elif include_parents and include_children is False:
             edges = []
             for _path in parents:
-                _path.append(self.cls_converter.get_name(source))
+                _path.append(self.cls_converter.get_label(source))
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
         # handle cases where user want to get both parents and children
@@ -319,15 +319,15 @@ class Schema():
             edges = list(nx.edge_bfs(self.schema_nx,
                                      [self.cls_converter.get_uri(source)]))
             for _path in parents:
-                _path.append(self.cls_converter.get_name(source))
+                _path.append(self.cls_converter.get_label(source))
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
         else:
             raise ValueError("At least one of include_parents and include_children parameter need to be set to True")
         curie_edges = []
         for _edge in edges:
-            curie_edges.append((self.cls_converter.get_name(_edge[0]),
-                                self.cls_converter.get_name(_edge[1])))
+            curie_edges.append((self.cls_converter.get_label(_edge[0]),
+                                self.cls_converter.get_label(_edge[1])))
         return visualize(curie_edges, size=size)
 
     def list_all_classes(self):
@@ -463,7 +463,7 @@ class SchemaClass():
 
     @property
     def label(self):
-        return self.se.cls_converter.get_name(self.name)
+        return self.se.cls_converter.get_label(self.name)
 
     @property
     def uri(self):
@@ -664,7 +664,7 @@ class SchemaProperty():
 
     @property
     def label(self):
-        return self.se.prop_converter.get_name(self.name)
+        return self.se.prop_converter.get_label(self.name)
 
     @property
     def uri(self):
