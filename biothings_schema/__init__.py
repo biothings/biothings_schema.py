@@ -236,7 +236,7 @@ class Schema():
         # if @context is defined in schema, update it to local context
         if "@context" in self.schema:
             self.context.update(self.schema["@context"])
-        self._all_class_uris = list(self.schema_nx_extension_only.nodes())
+        self._all_class_uris = list(self.schema_nx_extension_only.nodes()) + list(self.schema_datatype_nx.nodes())
         self.cls_converter = CurieUriConverter(self.context,
                                                self._all_class_uris)
         self._all_prop_uris = list(self.schema_property_nx.nodes())
