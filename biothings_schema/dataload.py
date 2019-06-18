@@ -3,7 +3,6 @@ import json
 import yaml
 import networkx as nx
 
-from .curies import extract_name_from_uri_or_curie
 from .utils import dict2list
 
 SCHEMAORG_PATH = 'https://api.github.com/repos/schemaorg/schemaorg/contents/data/releases'
