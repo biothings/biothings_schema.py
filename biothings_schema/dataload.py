@@ -151,12 +151,13 @@ def load_schema_datatype_into_networkx(schema):
             G.add_node(record["@id"],
                        uri=record["@id"],
                        description=record["rdfs:comment"])
-        if "rdf:subClassOf" in record and record["rdf:subClassOf"]["@id"] != "rdfs:Class":
-            parents = dict2list(record["rdfs:subPropertyOf"])
-            for _parent in parents:
-                G.add_edge(_parent["@id"],
-                           record["@id"])
-        elif "@type" in record and "http://schema.org/DataType" in record["@type"]:
-            G.add_edge("http://schema.org/DataType", record["@id"])
+            if "rdfs:subClassOf" in record:
+                parents = dict2list(record["rdfs:subClassOf"])
+                for _parent in parents:
+                    if _parent["@id"] != "rdfs:Class":
+                        G.add_edge(_parent["@id"],
+                                   record["@id"])
+            elif "@type" in record and "http://schema.org/DataType" in record["@type"]:
+                G.add_edge("http://schema.org/DataType", record["@id"])
     return G
 
