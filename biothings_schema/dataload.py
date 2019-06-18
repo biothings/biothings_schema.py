@@ -160,4 +160,3 @@ def load_schema_datatype_into_networkx(schema):
             elif "@type" in record and "http://schema.org/DataType" in record["@type"]:
                 G.add_edge("http://schema.org/DataType", record["@id"])
     return G
-
