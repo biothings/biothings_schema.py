@@ -10,7 +10,7 @@ SCHEMAORG_PATH = 'https://raw.githubusercontent.com/schemaorg/schemaorg/master/d
 
 DATATYPES = ["http://schema.org/DataType", "http://schema.org/Boolean",
              "http://schema.org/False", "http://schema.org/True",
-             "http://schema.org/Data", "http://schema.org/DateTime",
+             "http://schema.org/Date", "http://schema.org/DateTime",
              "http://schema.org/Number", "http://schema.org/Integer",
              "http://schema.org/Float", "http://schema.org/Text",
              "http://schema.org/CssSelectorType", "http://schema.org/URL",
