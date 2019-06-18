@@ -271,6 +271,8 @@ class Schema():
         # merge together the given schema and the schema defined by schemaorg
         self.schema = merge_schema(self.schema_extension_only,
                                    self.schemaorg_schema)
+        # load datatype networkx graph
+        self.schema_datatype_nx = load_schema_datatype_into_networkx(self.schemaorg_schema)
 
     def load_default_schema(self):
         """Load default schema, either schema.org or biothings"""
@@ -278,6 +280,7 @@ class Schema():
         self.schema_nx = load_schema_class_into_networkx(self.schema)
         self.schema_nx_extension_only = load_schema_class_into_networkx(self.schema)
         self.schema_property_nx = load_schema_property_into_networkx(self.schema)
+        self.schema_datatype_nx = load_schema_datatype_into_networkx(self.schema)
 
     def full_schema_graph(self, size=None):
         """Visualize the full schema loaded using graphviz"""
@@ -425,23 +428,13 @@ class Schema():
 class SchemaClass():
     """Class representing an individual class in Schema
 
-    # TODO: Every class should have a prefix
-    # TODO: If no prefix is provided, the class/property could only be accessed using URI
-    # TODO: __str__ and __repr__ return curies 
-    # TODO: add prefix as property
-    # TODO: add label as property
-    # TODO: name should be normalized to curie
     # TODO: option to only display the name, rather than python class as results
     """
     def __init__(self, class_name, schema):
         self.defined_in_schema = True
         self.se = schema
         self.name = self.se.cls_converter.get_curie(class_name)
-        self.CLASS_REMOVE = ["Number", "Integer", "Float", "Text",
-                        "CssSelectorType", "URL", "XPathType", "Class",
-                        "DataType", "Boolean", "DateTime", "Date", "Time"]
-        self.CLASS_REMOVE = [('http://schema.org/' + _item) for _item in self.CLASS_REMOVE]
-        self.ALL_CLASSES = self.CLASS_REMOVE + list(self.se.schema_nx_extension_only.nodes())
+        self.ALL_CLASSES = list(self.se.schema_datatype_nx.nodes()) + list(self.se.schema_nx_extension_only.nodes())
         # if class is not defined in schema, raise warning
         if self.uri not in self.ALL_CLASSES:
             # raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
@@ -469,10 +462,16 @@ class SchemaClass():
     @property
     def description(self):
         if self.defined_in_schema:
-            if self.uri not in self.CLASS_REMOVE:
+            if self.uri in self.se.schema_nx.nodes():
                 # classes might not have descriptions
                 if 'description' in self.se.schema_nx.node[self.uri]:
                     return self.se.schema_nx.node[self.uri]['description']
+                else:
+                    return None
+            elif self.uri in self.se.schema_datatype_nx.nodes():
+                # classes might not have descriptions
+                if 'description' in self.se.schema_datatype_nx.node[self.uri]:
+                    return self.se.schema_datatype_nx.node[self.uri]['description']
                 else:
                     return None
             else:
@@ -621,7 +620,9 @@ class SchemaClass():
                           'curie': self.name,
                           'used_by': self.used_by(),
                           'child_classes': self.child_classes,
-                          'parent_classes': self.parent_classes}
+                          'parent_classes': self.parent_classes,
+                          'ancestor_classes': self.ancestor_classes,
+                          'descendant_classes': self.descendant_classes}
             return class_info
         else:
             return {}
@@ -717,7 +718,7 @@ class SchemaProperty():
                              'label': self.label}
             for record in self.se.schema["@graph"]:
                 if record["@type"] == "rdf:Property":
-                    if "rdfs:label" in record and record["rdfs:label"] == self.label:
+                    if record["@id"] == self.uri:
                         property_info["description"] = record["rdfs:comment"]
                         #property_info["uri"] = self.curie2uri(record["@id"])
                         if "http://schema.org/domainIncludes" in record:
