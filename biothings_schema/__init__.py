@@ -235,6 +235,8 @@ class Schema():
         # if @context is defined in schema, update it to local context
         if "@context" in self.schema:
             self.context.update(self.schema["@context"])
+        self._all_uris = list(self.schema_nx_extension_only.nodes())
+        self.converter = CurieUriConverter(self.context, self._all_uris)
 
     def extract_validation_info(self, schema=None, return_results=True):
         """Extract the $validation field and organize into self.validation"""
@@ -275,7 +277,11 @@ class Schema():
     def full_schema_graph(self, size=None):
         """Visualize the full schema loaded using graphviz"""
         edges = self.schema_nx_extension_only.edges()
-        return visualize(edges, size=size)
+        curie_edges = []
+        for _edge in edges:
+            curie_edges.append((self.converter.get_name(_edge[0]),
+                                self.converter.get_name(_edge[1])))
+        return visualize(curie_edges, size=size)
 
     def sub_schema_graph(self, source, include_parents=True, include_children=True, size=None):
         """Visualize a sub-graph of the schema based on a specific node
@@ -291,24 +297,30 @@ class Schema():
             parents.append(elements)
         # handle cases where user want to get all children
         if include_parents is False and include_children:
-            edges = list(nx.edge_bfs(self.schema_nx, [source]))
+            edges = list(nx.edge_bfs(self.schema_nx,
+                                     [self.converter.get_uri(source)]))
         # handle cases where user want to get all parents
         elif include_parents and include_children is False:
             edges = []
             for _path in parents:
-                _path.append(source)
+                _path.append(self.converter.get_name(source))
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
         # handle cases where user want to get both parents and children
         elif include_parents and include_children:
-            edges = list(nx.edge_bfs(self.schema_nx, [source]))
+            edges = list(nx.edge_bfs(self.schema_nx,
+                                     [self.converter.get_uri(source)]))
             for _path in parents:
-                _path.append(source)
+                _path.append(self.converter.get_name(source))
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
         else:
             raise ValueError("At least one of include_parents and include_children parameter need to be set to True")
-        return visualize(edges, size=size)
+        curie_edges = []
+        for _edge in edges:
+            curie_edges.append((self.converter.get_name(_edge[0]),
+                                self.converter.get_name(_edge[1])))
+        return visualize(curie_edges, size=size)
 
     def list_all_classes(self):
         """Find all classes defined in the schema"""
