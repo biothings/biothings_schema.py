@@ -1,5 +1,6 @@
 import os
 import json
+import warnings
 
 import networkx as nx
 from jsonschema import validate
@@ -235,8 +236,12 @@ class Schema():
         # if @context is defined in schema, update it to local context
         if "@context" in self.schema:
             self.context.update(self.schema["@context"])
-        self._all_uris = list(self.schema_nx_extension_only.nodes())
-        self.converter = CurieUriConverter(self.context, self._all_uris)
+        self._all_class_uris = list(self.schema_nx_extension_only.nodes())
+        self.cls_converter = CurieUriConverter(self.context,
+                                               self._all_class_uris)
+        self._all_prop_uris = list(self.schema_property_nx.nodes())
+        self.prop_converter = CurieUriConverter(self.context,
+                                                self._all_prop_uris)
 
     def extract_validation_info(self, schema=None, return_results=True):
         """Extract the $validation field and organize into self.validation"""
@@ -279,8 +284,8 @@ class Schema():
         edges = self.schema_nx_extension_only.edges()
         curie_edges = []
         for _edge in edges:
-            curie_edges.append((self.converter.get_name(_edge[0]),
-                                self.converter.get_name(_edge[1])))
+            curie_edges.append((self.cls_converter.get_name(_edge[0]),
+                                self.cls_converter.get_name(_edge[1])))
         return visualize(curie_edges, size=size)
 
     def sub_schema_graph(self, source, include_parents=True, include_children=True, size=None):
@@ -298,28 +303,28 @@ class Schema():
         # handle cases where user want to get all children
         if include_parents is False and include_children:
             edges = list(nx.edge_bfs(self.schema_nx,
-                                     [self.converter.get_uri(source)]))
+                                     [self.cls_converter.get_uri(source)]))
         # handle cases where user want to get all parents
         elif include_parents and include_children is False:
             edges = []
             for _path in parents:
-                _path.append(self.converter.get_name(source))
+                _path.append(self.cls_converter.get_name(source))
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
         # handle cases where user want to get both parents and children
         elif include_parents and include_children:
             edges = list(nx.edge_bfs(self.schema_nx,
-                                     [self.converter.get_uri(source)]))
+                                     [self.cls_converter.get_uri(source)]))
             for _path in parents:
-                _path.append(self.converter.get_name(source))
+                _path.append(self.cls_converter.get_name(source))
                 for i in range(0, len(_path) - 1):
                     edges.append((_path[i], _path[i + 1]))
         else:
             raise ValueError("At least one of include_parents and include_children parameter need to be set to True")
         curie_edges = []
         for _edge in edges:
-            curie_edges.append((self.converter.get_name(_edge[0]),
-                                self.converter.get_name(_edge[1])))
+            curie_edges.append((self.cls_converter.get_name(_edge[0]),
+                                self.cls_converter.get_name(_edge[1])))
         return visualize(curie_edges, size=size)
 
     def list_all_classes(self):
@@ -431,21 +436,16 @@ class SchemaClass():
     def __init__(self, class_name, schema):
         self.defined_in_schema = True
         self.se = schema
-        self._all_uris = list(self.se.schema_nx_extension_only.nodes())
-        self.converter = CurieUriConverter(self.se.context, self._all_uris)
-        self.name = self.converter.get_curie(class_name)
-        self.prefix = self.converter.get_prefix(class_name)
-        self.label = self.converter.get_name(class_name)
-        self.uri = self.converter.get_uri(class_name)
+        self.name = self.se.cls_converter.get_curie(class_name)
         self.CLASS_REMOVE = ["Number", "Integer", "Float", "Text",
                         "CssSelectorType", "URL", "XPathType", "Class",
                         "DataType", "Boolean", "DateTime", "Date", "Time"]
         self.CLASS_REMOVE = [('http://schema.org/' + _item) for _item in self.CLASS_REMOVE]
         self.ALL_CLASSES = self.CLASS_REMOVE + list(self.se.schema_nx_extension_only.nodes())
-        # if class is not defined in schema, raise ValueError
+        # if class is not defined in schema, raise warning
         if self.uri not in self.ALL_CLASSES:
             # raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
-            print('Class {} is not defined in Schema. Could not access it'.format(self.name))
+            warnings.warn('Class {} is not defined in Schema. Could not access it'.format(self.name))
             self.defined_in_schema = False
 
     def __repr__(self):
@@ -453,6 +453,18 @@ class SchemaClass():
 
     def __str__(self):
         return str(self.name)
+
+    @property
+    def prefix(self):
+        return self.se.cls_converter.get_prefix(self.name)
+
+    @property
+    def label(self):
+        return self.se.cls_converter.get_name(self.name)
+
+    @property
+    def uri(self):
+        return self.se.cls_converter.get_uri(self.name)
 
     @property
     def description(self):
@@ -622,16 +634,11 @@ class SchemaProperty():
     def __init__(self, property_name, schema):
         self.defined_in_schema = True
         self.se = schema
-        self._all_uris = list(self.se.schema_property_nx.nodes())
-        self.converter = CurieUriConverter(self.se.context, self._all_uris)
-        self.name = self.converter.get_curie(property_name)
-        self.prefix = self.converter.get_prefix(property_name)
-        self.label = self.converter.get_name(property_name)
-        self.uri = self.converter.get_uri(property_name)
+        self.name = self.se.prop_converter.get_curie(property_name)
         # if property is not defined in schema, raise ValueError
         if self.uri not in self.se.schema_property_nx.nodes():
             #raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
-            print('Property {} is not defined in Schema. Could not access it'.format(self.name))
+            warnings.warn('Property {} is not defined in Schema. Could not access it'.format(self.name))
             self.defined_in_schema = False
 
     def __repr__(self):
@@ -639,6 +646,18 @@ class SchemaProperty():
 
     def __str__(self):
         return str(self.name)
+
+    @property
+    def prefix(self):
+        return self.se.prop_converter.get_prefix(self.name)
+
+    @property
+    def label(self):
+        return self.se.prop_converter.get_name(self.name)
+
+    @property
+    def uri(self):
+        return self.se.prop_converter.get_uri(self.name)
 
     @property
     def description(self):
