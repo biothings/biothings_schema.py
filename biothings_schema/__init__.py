@@ -434,7 +434,7 @@ class SchemaClass():
         self.defined_in_schema = True
         self.se = schema
         self.name = self.se.cls_converter.get_curie(class_name)
-        self.ALL_CLASSES = list(self.se.schema_datatype_nx.nodes()) + list(self.se.schema_nx_extension_only.nodes())
+        self.ALL_CLASSES = list(self.se.schema_datatype_nx.nodes()) + list(self.se.schema_nx.nodes())
         # if class is not defined in schema, raise warning
         if self.uri not in self.ALL_CLASSES:
             # raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
@@ -532,9 +532,9 @@ class SchemaClass():
                         # some property doesn't have domainInclude/rangeInclude parameter
                         if "http://schema.org/domainIncludes" in record:
                             if isinstance(record["http://schema.org/domainIncludes"], dict) and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
-                                properties.append(SchemaProperty(extract_name_from_uri_or_curie(record["@id"]), self.se))
+                                properties.append(SchemaProperty(record["@id"], self.se))
                             elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
-                                properties.append(SchemaProperty(extract_name_from_uri_or_curie(record["@id"]), self.se))
+                                properties.append(SchemaProperty(record["@id"], self.se))
                 return properties
         if self.defined_in_schema:
             if class_specific:
