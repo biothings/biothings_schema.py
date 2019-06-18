@@ -629,7 +629,7 @@ class SchemaClass():
         :arg str class_uri: The URI of the class which has JSON schema
         """
         if not self.uri in self.se.validation:
-            raise RuntimeError("$validation is not defined for {} field; thus the json document could not be validated".format(self.curie))
+            raise RuntimeError("$validation is not defined for {} field; thus the json document could not be validated".format(self.name))
         else:
             validate(json_doc, self.se.validation[self.uri])
             print('The JSON document is valid')
