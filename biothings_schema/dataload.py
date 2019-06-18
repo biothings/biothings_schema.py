@@ -6,7 +6,7 @@ import networkx as nx
 from .curies import extract_name_from_uri_or_curie
 from .utils import dict2list
 
-SCHEMAORG_PATH = 'https://raw.githubusercontent.com/schemaorg/schemaorg/master/data/releases/3.7/all-layers.jsonld'
+SCHEMAORG_PATH = 'https://api.github.com/repos/schemaorg/schemaorg/contents/data/releases'
 
 DATATYPES = ["http://schema.org/DataType", "http://schema.org/Boolean",
              "http://schema.org/False", "http://schema.org/True",
@@ -63,6 +63,19 @@ def normalize_rdfs_label_field(schema):
     return schema
 
 
+def get_latest_schemaorg_version():
+    """Get the latest version of schemaorg from its github"""
+    response = load_json_or_yaml(SCHEMAORG_PATH)
+    versions = [float(_item['name']) for _item in response if 'name' in _item]
+    versions.sort()
+    return str(versions[-1])
+
+
+def construct_schemaorg_url(version):
+    """Construct url to schemaorg jsonld file"""
+    return "https://raw.githubusercontent.com/schemaorg/schemaorg/master/data/releases/" + str(version) + "/all-layers.jsonld"
+
+
 def load_schemaorg(version=None, verbose=False):
     """Load SchemOrg vocabulary
 
@@ -70,18 +83,14 @@ def load_schemaorg(version=None, verbose=False):
     """
     # if version is not specified, use the latest one by default
     if not version:
-        if verbose:
-            print('Schema.org schema is loaded from {}'.format(SCHEMAORG_PATH))
-        return load_json_or_yaml(SCHEMAORG_PATH)
-    # if version is specified, try query that version
-    else:
-        schemaorg_path = 'https://schema.org/version/' + str(version) + '/schema.jsonld'
-        try:
-            return load_json_or_yaml(schemaorg_path)
-        except ValueError:
-            raise ValueError("version {} is not valid! Example version: 3.6".format(version))
-        if verbose:
-            print("Schema.org schema is loaded from {}".format(schemaorg_path))
+        version = get_latest_schemaorg_version()
+    url = construct_schemaorg_url(version)
+    if verbose:
+        print("Loading Schema.org schema from {}".format(url))
+    try:
+        return load_json_or_yaml(url)
+    except ValueError:
+        raise ValueError("version {} is not valid! Current latest version is {}".format(version, get_latest_schemaorg_version()))
 
 
 def load_schema_class_into_networkx(schema, preload_schemaorg=False):
