@@ -4,8 +4,17 @@ import yaml
 import networkx as nx
 
 from .curies import extract_name_from_uri_or_curie
+from .utils import dict2list
 
 SCHEMAORG_PATH = 'https://raw.githubusercontent.com/schemaorg/schemaorg/master/data/releases/3.7/all-layers.jsonld'
+
+DATATYPES = ["http://schema.org/DataType", "http://schema.org/Boolean",
+             "http://schema.org/False", "http://schema.org/True",
+             "http://schema.org/Data", "http://schema.org/DateTime",
+             "http://schema.org/Number", "http://schema.org/Integer",
+             "http://schema.org/Float", "http://schema.org/Text",
+             "http://schema.org/CssSelectorType", "http://schema.org/URL",
+             "http://schema.org/XPathType", "http://schema.org/Time"]
 
 
 def load_json_or_yaml(file_path):
@@ -83,17 +92,8 @@ def load_schema_class_into_networkx(schema, preload_schemaorg=False):
                                             preload_schemaorg=False)
     else:
         G = nx.DiGraph()
-    CLASS_REMOVE = ["http://schema.org/Number",
-                    "http://schema.org/Integer",
-                    "http://schema.org/Float",
-                    "http://schema.org/Text",
-                    "http://schema.org/CssSelectorType",
-                    "http://schema.org/URL",
-                    "http://schema.org/XPathType",
-                    "http://schema.org/Class",
-                    "http://schema.org/DataType"]
     for record in schema["@graph"]:
-        if record["@type"] == "rdfs:Class" and record["@id"] not in CLASS_REMOVE:
+        if record["@type"] == "rdfs:Class" and record["@id"] not in DATATYPES:
             G.add_node(record["@id"],
                        uri=record["@id"],
                        description=record["rdfs:comment"])
@@ -144,6 +144,19 @@ def load_schema_property_into_networkx(schema, preload_schemaorg=False):
 
 def load_schema_datatype_into_networkx(schema):
     """Construct networkx DiGraph for data types based on Schema provided"""
+
     G = nx.DiGraph()
     for record in schema["@graph"]:
+        if record["@id"] in DATATYPES:
+            G.add_node(record["@id"],
+                       uri=record["@id"],
+                       description=record["rdfs:comment"])
+        if "rdf:subClassOf" in record and record["rdf:subClassOf"]["@id"] != "rdfs:Class":
+            parents = dict2list(record["rdfs:subPropertyOf"])
+            for _parent in parents:
+                G.add_edge(_parent["@id"],
+                           record["@id"])
+        elif "@type" in record and "http://schema.org/DataType" in record["@type"]:
+            G.add_edge("http://schema.org/DataType", record["@id"])
+    return G
 
