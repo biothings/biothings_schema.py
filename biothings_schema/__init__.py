@@ -116,6 +116,7 @@ class SchemaValidator():
         if _id != record["rdfs:label"]:
             raise ValueError("id and label not match: {}".format(record))
 
+"""
     def check_duplicate_labels(self):
         """ Check for duplication in the schema
         """
@@ -123,6 +124,7 @@ class SchemaValidator():
         duplicates = find_duplicates(labels)
         if duplicates:
             raise ValueError('Duplicates detected in graph: {}'.format(duplicates))
+"""
 
     def validate_schema(self, schema):
         """Validate schema against SchemaORG standard
@@ -402,16 +404,15 @@ class Schema():
         """
         SchemaValidator(self.schema_extension_only, self.schema_nx).validate_class_schema(class_info)
         self.schema["@graph"].append(class_info)
-        SchemaValidator(self.schema_extension_only, self.schema_nx).validate_full_schema()
+        self.load_schema(self.schema)
         print("Updated the class {} successfully!".format(class_info["rdfs:label"]))
-        self.schema_nx = load_schema_class_into_networkx(self.schema)         # pylint: disable=attribute-defined-outside-init
 
     def update_property(self, property_info):
         """Add a new property into schema
         """
         SchemaValidator(self.schema_extension_only, self.schema_nx).validate_property_schema(property_info)
         self.schema["@graph"].append(property_info)
-        SchemaValidator(self.schema_extension_only, self.schema_nx).validate_schema(self.schema)
+        self.load_schema(self.schema)
         print("Updated the property {} successfully!".format(property_info["rdfs:label"]))
 
     def export_schema(self, file_path):
