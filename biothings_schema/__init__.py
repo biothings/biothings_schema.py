@@ -173,8 +173,8 @@ class SchemaValidator():
                 properties = schema["$validation"]["properties"].keys()
                 # find all parents of the class
                 paths = nx.all_simple_paths(self.schema_nx,
-                                            source='Thing',
-                                            target=schema["rdfs:label"])
+                                            source='http://schema.org/Thing',
+                                            target=schema["@id"])
                 parent_classes = set()
                 for _path in paths:
                     for _item in _path:
@@ -187,7 +187,7 @@ class SchemaValidator():
                         if _record["rdfs:label"] == _property:
                             domainincludes_value = dict2list(_record["http://schema.org/domainIncludes"])
                             for record in domainincludes_value:
-                                if extract_name_from_uri_or_curie(record["@id"]) in parent_classes:
+                                if record["@id"] in parent_classes:
                                     matched = True
                     if not matched:
                         raise ValueError('field {} in $validation is not correctly documented'.format(_property))
@@ -359,21 +359,6 @@ class Schema():
             return [SchemaProperty(_item, self) for _item in uris]
         else:
             return SchemaProperty(property_name, self)
-
-    def validate_against_schema(self, json_doc, class_uri):
-        """Validate a json document against it's JSON schema defined in Schema
-
-        :arg dict json_doc: The JSON Document to be validated
-        :arg str class_uri: The URI of the class which has JSON schema
-        """
-        if not self.validation:
-            raise RuntimeError("The Schema File doesn't contain any validation field")
-        elif class_uri not in self.validation:
-            raise KeyError("{} not in the the list of URIs [{}] which has JSON-Schema embed".format(class_uri,
-                                          list(self.validation.keys())))
-        else:
-            validate(json_doc, self.validation[class_uri])
-            print('The JSON document is valid')
 
     def generate_class_template(self):
         """Generate a template for schema class
@@ -637,6 +622,18 @@ class SchemaClass():
         else:
             return {}
 
+    def validate_against_schema(self, json_doc):
+        """Validate a json document against it's JSON schema defined in Schema
+
+        :arg dict json_doc: The JSON Document to be validated
+        :arg str class_uri: The URI of the class which has JSON schema
+        """
+        if not self.uri in self.se.validation:
+            raise RuntimeError("$validation is not defined for {} field; thus the json document could not be validated".format(self.curie))
+        else:
+            validate(json_doc, self.se.validation[self.uri])
+            print('The JSON document is valid')
+
 
 class SchemaProperty():
     """Class representing an individual property in Schema
@@ -697,7 +694,7 @@ class SchemaProperty():
         """Find schema properties that directly inherit from the given property
         """
         if self.defined_in_schema:
-            children =  list(self.se.schema_property_nx.successors(self.uri))
+            children = list(self.se.schema_property_nx.successors(self.uri))
             children = [SchemaProperty(_child, self.se) for _child in children]
             return children
         else:
