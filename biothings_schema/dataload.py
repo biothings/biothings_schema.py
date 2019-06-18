@@ -54,14 +54,15 @@ def normalize_rdfs_label_field(schema):
     return schema
 
 
-def load_schemaorg(version=None):
+def load_schemaorg(version=None, verbose=False):
     """Load SchemOrg vocabulary
 
     :arg float version: The schemaorg schema version, e.g 3.7
     """
     # if version is not specified, use the latest one by default
     if not version:
-        print('Schema.org schema is loaded from {}'.format(SCHEMAORG_PATH))
+        if verbose:
+            print('Schema.org schema is loaded from {}'.format(SCHEMAORG_PATH))
         return load_json_or_yaml(SCHEMAORG_PATH)
     # if version is specified, try query that version
     else:
@@ -70,7 +71,8 @@ def load_schemaorg(version=None):
             return load_json_or_yaml(schemaorg_path)
         except ValueError:
             raise ValueError("version {} is not valid! Example version: 3.6".format(version))
-        print("Schema.org schema is loaded from {}".format(schemaorg_path))
+        if verbose:
+            print("Schema.org schema is loaded from {}".format(schemaorg_path))
 
 
 def load_schema_class_into_networkx(schema, preload_schemaorg=False):
@@ -138,3 +140,10 @@ def load_schema_property_into_networkx(schema, preload_schemaorg=False):
             else:
                 pass
     return G
+
+
+def load_schema_datatype_into_networkx(schema):
+    """Construct networkx DiGraph for data types based on Schema provided"""
+    G = nx.DiGraph()
+    for record in schema["@graph"]:
+
