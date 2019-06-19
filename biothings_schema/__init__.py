@@ -116,15 +116,14 @@ class SchemaValidator():
         if _id != record["rdfs:label"]:
             raise ValueError("id and label not match: {}".format(record))
 
-"""
+    """
     def check_duplicate_labels(self):
-        """ Check for duplication in the schema
-        """
+        #Check for duplication in the schema
         labels = [_record['rdfs:label'] for _record in self.extension_schema["schema"]["@graph"]]
         duplicates = find_duplicates(labels)
         if duplicates:
             raise ValueError('Duplicates detected in graph: {}'.format(duplicates))
-"""
+    """
 
     def validate_schema(self, schema):
         """Validate schema against SchemaORG standard
@@ -199,7 +198,7 @@ class SchemaValidator():
     def validate_full_schema(self):
         """ Main function to validate schema
         """
-        self.check_duplicate_labels()
+        #self.check_duplicate_labels()
         for record in self.extension_schema['schema']['@graph']:
             self.check_whether_atid_and_label_match(record)
             if record['@type'] == "rdfs:Class":
@@ -211,8 +210,8 @@ class SchemaValidator():
                 self.validate_property_label(record["@id"])
                 self.validate_domainIncludes_field(record["http://schema.org/domainIncludes"])
                 self.validate_rangeIncludes_field(record["http://schema.org/rangeIncludes"])
-            else:
-                raise ValueError('wrong @type value found: {}'.format(record))
+            #else:
+                # raise ValueError('wrong @type value found: {}'.format(record))
 
 
 class Schema():
