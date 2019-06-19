@@ -706,7 +706,8 @@ class SchemaProperty():
                              'domain': self.domain,
                              'range': self.range,
                              'uri': self.uri,
-                             'label': self.label}
+                             'label': self.label,
+                             'description': self.description}
             return property_info
         else:
             return {}
