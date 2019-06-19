@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 import requests
 import yaml
@@ -120,33 +121,71 @@ def find_parent_child_relation(record, _type="Class"):
     return edges
 
 
+def find_domain_range(record):
+    """Find domain and range info of a record in schema"""
+    response = {"domain": [], "range": []}
+    if "http://schema.org/domainIncludes" in record:
+        if isinstance(record["http://schema.org/domainIncludes"], dict):
+            response["domain"] = [record["http://schema.org/domainIncludes"]["@id"]]
+        elif isinstance(record["http://schema.org/domainIncludes"], list):
+            response["domain"] = [_item["@id"] for _item in record["http://schema.org/domainIncludes"]]
+    if "http://schema.org/rangeIncludes" in record:
+        if isinstance(record["http://schema.org/rangeIncludes"], dict):
+            response["range"] = [record["http://schema.org/rangeIncludes"]["@id"]]
+        elif isinstance(record["http://schema.org/rangeIncludes"], list):
+            response["range"] = [_item["@id"] for _item in record["http://schema.org/rangeIncludes"]]
+    return (response["domain"], response["range"])
+
+
 def load_schema_into_networkx(schema, load_class=True, load_property=True, load_datatype=True):
     """Construct networkx DiGraph based on Schema provided"""
     # initialize DiGraph for classes, properties and data types
-    G_cls, G_prop, G_dtype = nx.DiGraph(), nx.DiGraph(), nx.DiGraph()
-    edges_cls, edges_prop, edges_dtype = [], [], []
+    G = nx.DiGraph()
+    edges = []
+    classes = {}
     for record in schema["@graph"]:
         if record["@id"] in DATATYPES and load_datatype:
-            G_dtype.add_node(record["@id"],
-                             description=record["rdfs:comment"])
-            edges_dtype += find_parent_child_relation(record)
+            G.add_node(record["@id"],
+                       description=record["rdfs:comment"],
+                       type="DataType")
+            edges += find_parent_child_relation(record)
         elif record["@type"] == "rdfs:Class" and load_class:
-                # add class as node
-                G_cls.add_node(record["@id"],
-                               description=record["rdfs:comment"])
-                # add class edges
-                edges_cls += find_parent_child_relation(record)
+            if record["@id"] in classes:
+                classes[record["@id"]]["description"] = record["rdfs:comment"]
+                classes[record["@id"]]["type"] = "Class"
+            else:
+                classes[record["@id"]] = {"description": record["rdfs:comment"],
+                                          "type": "Class",
+                                          "properties": [],
+                                          "used_by": []}
+            # add class edges
+            edges += find_parent_child_relation(record)
         elif record["@type"] == "rdf:Property" and load_property:
-            G_prop.add_node(record["@id"],
-                            description=record["rdfs:comment"])
-            edges_prop += find_parent_child_relation(record, _type="Property")
-    G_cls.add_edges_from(edges_cls)
-    G_prop.add_edges_from(edges_prop)
-    G_dtype.add_edges_from(edges_dtype)
-    return (G_cls, G_prop, G_dtype)
+            _domain, _range = find_domain_range(record)
+            G.add_node(record["@id"],
+                       description=record["rdfs:comment"],
+                       domain=_domain,
+                       range=_range,
+                       type="Property")
+            for _id in _domain:
+                if _id not in classes:
+                    classes[_id] = {"properties": [record["@id"]],
+                                    "type": "Class",
+                                    "used_by": []}
+                else:
+                    classes[_id]["properties"].append(record["@id"])
+            for _id in _range:
+                if _id not in classes:
+                    classes[_id] = {"used_by": [record["@id"]],
+                                    "type": "Class",
+                                    "properties": []}
+                else:
+                    classes[_id]["used_by"].append(record["@id"])
+            edges += find_parent_child_relation(record, _type="Property")
+    G.add_edges_from(edges)
+    G.add_nodes_from(list(classes.items()))
 
-
-
+    return G
 
 
 def load_schema_class_into_networkx(schema, preload_schemaorg=False):
