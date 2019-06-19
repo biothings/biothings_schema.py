@@ -56,7 +56,7 @@ class SchemaValidator():
                     self.schemaorg['properties'].append(_record["@id"])
                 elif "rdfs:Class" in _type:
                     self.schemaorg['classes'].append(_record["@id"])
-        self.extension_schema = {'schema': expand_curies_in_schema(schema),
+        self.extension_schema = {'schema': preprocess_schema(schema),
                                  'classes': [],
                                  'properties': []}
         for _record in self.extension_schema['schema']["@graph"]:
@@ -244,44 +244,34 @@ class Schema():
         self.prop_converter = CurieUriConverter(self.context,
                                                 self._all_prop_uris)
 
-    def extract_validation_info(self, schema=None, return_results=True):
-        """Extract the $validation field and organize into self.validation"""
-        self.validation = {}
-        # if no schema is provided, try self.schema
-        if not schema:
-            schema = self.schema
-        if "@graph" not in schema:
-            raise ValueError('No valid schmea provided')
-        for _doc in schema['@graph']:
+    @property
+    def validation(self):
+        validation_info = {}
+        for _doc in self.schema_extension_only['@graph']:
             if "$validation" in _doc:
-                self.validation[_doc['@id']] = _doc['$validation']
-        if return_results:
-            return self.validation
+                validation_info[_doc["@id"]] = _doc["$validation"]
+        return validation_info
 
     def load_schema(self, schema):
         """Load schema and convert it to networkx graph"""
-        self.schema_extension_only = normalize_rdfs_label_field(expand_curies_in_schema(load_json_or_yaml(schema)))
-        self.extract_validation_info(schema=self.schema_extension_only,
-                                     return_results=False)
-        self.schemaorg_schema = normalize_rdfs_label_field(expand_curies_in_schema(load_schemaorg()))
-        self.schema_nx = load_schema_class_into_networkx(self.schemaorg_schema,
-                                                   self.schema_extension_only)
-        self.schema_nx_extension_only = load_schema_class_into_networkx(self.schema_extension_only)
-        self.schema_property_nx = load_schema_property_into_networkx(self.schemaorg_schema, self.schema_extension_only)
+        self.load_default_schema()
+        self.schema_extension_only = preprocess_schema(load_json_or_yaml(schema))
+        self.schema_nx_extension_only, self.schema_property_nx_extension, self.schema_datatype_nx_extension = load_schema_into_networkx(self.schema_extension_only)
+        self.schema_nx = merge_schema_networkx(self.schema_nx, self.schema_nx_extension_only)
+        self.schema_property_nx = merge_schema_networkx(self.schema_property_nx, self.schema_property_nx_extension)
+        self.schema_datatype_nx = merge_schema_networkx(self.schema_datatype_nx, self.schema_datatype_nx_extension)
         SchemaValidator(self.schema_extension_only, self.schema_nx).validate_full_schema()
         # merge together the given schema and the schema defined by schemaorg
         self.schema = merge_schema(self.schema_extension_only,
                                    self.schemaorg_schema)
-        # load datatype networkx graph
-        self.schema_datatype_nx = load_schema_datatype_into_networkx(self.schemaorg_schema)
 
     def load_default_schema(self):
         """Load default schema, either schema.org or biothings"""
-        self.schema = load_schemaorg()
-        self.schema_nx = load_schema_class_into_networkx(self.schema)
-        self.schema_nx_extension_only = load_schema_class_into_networkx(self.schema)
-        self.schema_property_nx = load_schema_property_into_networkx(self.schema)
-        self.schema_datatype_nx = load_schema_datatype_into_networkx(self.schema)
+        self.schema = preprocess_schema(load_schemaorg())
+        self.schemaorg_schema = self.schema
+        self.schema_extension_only = self.schema
+        self.schema_nx, self.schema_property_nx, self.schema_datatype_nx = load_schema_into_networkx(self.schema)
+        self.schema_nx_extension_only = self.schema_nx
 
     def full_schema_graph(self, size=None):
         """Visualize the full schema loaded using graphviz"""
@@ -516,21 +506,18 @@ class SchemaClass():
         """
         def find_class_specific_properties(schema_class):
             """Find properties specifically associated with a given class"""
-            if 'uri' not in self.se.schema_nx.node[schema_class]:
-                return []
-            else:
-                schema_uri = self.se.schema_nx.node[schema_class]["uri"]
-                properties = []
-                for record in self.se.schema["@graph"]:
-                    # look for record which is property only
-                    if record['@type'] == "rdf:Property":
-                        # some property doesn't have domainInclude/rangeInclude parameter
-                        if "http://schema.org/domainIncludes" in record:
-                            if isinstance(record["http://schema.org/domainIncludes"], dict) and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
-                                properties.append(SchemaProperty(record["@id"], self.se))
-                            elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
-                                properties.append(SchemaProperty(record["@id"], self.se))
-                return properties
+            schema_uri = self.se.cls_converter.get_uri(schema_class)
+            properties = []
+            for record in self.se.schema["@graph"]:
+                # look for record which is property only
+                if record['@type'] == "rdf:Property":
+                    # some property doesn't have domainInclude/rangeInclude parameter
+                    if "http://schema.org/domainIncludes" in record:
+                        if isinstance(record["http://schema.org/domainIncludes"], dict) and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
+                            properties.append(SchemaProperty(record["@id"], self.se))
+                        elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
+                            properties.append(SchemaProperty(record["@id"], self.se))
+            return properties
         if self.defined_in_schema:
             if class_specific:
                 properties = [{'class': self.name,
