@@ -232,7 +232,6 @@
     "@id",
     "@type",
     "rdfs:comment",
-    "rdfs:label",
-    "rdfs:subClassOf"
+    "rdfs:label"
   ]
 }
