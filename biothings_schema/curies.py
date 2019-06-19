@@ -173,6 +173,8 @@ def expand_curies_in_schema(schema):
                 new_record[expand_curie_to_uri(k, context)] = {"@id": expand_curie_to_uri(v["@id"], context)}
             elif v is None:
                 new_record[expand_curie_to_uri(k, context)] = None
+            else:
+                new_record[expand_curie_to_uri(k, context)] = v
         new_schema["@graph"].append(new_record)
     return new_schema
 
