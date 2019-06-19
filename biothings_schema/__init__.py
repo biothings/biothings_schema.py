@@ -237,10 +237,10 @@ class Schema():
         # if @context is defined in schema, update it to local context
         if "@context" in self.schema:
             self.context.update(self.schema["@context"])
-        self._all_class_uris = list(self.schema_nx_extension_only.nodes()) + list(self.schema_datatype_nx.nodes())
+        self._all_class_uris = [node for node,attrdict in self.schema_nx.node.items() if attrdict['type'] in ['Class', 'DataType']]
         self.cls_converter = CurieUriConverter(self.context,
                                                self._all_class_uris)
-        self._all_prop_uris = list(self.schema_property_nx.nodes())
+        self._all_prop_uris = list(self.property_only_graph.nodes())
         self.prop_converter = CurieUriConverter(self.context,
                                                 self._all_prop_uris)
 
@@ -255,27 +255,42 @@ class Schema():
     def load_schema(self, schema):
         """Load schema and convert it to networkx graph"""
         self.load_default_schema()
+        # load JSON-LD file of user defined schema
         self.schema_extension_only = preprocess_schema(load_json_or_yaml(schema))
-        self.schema_nx_extension_only, self.schema_property_nx_extension, self.schema_datatype_nx_extension = load_schema_into_networkx(self.schema_extension_only)
-        self.schema_nx = merge_schema_networkx(self.schema_nx, self.schema_nx_extension_only)
-        self.schema_property_nx = merge_schema_networkx(self.schema_property_nx, self.schema_property_nx_extension)
-        self.schema_datatype_nx = merge_schema_networkx(self.schema_datatype_nx, self.schema_datatype_nx_extension)
+        # convert user defined schema into a networkx DiGraph
+        self.schema_extension_nx = load_schema_into_networkx(self.schema_extension_only)
+        # update undefined classes/properties
+        undefined_nodes = [node for node, attrdict in self.schema_extension_nx.node.items() if not attrdict]
+        attr_dict = {}
+        for _node in undefined_nodes:
+            if _node in self.schemaorg_nx.nodes():
+                attr_dict[_node] = self.schemaorg_nx.nodes[_node]
+        nx.set_node_attributes(self.schema_extension_nx, attr_dict)
+        # merge networkx graph of user-defined schema with networkx graph of schema defined by Schema.org
+        self.schema_nx = merge_schema_networkx(self.schemaorg_nx, self.schema_extension_nx)
         SchemaValidator(self.schema_extension_only, self.schema_nx).validate_full_schema()
         # merge together the given schema and the schema defined by schemaorg
         self.schema = merge_schema(self.schema_extension_only,
                                    self.schemaorg_schema)
+        self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.node.items() if attrdict['type'] == 'Class'])
+        self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Class'])
+        self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Property'])
 
     def load_default_schema(self):
         """Load default schema, either schema.org or biothings"""
         self.schema = preprocess_schema(load_schemaorg())
         self.schemaorg_schema = self.schema
         self.schema_extension_only = self.schema
-        self.schema_nx, self.schema_property_nx, self.schema_datatype_nx = load_schema_into_networkx(self.schema)
-        self.schema_nx_extension_only = self.schema_nx
+        self.schemaorg_nx = load_schema_into_networkx(self.schema)
+        self.schema_extension_nx = self.schemaorg_nx
+        self.schema_nx = self.schemaorg_nx
+        self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.node.items() if attrdict['type'] == 'Class'])
+        self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Class'])
+        self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Property'])
 
     def full_schema_graph(self, size=None):
         """Visualize the full schema loaded using graphviz"""
-        edges = self.schema_nx_extension_only.edges()
+        edges = self.extended_class_only_graph.edges()
         curie_edges = []
         for _edge in edges:
             curie_edges.append((self.cls_converter.get_label(_edge[0]),
@@ -296,7 +311,7 @@ class Schema():
             parents.append(elements)
         # handle cases where user want to get all children
         if include_parents is False and include_children:
-            edges = list(nx.edge_bfs(self.schema_nx,
+            edges = list(nx.edge_bfs(self.full_class_only_graph,
                                      [self.cls_converter.get_uri(source)]))
         # handle cases where user want to get all parents
         elif include_parents and include_children is False:
@@ -307,7 +322,7 @@ class Schema():
                     edges.append((_path[i], _path[i + 1]))
         # handle cases where user want to get both parents and children
         elif include_parents and include_children:
-            edges = list(nx.edge_bfs(self.schema_nx,
+            edges = list(nx.edge_bfs(self.full_class_only_graph,
                                      [self.cls_converter.get_uri(source)]))
             for _path in parents:
                 _path.append(self.cls_converter.get_label(source))
@@ -323,13 +338,13 @@ class Schema():
 
     def list_all_classes(self):
         """Find all classes defined in the schema"""
-        classes = list(self.schema_nx_extension_only.nodes())
+        classes = list(self.extended_class_only_graph.nodes())
         classes = [SchemaClass(_cls, self) for _cls in classes]
         return classes
 
     def list_all_properties(self):
         """Find all properties defined in the schema"""
-        properties = list(self.schema_property_nx.nodes())
+        properties = list(self.property_only_graph.nodes())
         properties = [SchemaProperty(_prop, self) for _prop in properties]
         return properties
 
@@ -399,7 +414,7 @@ class Schema():
     def update_property(self, property_info):
         """Add a new property into schema
         """
-        SchemaValidator(self.schema_extension_only, self.schema_nx).validate_property_schema(property_info)
+        SchemaValidator(self.schema_extension_only, self.full_schema_graph).validate_property_schema(property_info)
         self.schema["@graph"].append(property_info)
         self.load_schema(self.schema)
         print("Updated the property {} successfully!".format(property_info["rdfs:label"]))
@@ -419,9 +434,8 @@ class SchemaClass():
         self.defined_in_schema = True
         self.se = schema
         self.name = self.se.cls_converter.get_curie(class_name)
-        self.ALL_CLASSES = list(self.se.schema_datatype_nx.nodes()) + list(self.se.schema_nx.nodes())
         # if class is not defined in schema, raise warning
-        if self.uri not in self.ALL_CLASSES:
+        if self.uri not in self.se._all_class_uris:
             # raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
             warnings.warn('Class {} is not defined in Schema. Could not access it'.format(self.name))
             self.defined_in_schema = False
@@ -447,16 +461,10 @@ class SchemaClass():
     @property
     def description(self):
         if self.defined_in_schema:
-            if self.uri in self.se.schema_nx.nodes():
+            if self.uri in self.se.full_class_only_graph.nodes():
                 # classes might not have descriptions
-                if 'description' in self.se.schema_nx.node[self.uri]:
+                if 'description' in self.se.full_class_only_graph.node[self.uri]:
                     return self.se.schema_nx.node[self.uri]['description']
-                else:
-                    return None
-            elif self.uri in self.se.schema_datatype_nx.nodes():
-                # classes might not have descriptions
-                if 'description' in self.se.schema_datatype_nx.node[self.uri]:
-                    return self.se.schema_datatype_nx.node[self.uri]['description']
                 else:
                     return None
             else:
@@ -467,7 +475,7 @@ class SchemaClass():
     @property
     def ancestor_classes(self):
         if self.defined_in_schema:
-            ancestors = list(nx.ancestors(self.se.schema_nx, self.uri))
+            ancestors = list(nx.ancestors(self.se.full_class_only_graph, self.uri))
             ancestors = [SchemaClass(_ancestor, self.se) for _ancestor in ancestors]
             return ancestors
         else:
@@ -477,14 +485,14 @@ class SchemaClass():
     def parent_classes(self):
         """Find all parents of a specific class"""
         if self.defined_in_schema:
-            root_node = list(nx.topological_sort(self.se.schema_nx))
+            root_node = list(nx.topological_sort(self.se.full_class_only_graph))
             # When a schema is not a tree with only one root node
             # Set "Thing" as the root node by default
             if 'http://schema.org/Thing' in root_node:
                 root_node = 'http://schema.org/Thing'
             else:
                 root_node = root_node[0]
-            paths = nx.all_simple_paths(self.se.schema_nx,
+            paths = nx.all_simple_paths(self.se.full_class_only_graph,
                                         source=root_node,
                                         target=self.uri)
             paths =  [_path[:-1] for _path in paths]
@@ -504,37 +512,24 @@ class SchemaClass():
         :arg boolean class_specific: specify whether only to return class specific properties or not
         :arg boolean group_by_class: specify whether the output should be grouped by class or not
         """
-        def find_class_specific_properties(schema_class):
-            """Find properties specifically associated with a given class"""
-            schema_uri = self.se.cls_converter.get_uri(schema_class)
-            properties = []
-            for record in self.se.schema["@graph"]:
-                # look for record which is property only
-                if record['@type'] == "rdf:Property":
-                    # some property doesn't have domainInclude/rangeInclude parameter
-                    if "http://schema.org/domainIncludes" in record:
-                        if isinstance(record["http://schema.org/domainIncludes"], dict) and record["http://schema.org/domainIncludes"]["@id"] == schema_uri:
-                            properties.append(SchemaProperty(record["@id"], self.se))
-                        elif isinstance(record["http://schema.org/domainIncludes"], list) and [item for item in record["http://schema.org/domainIncludes"] if item["@id"] == schema_uri] != []:
-                            properties.append(SchemaProperty(record["@id"], self.se))
-            return properties
         if self.defined_in_schema:
             if class_specific:
                 properties = [{'class': self.name,
-                               'properties': find_class_specific_properties(self.uri)}]
+                               'properties': [SchemaProperty(_property, self.se) for _property in self.se.full_class_only_graph.nodes[self.uri]['properties']]}]
             else:
                 # find all parent classes
                 parents = [[_item.uri for _item in _cls] for _cls in self.parent_classes]
                 properties = [{'class': self.name,
-                               'properties': find_class_specific_properties(self.uri)}]
+                               'properties': [SchemaProperty(_property, self.se) for _property in self.se.full_class_only_graph.nodes[self.uri]['properties']]}]
                 # update properties, each dict represent properties associated with
                 # the class
                 for path in parents:
                     path.reverse()
                     for _parent in path:
+                        parent_uri = self.se.cls_converter.get_uri(_parent)
                         properties.append({
                             "class": _parent,
-                            "properties": find_class_specific_properties(_parent)
+                            "properties": [SchemaProperty(_property, self.se) for _property in self.se.full_class_only_graph.nodes[parent_uri]['properties']]
                         })
             if group_by_class:
                 return properties
@@ -548,32 +543,20 @@ class SchemaClass():
 
     def used_by(self):
         """Find where a given class is used as a value of a property"""
-        usages = []
         if not self.defined_in_schema:
-            return usages
+            return []
         else:
-            for record in self.se.schema["@graph"]:
-                usage = {}
-                if record["@type"] == "rdf:Property":
-                    if "http://schema.org/rangeIncludes" in record:
-                        p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                        for _doc in p_range:
-                            if _doc['@id'] == self.uri:
-                                usage["property"] = SchemaProperty(record["@id"], self.se)
-                                p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                                cls_using_property = [record["@id"] for record in p_domain]
-                                usage["property_used_on_class"] = [SchemaClass(_cls, self.se) for _cls in cls_using_property]
-                                usage["description"] = record["rdfs:comment"]
-                if usage:
-                    usages.append(usage)
-            return usages
+            if 'used_by' in self.se.full_class_only_graph.nodes[self.uri]:
+                return self.se.full_class_only_graph.nodes[self.uri]['used_by']
+            else:
+                return []
 
     @property
     def child_classes(self):
         """Find schema classes that directly inherit from the given class
         """
         if self.defined_in_schema:
-            children = list(self.se.schema_nx.successors(self.uri))
+            children = list(self.se.full_class_only_graph.successors(self.uri))
             children = [SchemaClass(_child, self.se) for _child in children]
             return children
         else:
@@ -584,7 +567,7 @@ class SchemaClass():
         """Find schema classes that inherit from the given class
         """
         if self.defined_in_schema:
-            descendants = list(nx.descendants(self.se.schema_nx,
+            descendants = list(nx.descendants(self.se.full_class_only_graph,
                                               self.uri))
             descendants = [SchemaClass(_des, self.se) for _des in descendants]
             return descendants
@@ -631,7 +614,7 @@ class SchemaProperty():
         self.se = schema
         self.name = self.se.prop_converter.get_curie(property_name)
         # if property is not defined in schema, raise ValueError
-        if self.uri not in self.se.schema_property_nx.nodes():
+        if self.uri not in self.se.property_only_graph.nodes():
             #raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
             warnings.warn('Property {} is not defined in Schema. Could not access it'.format(self.name))
             self.defined_in_schema = False
@@ -641,6 +624,20 @@ class SchemaProperty():
 
     def __str__(self):
         return str(self.name)
+
+    @property
+    def domain(self):
+        if 'domain' in self.se.property_only_graph.nodes[self.uri]:
+            return [SchemaClass(_item, self.se) for _item in self.se.property_only_graph.nodes[self.uri]['domain']]
+        else:
+            return []
+
+    @property
+    def range(self):
+        if 'range' in self.se.property_only_graph.nodes[self.uri]:
+            return [SchemaClass(_item, self.se) for _item in self.se.property_only_graph.nodes[self.uri]['range']]
+        else:
+            return []
 
     @property
     def prefix(self):
@@ -660,7 +657,7 @@ class SchemaProperty():
             return None
         else:
             # some properties doesn't have descriptions
-            if 'description' in self.se.schema_property_nx.node[self.uri]:
+            if 'description' in self.se.property_only_graph.node[self.uri]:
                 return self.se.schema_property_nx.node[self.uri]['description']
             else:
                 return None
@@ -669,7 +666,7 @@ class SchemaProperty():
     def parent_properties(self):
         """Find all parents of a specific class"""
         if self.defined_in_schema:
-            parents = list(nx.ancestors(self.se.schema_property_nx,
+            parents = list(nx.ancestors(self.se.property_only_graph,
                                         self.uri))
             parents = [SchemaProperty(_parent, self.se) for _parent in parents]
             return parents
@@ -681,7 +678,7 @@ class SchemaProperty():
         """Find schema properties that directly inherit from the given property
         """
         if self.defined_in_schema:
-            children = list(self.se.schema_property_nx.successors(self.uri))
+            children = list(self.se.property_only_graph.successors(self.uri))
             children = [SchemaProperty(_child, self.se) for _child in children]
             return children
         else:
@@ -692,7 +689,7 @@ class SchemaProperty():
         """Find schema properties that inherit from the given property
         """
         if self.defined_in_schema:
-            descendants = list(nx.descendants(self.se.schema_property_nx,
+            descendants = list(nx.descendants(self.se.property_only_graph,
                                               self.uri))
             descendants = [SchemaProperty(_descendant, self.se) for _descendant in descendants]
             return descendants
@@ -706,21 +703,10 @@ class SchemaProperty():
             property_info = {'child_properties': self.child_properties,
                              'descendant_properties': self.descendant_properties,
                              'parent_properties': self.parent_properties,
-                             'domain': [],
-                             'range': [],
+                             'domain': self.domain,
+                             'range': self.range,
                              'uri': self.uri,
                              'label': self.label}
-            for record in self.se.schema["@graph"]:
-                if record["@type"] == "rdf:Property":
-                    if record["@id"] == self.uri:
-                        property_info["description"] = record["rdfs:comment"]
-                        #property_info["uri"] = self.curie2uri(record["@id"])
-                        if "http://schema.org/domainIncludes" in record:
-                            p_domain = dict2list(record["http://schema.org/domainIncludes"])
-                            property_info["domain"] = [SchemaClass(record["@id"], self.se) for record in p_domain]
-                        if "http://schema.org/rangeIncludes" in record:
-                            p_range = dict2list(record["http://schema.org/rangeIncludes"])
-                            property_info["range"] = [SchemaClass(record["@id"], self.se) for record in p_range]
             return property_info
         else:
             return {}
