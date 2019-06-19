@@ -1,4 +1,5 @@
 import json
+import networkx as nx
 
 
 def merge_schema(schema1, schema2):
@@ -10,6 +11,11 @@ def merge_schema(schema1, schema2):
     new_schema["@context"].update(schema2["@context"])
     new_schema["@graph"] = schema1["@graph"] + schema2["@graph"]
     return new_schema
+
+
+def merge_schema_networkx(g1, g2):
+    """Merge two networkx DiGraphs"""
+    return nx.compose(g1, g2)
 
 
 def find_duplicates(_list):
