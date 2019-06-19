@@ -15,6 +15,8 @@ DATATYPES = ["http://schema.org/DataType", "http://schema.org/Boolean",
              "http://schema.org/CssSelectorType", "http://schema.org/URL",
              "http://schema.org/XPathType", "http://schema.org/Time"]
 
+IGNORED_CLASS_PROPERTY = ["rdfs:Class", "rdf:type", "rdfs:label"]
+
 
 def load_json_or_yaml(file_path):
     """Load either json or yaml document from file path or url or JSON doc
@@ -51,25 +53,15 @@ def load_json_or_yaml(file_path):
     return data
 
 
-def normalize_rdfs_label_field(schema):
-    """schemaorg file has some discrepancy, fix them"""
-    graph = []
-    for _record in schema["@graph"]:
-        # if a class is superseded, no need to load into graph
-        if "http://schema.org/supersededBy" not in _record:
-            if type(_record["rdfs:label"]) == dict:
-                _record["rdfs:label"] = _record["rdfs:label"]["@value"]
-            graph.append(_record)
-    schema["@graph"] = graph
-    return schema
-
-
 def get_latest_schemaorg_version():
     """Get the latest version of schemaorg from its github"""
+    """
     response = load_json_or_yaml(SCHEMAORG_PATH)
     versions = [float(_item['name']) for _item in response if 'name' in _item]
     versions.sort()
     return str(versions[-1])
+    """
+    return "3.7"
 
 
 def construct_schemaorg_url(version):
@@ -84,7 +76,10 @@ def load_schemaorg(version=None, verbose=False):
     """
     # if version is not specified, use the latest one by default
     if not version:
-        version = get_latest_schemaorg_version()
+        try:
+            version = get_latest_schemaorg_version()
+        except ValueError:
+            version = "3.7"
     url = construct_schemaorg_url(version)
     if verbose:
         print("Loading Schema.org schema from {}".format(url))
@@ -92,6 +87,65 @@ def load_schemaorg(version=None, verbose=False):
         return load_json_or_yaml(url)
     except ValueError:
         raise ValueError("version {} is not valid! Current latest version is {}".format(version, get_latest_schemaorg_version()))
+
+
+def find_parent_child_relation(record, _type="Class"):
+    """Find parent child relationship from individual schema definition
+
+    :arg dict record: a class/property definition represented by JSON in schema
+    :arg str _type: either Class or Property
+    """
+    edges = []
+    if _type not in ["Class", "Property"]:
+        raise ValueError("Value of _type could only be Class or Property")
+    _key = "rdfs:sub{}Of".format(_type)
+    if _key in record:
+        parents = record[_key]
+        if isinstance(parents, list):
+            for _parent in parents:
+                if _parent["@id"] not in IGNORED_CLASS_PROPERTY:
+                    edges.append((_parent["@id"], record["@id"]))
+        elif isinstance(parents, dict):
+            if parents["@id"] not in IGNORED_CLASS_PROPERTY:
+                edges.append((parents["@id"], record["@id"]))
+        else:
+            raise ValueError('"dictionary" input is not a list or dict')
+    elif "@type" in record and "http://schema.org/DataType" in record["@type"]:
+        edges.append(("http://schema.org/DataType", record["@id"]))
+    elif "@type" in record and record["@type"] in DATATYPES:
+        edges.append((record["@type"], record["@id"]))
+    else:
+        pass
+    return edges
+
+
+def load_schema_into_networkx(schema, load_class=True, load_property=True, load_datatype=True):
+    """Construct networkx DiGraph based on Schema provided"""
+    # initialize DiGraph for classes, properties and data types
+    G_cls, G_prop, G_dtype = nx.DiGraph(), nx.DiGraph(), nx.DiGraph()
+    edges_cls, edges_prop, edges_dtype = [], [], []
+    for record in schema["@graph"]:
+        if record["@id"] in DATATYPES and load_datatype:
+            G_dtype.add_node(record["@id"],
+                             description=record["rdfs:comment"])
+            edges_dtype += find_parent_child_relation(record)
+        elif record["@type"] == "rdfs:Class" and load_class:
+                # add class as node
+                G_cls.add_node(record["@id"],
+                               description=record["rdfs:comment"])
+                # add class edges
+                edges_cls += find_parent_child_relation(record)
+        elif record["@type"] == "rdf:Property" and load_property:
+            G_prop.add_node(record["@id"],
+                            description=record["rdfs:comment"])
+            edges_prop += find_parent_child_relation(record, _type="Property")
+    G_cls.add_edges_from(edges_cls)
+    G_prop.add_edges_from(edges_prop)
+    G_dtype.add_edges_from(edges_dtype)
+    return (G_cls, G_prop, G_dtype)
+
+
+
 
 
 def load_schema_class_into_networkx(schema, preload_schemaorg=False):
@@ -105,7 +159,6 @@ def load_schema_class_into_networkx(schema, preload_schemaorg=False):
     for record in schema["@graph"]:
         if record["@type"] == "rdfs:Class" and record["@id"] not in DATATYPES:
             G.add_node(record["@id"],
-                       uri=record["@id"],
                        description=record["rdfs:comment"])
             if "rdfs:subClassOf" in record:
                 parents = record["rdfs:subClassOf"]
