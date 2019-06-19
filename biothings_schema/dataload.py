@@ -1,5 +1,6 @@
-import requests
 import json
+
+import requests
 import yaml
 import networkx as nx
 
@@ -44,7 +45,7 @@ def load_json_or_yaml(file_path):
     except json.JSONDecodeError:   # for py>=3.5
     # except ValueError:               # for py<3.5
         try:
-            data = yaml.load(_data, Loader=yaml.FullLoader)
+            data = yaml.load(_data, Loader=yaml.SafeLoader)
         except (yaml.scanner.ScannerError,
                 yaml.parser.ParserError):
             raise ValueError("Not a valid JSON or YAML format.")
@@ -169,3 +170,22 @@ def load_schema_datatype_into_networkx(schema):
             elif "@type" in record and "http://schema.org/DataType" in record["@type"]:
                 G.add_edge("http://schema.org/DataType", record["@id"])
     return G
+
+
+def get_clean_schema_context(schema):
+    """return the clean prefix list from "@content" for only those are used"""
+    _schema = load_json_or_yaml(schema)
+    context = _schema.get('@context', [])
+    if context:
+        graph = _schema.get('@graph', [])
+        graph = json.dumps(graph)
+        used_prefix_li = []
+        for prefix in context:
+            if graph.find(prefix + ":") != -1:
+                used_prefix_li.append(prefix)
+        clean_context = {
+            "@context": {prefix: context[prefix] for prefix in sorted(set(used_prefix_li))}
+        }
+        return clean_context
+    else:
+        print('No "@context" found in the schema')
