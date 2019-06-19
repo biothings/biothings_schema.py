@@ -658,7 +658,7 @@ class SchemaProperty():
         else:
             # some properties doesn't have descriptions
             if 'description' in self.se.property_only_graph.node[self.uri]:
-                return self.se.schema_property_nx.node[self.uri]['description']
+                return self.se.property_only_graph.node[self.uri]['description']
             else:
                 return None
 
