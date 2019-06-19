@@ -55,8 +55,9 @@ def normalize_rdfs_label_field(schema):
     """schemaorg file has some discrepancy, fix them"""
     graph = []
     for _record in schema["@graph"]:
+        # if a class is superseded, no need to load into graph
         if "http://schema.org/supersededBy" not in _record:
-            if "rdfs:label" in _record and type(_record["rdfs:label"]) == dict:
+            if type(_record["rdfs:label"]) == dict:
                 _record["rdfs:label"] = _record["rdfs:label"]["@value"]
             graph.append(_record)
     schema["@graph"] = graph
@@ -73,7 +74,7 @@ def get_latest_schemaorg_version():
 
 def construct_schemaorg_url(version):
     """Construct url to schemaorg jsonld file"""
-    return "https://raw.githubusercontent.com/schemaorg/schemaorg/master/data/releases/" + str(version) + "/all-layers.jsonld"
+    return "https://raw.githubusercontent.com/schemaorg/schemaorg/master/data/releases/{}/all-layers.jsonld".format(str(version))
 
 
 def load_schemaorg(version=None, verbose=False):
