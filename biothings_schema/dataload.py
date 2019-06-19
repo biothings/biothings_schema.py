@@ -22,7 +22,7 @@ def load_json_or_yaml(file_path):
     :arg str file_path: The path of the url doc, could be url or file path
     """
     # handle json doc
-    if type(file_path) == dict:
+    if isinstance(file_path, dict):
         return file_path
     # handle url
     elif file_path.startswith("http"):
@@ -55,9 +55,10 @@ def normalize_rdfs_label_field(schema):
     """schemaorg file has some discrepancy, fix them"""
     graph = []
     for _record in schema["@graph"]:
-        if "rdfs:label" in _record and type(_record["rdfs:label"]) == dict:
-            _record["rdfs:label"] = _record["rdfs:label"]["@value"]
-        graph.append(_record)
+        if "http://schema.org/supersededBy" not in _record:
+            if "rdfs:label" in _record and type(_record["rdfs:label"]) == dict:
+                _record["rdfs:label"] = _record["rdfs:label"]["@value"]
+            graph.append(_record)
     schema["@graph"] = graph
     return schema
 
