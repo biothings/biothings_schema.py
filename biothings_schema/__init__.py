@@ -226,7 +226,7 @@ class Schema():
     def __init__(self, schema=None, context=None):
         self.context = self.CONTEXT
         if context:
-            if type(context) != dict:
+            if not isinstance(context, dict):
                 raise ValueError("context should be a python dictionary, with URI as key, and the namespace/prefix as value")
             else:
                 self.context.update(context)
