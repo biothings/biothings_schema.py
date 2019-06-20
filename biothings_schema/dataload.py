@@ -168,19 +168,21 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
                        range=_range,
                        type="Property")
             for _id in _domain:
-                if _id not in classes:
-                    classes[_id] = {"properties": [record["@id"]],
-                                    "type": "Class",
-                                    "used_by": []}
-                else:
-                    classes[_id]["properties"].append(record["@id"])
+                if _id not in DATATYPES:
+                    if _id not in classes:
+                        classes[_id] = {"properties": [record["@id"]],
+                                        "type": "Class",
+                                        "used_by": []}
+                    else:
+                        classes[_id]["properties"].append(record["@id"])
             for _id in _range:
-                if _id not in classes:
-                    classes[_id] = {"used_by": [record["@id"]],
-                                    "type": "Class",
-                                    "properties": []}
-                else:
-                    classes[_id]["used_by"].append(record["@id"])
+                if _id not in DATATYPES:
+                    if _id not in classes:
+                        classes[_id] = {"used_by": [record["@id"]],
+                                        "type": "Class",
+                                        "properties": []}
+                    else:
+                        classes[_id]["used_by"].append(record["@id"])
             edges += find_parent_child_relation(record, _type="Property")
     G.add_edges_from(edges)
     G.add_nodes_from(list(classes.items()))
