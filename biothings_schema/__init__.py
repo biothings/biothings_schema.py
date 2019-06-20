@@ -471,7 +471,7 @@ class SchemaClass():
     @property
     def description(self):
         if self.defined_in_schema:
-            if self.uri in self.se.full_class_only_graph.nodes():
+            if self.uri in self.se.full_class_only_graph:
                 # classes might not have descriptions
                 if 'description' in self.se.full_class_only_graph.node[self.uri]:
                     return self.se.schema_nx.node[self.uri]['description']
@@ -485,7 +485,7 @@ class SchemaClass():
     @property
     def ancestor_classes(self):
         if self.defined_in_schema:
-            ancestors = list(nx.ancestors(self.se.full_class_only_graph, self.uri))
+            ancestors = nx.ancestors(self.se.full_class_only_graph, self.uri)
             ancestors = [SchemaClass(_ancestor, self.se) for _ancestor in ancestors]
             return ancestors
         else:
