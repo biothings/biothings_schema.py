@@ -237,12 +237,6 @@ class Schema():
         # if @context is defined in schema, update it to local context
         if "@context" in self.schema:
             self.context.update(self.schema["@context"])
-        self._all_class_uris = [node for node,attrdict in self.schema_nx.node.items() if attrdict['type'] in ['Class', 'DataType']]
-        self.cls_converter = CurieUriConverter(self.context,
-                                               self._all_class_uris)
-        self._all_prop_uris = list(self.property_only_graph.nodes())
-        self.prop_converter = CurieUriConverter(self.context,
-                                                self._all_prop_uris)
 
     @property
     def validation(self):
@@ -257,6 +251,8 @@ class Schema():
         self.load_default_schema()
         # load JSON-LD file of user defined schema
         self.schema_extension_only = preprocess_schema(load_json_or_yaml(schema))
+        if "@context" in self.schema_extension_only:
+            self.context.update(self.schema_extension_only["@context"])
         # convert user defined schema into a networkx DiGraph
         self.schema_extension_nx = load_schema_into_networkx(self.schema_extension_only)
         # update undefined classes/properties
@@ -275,6 +271,12 @@ class Schema():
         self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.node.items() if attrdict['type'] == 'Class'])
         self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Class'])
         self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Property'])
+        self._all_class_uris = [node for node,attrdict in self.schema_nx.node.items() if attrdict['type'] in ['Class', 'DataType']]
+        self.cls_converter = CurieUriConverter(self.context,
+                                               self._all_class_uris)
+        self._all_prop_uris = list(self.property_only_graph.nodes())
+        self.prop_converter = CurieUriConverter(self.context,
+                                                self._all_prop_uris)
 
     def load_default_schema(self):
         """Load default schema, either schema.org or biothings"""
