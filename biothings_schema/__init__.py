@@ -224,19 +224,16 @@ class Schema():
     }
 
     def __init__(self, schema=None, context=None):
-        if not schema:
-            self.load_default_schema()
-        else:
-            self.load_schema(schema)
         self.context = self.CONTEXT
         if context:
             if type(context) != dict:
                 raise ValueError("context should be a python dictionary, with URI as key, and the namespace/prefix as value")
             else:
                 self.context.update(context)
-        # if @context is defined in schema, update it to local context
-        if "@context" in self.schema:
-            self.context.update(self.schema["@context"])
+        if not schema:
+            self.load_default_schema()
+        else:
+            self.load_schema(schema)
 
     @property
     def validation(self):
@@ -268,9 +265,11 @@ class Schema():
         # merge together the given schema and the schema defined by schemaorg
         self.schema = merge_schema(self.schema_extension_only,
                                    self.schemaorg_schema)
+        # split the schema networkx into individual ones
         self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.node.items() if attrdict['type'] == 'Class'])
         self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Class'])
         self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Property'])
+        # instantiate converters for classes and properties
         self._all_class_uris = [node for node,attrdict in self.schema_nx.node.items() if attrdict['type'] in ['Class', 'DataType']]
         self.cls_converter = CurieUriConverter(self.context,
                                                self._all_class_uris)
@@ -282,6 +281,8 @@ class Schema():
         """Load default schema, either schema.org or biothings"""
         self.schema = preprocess_schema(load_schemaorg())
         self.schemaorg_schema = self.schema
+        if "@context" in self.schema:
+            self.context.update(self.schema["@context"])
         self.schema_extension_only = self.schema
         self.schemaorg_nx = load_schema_into_networkx(self.schema)
         self.schema_extension_nx = self.schemaorg_nx
@@ -289,6 +290,13 @@ class Schema():
         self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.node.items() if attrdict['type'] == 'Class'])
         self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Class'])
         self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Property'])
+        # instantiate converters for classes and properties
+        self._all_class_uris = [node for node,attrdict in self.schema_nx.node.items() if attrdict['type'] in ['Class', 'DataType']]
+        self.cls_converter = CurieUriConverter(self.context,
+                                               self._all_class_uris)
+        self._all_prop_uris = list(self.property_only_graph.nodes())
+        self.prop_converter = CurieUriConverter(self.context,
+                                                self._all_prop_uris)
 
     def full_schema_graph(self, size=None):
         """Visualize the full schema loaded using graphviz"""
