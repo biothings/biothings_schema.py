@@ -362,7 +362,8 @@ class Schema():
     def list_all_referenced_classes(self):
         all_classes = list(self.extended_class_only_graph.nodes())
         defined_classes = [_item["@id"] for _item in self.schema_extension_only["@graph"] if "@type" in _item and _item["@type"] == "rdfs:Class"]
-        return list(set(all_classes) - set(defined_classes))
+        reference_classes = [SchemaClass(_cls, self) for _cls in (set(all_classes) - set(defined_classes))]
+        return reference_classes
 
     def list_all_properties(self):
         """Find all properties defined in the schema"""
