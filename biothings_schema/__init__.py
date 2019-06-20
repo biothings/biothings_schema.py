@@ -566,7 +566,7 @@ class SchemaClass():
         """Find schema classes that directly inherit from the given class
         """
         if self.defined_in_schema:
-            children = list(self.se.full_class_only_graph.successors(self.uri))
+            children = self.se.full_class_only_graph.successors(self.uri)
             children = [SchemaClass(_child, self.se) for _child in children]
             return children
         else:
@@ -577,8 +577,8 @@ class SchemaClass():
         """Find schema classes that inherit from the given class
         """
         if self.defined_in_schema:
-            descendants = list(nx.descendants(self.se.full_class_only_graph,
-                                              self.uri))
+            descendants = nx.descendants(self.se.full_class_only_graph,
+                                         self.uri)
             descendants = [SchemaClass(_des, self.se) for _des in descendants]
             return descendants
         else:
@@ -624,7 +624,7 @@ class SchemaProperty():
         self.se = schema
         self.name = self.se.prop_converter.get_curie(property_name)
         # if property is not defined in schema, raise ValueError
-        if self.uri not in self.se.property_only_graph.nodes():
+        if self.uri not in self.se.property_only_graph:
             #raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
             warnings.warn('Property {} is not defined in Schema. Could not access it'.format(self.name))
             self.defined_in_schema = False
@@ -676,8 +676,8 @@ class SchemaProperty():
     def parent_properties(self):
         """Find all parents of a specific class"""
         if self.defined_in_schema:
-            parents = list(nx.ancestors(self.se.property_only_graph,
-                                        self.uri))
+            parents = nx.ancestors(self.se.property_only_graph,
+                                   self.uri)
             parents = [SchemaProperty(_parent, self.se) for _parent in parents]
             return parents
         else:
@@ -688,7 +688,7 @@ class SchemaProperty():
         """Find schema properties that directly inherit from the given property
         """
         if self.defined_in_schema:
-            children = list(self.se.property_only_graph.successors(self.uri))
+            children = self.se.property_only_graph.successors(self.uri)
             children = [SchemaProperty(_child, self.se) for _child in children]
             return children
         else:
@@ -699,8 +699,8 @@ class SchemaProperty():
         """Find schema properties that inherit from the given property
         """
         if self.defined_in_schema:
-            descendants = list(nx.descendants(self.se.property_only_graph,
-                                              self.uri))
+            descendants = nx.descendants(self.se.property_only_graph,
+                                         self.uri)
             descendants = [SchemaProperty(_descendant, self.se) for _descendant in descendants]
             return descendants
         else:
