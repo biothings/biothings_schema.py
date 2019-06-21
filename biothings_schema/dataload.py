@@ -167,22 +167,26 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
                        domain=_domain,
                        range=_range,
                        type="Property")
+            property_info = {'description': record["rdfs:comment"],
+                             'domain': _domain,
+                             'range': _range,
+                             'uri': record["@id"]}
             for _id in _domain:
                 if _id not in DATATYPES:
                     if _id not in classes:
-                        classes[_id] = {"properties": [record["@id"]],
+                        classes[_id] = {"properties": [property_info],
                                         "type": "Class",
                                         "used_by": []}
                     else:
-                        classes[_id]["properties"].append(record["@id"])
+                        classes[_id]["properties"].append(property_info)
             for _id in _range:
                 if _id not in DATATYPES:
                     if _id not in classes:
-                        classes[_id] = {"used_by": [record["@id"]],
+                        classes[_id] = {"used_by": [property_info],
                                         "type": "Class",
                                         "properties": []}
                     else:
-                        classes[_id]["used_by"].append(record["@id"])
+                        classes[_id]["used_by"].append(property_info)
             edges += find_parent_child_relation(record, _type="Property")
     G.add_edges_from(edges)
     G.add_nodes_from(list(classes.items()))
