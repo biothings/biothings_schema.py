@@ -22,6 +22,12 @@ class TestSchemaOrg(unittest.TestCase):
             scls = self.se.get_class(_cls.name)
             # test describe function
             describe = scls.describe()
+            scls = self.se.get_class(_cls.name, output_type="curie")
+            describe = scls.describe()
+            scls = self.se.get_class(_cls.name, output_type="uri")
+            describe = scls.describe()
+            scls = self.se.get_class(_cls.name, output_type="label")
+            describe = scls.describe()
 
     def test_schemaproperty_class(self):
         """ Test the SchemaProperty Class using all classes in Schemaorg schema
@@ -30,6 +36,15 @@ class TestSchemaOrg(unittest.TestCase):
         for _prop in self.props:
             # test get_property
             sp = self.se.get_property(_prop.name)
+            # test describe function
+            describe = sp.describe()
+            sp = self.se.get_property(_prop.name, output_type="curie")
+            # test describe function
+            describe = sp.describe()
+            sp = self.se.get_property(_prop.name, output_type="uri")
+            # test describe function
+            describe = sp.describe()
+            sp = self.se.get_property(_prop.name, output_type="label")
             # test describe function
             describe = sp.describe()
 
