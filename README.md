@@ -111,7 +111,7 @@ $ pip install git+https://github.com/biothings/biothings_schema.py#egg=biothings
 Documentation
 -------------
 
-Fantastic documentation is available at <Coming soon!>.
+Fantastic documentation is available at <https://biothings-schemapy.readthedocs.io/en/latest/>.
 
 The Contributor Guide
 ---------------------
