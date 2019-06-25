@@ -537,6 +537,10 @@ class SchemaClass():
         else:
             return []
 
+    @property
+    def validation(self):
+        return self.se.validation.get(self.uri)
+
     def describe(self):
         """Find details about a specific schema class
         """
@@ -552,7 +556,8 @@ class SchemaClass():
                       'child_classes': self.child_classes,
                       'parent_classes': self.parent_classes,
                       'ancestor_classes': self.ancestor_classes,
-                      'descendant_classes': self.descendant_classes}
+                      'descendant_classes': self.descendant_classes,
+                      'validation': self.se.validation.get(self.uri)}
         return class_info
 
     def validate_against_schema(self, json_doc):
