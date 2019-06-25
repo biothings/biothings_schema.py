@@ -6,7 +6,7 @@ import networkx as nx
 
 from .utils import dict2list
 
-SCHEMAORG_PATH = 'https://api.github.com/repos/schemaorg/schemaorg/contents/data/releases'
+SCHEMAORG_PATH = 'https://schema.org/version/latest/schema.jsonld'
 
 DATATYPES = ["http://schema.org/DataType", "http://schema.org/Boolean",
              "http://schema.org/False", "http://schema.org/True",
@@ -56,13 +56,10 @@ def load_json_or_yaml(file_path):
 
 def get_latest_schemaorg_version():
     """Get the latest version of schemaorg from its github"""
-    """
-    response = load_json_or_yaml(SCHEMAORG_PATH)
-    versions = [float(_item['name']) for _item in response if 'name' in _item]
-    versions.sort()
-    return str(versions[-1])
-    """
-    return "3.7"
+    # call "latest" and get version
+    _url = requests.get(SCHEMAORG_PATH).url
+    # parse url
+    return str(_url.split('/')[-2])
 
 
 def construct_schemaorg_url(version):
