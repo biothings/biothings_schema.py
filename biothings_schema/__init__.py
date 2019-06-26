@@ -289,6 +289,11 @@ class Schema():
         classes = [SchemaClass(_cls, self) for _cls in classes]
         return classes
 
+    def list_all_defined_properties(self):
+        properties = [_item["@id"] for _item in self.schema_extension_only["@graph"] if "@type" in _item and _item["@type"] == "rdf:Property"]
+        properties = [SchemaProperty(_cls, self) for _cls in properties]
+        return properties
+
     def list_all_referenced_classes(self):
         all_classes = list(self.extended_class_only_graph.nodes())
         defined_classes = [_item["@id"] for _item in self.schema_extension_only["@graph"] if "@type" in _item and _item["@type"] == "rdfs:Class" and _item["@id"] not in DATATYPES]
@@ -557,7 +562,7 @@ class SchemaClass():
                       'parent_classes': self.parent_classes,
                       'ancestor_classes': self.ancestor_classes,
                       'descendant_classes': self.descendant_classes,
-                      'validation': self.se.validation.get(self.uri)}
+                      'validation': self.validation}
         return class_info
 
     def validate_against_schema(self, json_doc):
