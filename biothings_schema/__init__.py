@@ -167,10 +167,14 @@ class Schema():
 
     @property
     def validation(self):
+        """ Parse validation info from schema file"""
         validation_info = {}
         for _doc in self.schema_extension_only['@graph']:
             if "$validation" in _doc:
-                validation_info[_doc["@id"]] = _doc["$validation"]
+                data = _doc["$validation"]
+                if "definitions" in _doc["$validation"]:
+                    data = expand_ref(data, _doc["$validation"]["definitions"])
+                validation_info[_doc["@id"]] = data
         return validation_info
 
     def load_schema(self, schema):
