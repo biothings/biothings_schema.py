@@ -68,3 +68,31 @@ def export_json(json_doc, file_path):
     with open(file_path, 'w') as f:
         json.dump(json_doc, f, sort_keys=True,
                   indent=4, ensure_ascii=False)
+
+
+def expand_ref(json_obj, definition):
+    """expand the $ref in json schema"""
+    if isinstance(json_obj, dict):
+        for key in list(json_obj.keys()):
+            if key == "$ref":
+                if json_obj[key].startswith("#/definitions/"):
+                    concept = json_obj[key].split('/')[-1]
+                    if concept in definition:
+                        json_obj.pop("$ref")
+                        json_obj.update(definition[concept])
+                    else:
+                        raise ValueError("{} is not defined".format(json_obj[key]))
+            elif isinstance(json_obj[key], dict):
+                resolved = expand_ref(json_obj[key], definition)
+                json_obj[key] = resolved
+            elif isinstance(json_obj[key], list):
+                for (k, v) in enumerate(json_obj[key]):
+                    resolved = expand_ref(v, definition)
+                    if resolved:
+                        json_obj[key][k] = resolved
+    elif isinstance(json_obj, list):
+        for (key, value) in enumerate(json_obj):
+            resolved = expand_ref(value, definition)
+            if resolved:
+                json_obj[key] = resolved
+    return json_obj
