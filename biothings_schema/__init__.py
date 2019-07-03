@@ -154,6 +154,7 @@ class Schema():
     }
 
     def __init__(self, schema=None, context=None):
+        self.default_schema_loaded = False
         self.context = self.CONTEXT
         if context:
             if not isinstance(context, dict):
@@ -179,7 +180,8 @@ class Schema():
 
     def load_schema(self, schema):
         """Load schema and convert it to networkx graph"""
-        self.load_default_schema()
+        if not self.default_schema_loaded:
+            self.load_default_schema()
         # load JSON-LD file of user defined schema
         self.schema_extension_only = preprocess_schema(load_json_or_yaml(schema))
         if "@context" in self.schema_extension_only:
@@ -233,6 +235,7 @@ class Schema():
         self._all_prop_uris = list(self.property_only_graph.nodes())
         self.prop_converter = CurieUriConverter(self.context,
                                                 self._all_prop_uris)
+        self.default_schema_loaded = True
 
     def full_schema_graph(self, size=None):
         """Visualize the full schema loaded using graphviz"""
@@ -389,8 +392,6 @@ class Schema():
 
 class SchemaClass():
     """Class representing an individual class in Schema
-
-    # TODO: option to only display the name, rather than python class as results
     """
     def __init__(self, class_name, schema, output_type='PythonClass'):
         self.defined_in_schema = True
