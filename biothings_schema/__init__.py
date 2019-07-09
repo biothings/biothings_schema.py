@@ -34,7 +34,8 @@ METHODS_RETURN_DICT = ['describe']
 METHODS_RETURN_STR = ['description',
                       'label',
                       'prefix',
-                      'uri']
+                      'uri',
+                      'inverse_property']
 
 
 def check_defined(scls, method_name):
@@ -699,6 +700,19 @@ class SchemaProperty():
                                     inspect.stack()[0][3],
                                     self.output_type)
         return result
+
+    @property
+    def inverse_property(self):
+        response = check_defined(self, inspect.stack()[0][3])
+        if not response:
+            return response
+        inverse = self.se.property_only_graph.node[self.uri]['inverse']
+        if not inverse:
+            return inverse
+        else:
+            return self.se.get_property(inverse)
+
+    
 
     def describe(self):
         """Find details about a specific property
