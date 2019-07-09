@@ -158,14 +158,19 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
             edges += find_parent_child_relation(record)
         elif record["@type"] == "rdf:Property" and load_property:
             _domain, _range = find_domain_range(record)
+            _inverse = record.get("http://schema.org/inverseOf")
+            if _inverse:
+                _inverse = _inverse["@id"]
             G.add_node(record["@id"],
                        description=record["rdfs:comment"],
                        domain=_domain,
                        range=_range,
+                       inverse=_inverse,
                        type="Property")
             property_info = {'description': record["rdfs:comment"],
                              'domain': _domain,
                              'range': _range,
+                             'inverse': _inverse,
                              'uri': record["@id"]}
             for _id in _domain:
                 if _id not in DATATYPES:
