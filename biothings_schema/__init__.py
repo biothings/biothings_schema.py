@@ -174,9 +174,22 @@ class Schema():
         for _doc in self.schema_extension_only['@graph']:
             if "$validation" in _doc:
                 data = _doc["$validation"]
+                # expand json schema definition from definitions field
                 if "definitions" in _doc["$validation"]:
                     data = expand_ref(data, _doc["$validation"]["definitions"])
                 validation_info[_doc["@id"]] = data
+        for _doc in self.schema_extension_only["@graph"]:
+            if "$validation" in _doc:
+                # if json schema is not defined for a field, look for definition somewhere else
+                for _item, _def in _doc['$validation']['properties'].items():
+                    if type(_def) == dict and set(_def.keys()) == set(['description']):
+                        sp = self.get_property(_item)
+                        if type(sp) != list:
+                            sp = [sp]
+                        for _sp in sp:
+                            for _range in _sp.range:
+                                if _range.uri in validation_info:
+                                    validation_info[_doc["@id"]]['properties'][_item].update(validation_info[_range.uri])
         return validation_info
 
     def load_schema(self, schema):
@@ -711,8 +724,6 @@ class SchemaProperty():
             return inverse
         else:
             return self.se.get_property(inverse)
-
-    
 
     def describe(self):
         """Find details about a specific property
