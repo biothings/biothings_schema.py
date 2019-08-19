@@ -5,6 +5,7 @@ from functools import partial
 import inspect
 
 import networkx as nx
+import jsonschema
 from jsonschema import validate
 from jsonschema import validators
 # import tabletext
@@ -593,7 +594,7 @@ class SchemaClass():
         if self.uri not in self.se.validation:
             raise RuntimeError("$validation is not defined for {} field; thus the json document could not be validated".format(self.name))
         else:
-            validate(json_doc, self.se.validation[self.uri])
+            validate(json_doc, self.se.validation[self.uri], format_checker=jsonschema.FormatChecker())
             print('The JSON document is valid')
 
 
