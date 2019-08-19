@@ -5,7 +5,8 @@ install_requires = [
     'jsonschema>=3.0.1',
     'networkx>=2.3',
     'PyYAML>=5.1',
-    'requests>=2.21.0'
+    'requests>=2.21.0',
+    'strict-rfc3339'
 ]
 
 extra_requires = [
