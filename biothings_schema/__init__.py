@@ -834,7 +834,8 @@ class SchemaValidator():
         rangeincludes_value = dict2list(rangeincludes_value)
         for record in rangeincludes_value:
             if record["@id"] not in self.all_classes:
-                raise KeyError('Value of rangeincludes: {} is not defined in the schema.'.format(record["@id"]))
+                # raise KeyError('Value of rangeincludes: {} is not defined in the schema.'.format(record["@id"]))
+                pass
 
     def check_whether_atid_and_label_match(self, record):
         """ Check if @id field matches with the "rdfs:label" field
