@@ -136,6 +136,10 @@ def expand_curie_to_uri(curie, context_info):
     """
     # as suggested in SchemaOrg standard file, these prefixes don't expand
     PREFIXES_NOT_EXPAND = ["rdf", "rdfs", "xsd"]
+    if not curie:
+        return curie
+    if type(curie) == int:
+        curie = str(curie)
     # determine if a value is curie
     if len(curie.split(':')) == 2:
         prefix, value = curie.split(":")
