@@ -231,7 +231,7 @@ class Schema():
 
     def load_default_schema(self):
         """Load default schema, either schema.org or biothings"""
-        self.schema = preprocess_schema(load_schemaorg())
+        self.schema = preprocess_schema(load_schemaorg(version='3.7'))
         self.schemaorg_schema = self.schema
         if "@context" in self.schema:
             self.context.update(self.schema["@context"])
@@ -773,7 +773,7 @@ class SchemaValidator():
       # TODO: Check inverseof from both properties
     """
     def __init__(self, schema, schema_nx):
-        self.schemaorg = {'schema': load_schemaorg(),
+        self.schemaorg = {'schema': load_schemaorg(version='3.7'),
                           'classes': [],
                           'properties': []}
         for _record in self.schemaorg['schema']['@graph']:
