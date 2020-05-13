@@ -932,7 +932,7 @@ class SchemaValidator():
             if record['@type'] == "rdfs:Class":
                 self.validate_class_schema(record)
                 self.validate_class_label(record["@id"])
-                self.validate_validation_field(record)
+                # self.validate_validation_field(record)
             elif record['@type'] == "rdf:Property":
                 self.validate_property_schema(record)
                 self.validate_property_label(record["@id"])
