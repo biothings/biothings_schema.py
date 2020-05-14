@@ -218,11 +218,11 @@ class Schema():
                                    self.schemaorg_schema)
         # split the schema networkx into individual ones
         isolates = list(nx.isolates(self.schema_nx))
-        self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.node.items() if attrdict['type'] == 'Class' and node not in isolates])
-        self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Class'])
-        self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Property'])
+        self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.node.items() if attrdict.get('type') == 'Class' and node not in isolates])
+        self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict.get('type') == 'Class'])
+        self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict.get('type') == 'Property'])
         # instantiate converters for classes and properties
-        self._all_class_uris = [node for node,attrdict in self.schema_nx.node.items() if attrdict['type'] in ['Class', 'DataType']]
+        self._all_class_uris = [node for node,attrdict in self.schema_nx.node.items() if attrdict.get('type') in ['Class', 'DataType']]
         self.cls_converter = CurieUriConverter(self.context,
                                                self._all_class_uris)
         self._all_prop_uris = list(self.property_only_graph.nodes())
@@ -231,7 +231,7 @@ class Schema():
 
     def load_default_schema(self):
         """Load default schema, either schema.org or biothings"""
-        self.schema = preprocess_schema(load_schemaorg(version='3.7'))
+        self.schema = preprocess_schema(load_schemaorg(version='8.0'))
         self.schemaorg_schema = self.schema
         if "@context" in self.schema:
             self.context.update(self.schema["@context"])
@@ -773,7 +773,7 @@ class SchemaValidator():
       # TODO: Check inverseof from both properties
     """
     def __init__(self, schema, schema_nx):
-        self.schemaorg = {'schema': load_schemaorg(version='3.7'),
+        self.schemaorg = {'schema': load_schemaorg(version='8.0'),
                           'classes': [],
                           'properties': []}
         for _record in self.schemaorg['schema']['@graph']:
