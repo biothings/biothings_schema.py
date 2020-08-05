@@ -66,7 +66,7 @@ def get_latest_schemaorg_version():
 
 def construct_schemaorg_url(version):
     """Construct url to schemaorg jsonld file"""
-    return "https://raw.githubusercontent.com/schemaorg/schemaorg/master/data/releases/{}/all-layers.jsonld".format(str(version))
+    return "https://raw.githubusercontent.com/schemaorg/schemaorg/main/data/releases/{}/all-layers.jsonld".format(str(version))
 
 
 def load_schemaorg(version=None, verbose=False):
