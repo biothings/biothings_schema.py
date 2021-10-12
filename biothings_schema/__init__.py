@@ -204,7 +204,7 @@ class Schema():
         # convert user defined schema into a networkx DiGraph
         self.schema_extension_nx = load_schema_into_networkx(self.schema_extension_only)
         # update undefined classes/properties
-        undefined_nodes = [node for node, attrdict in self.schema_extension_nx.node.items() if not attrdict]
+        undefined_nodes = [node for node, attrdict in self.schema_extension_nx.nodes._nodes.items() if not attrdict]
         attr_dict = {}
         for _node in undefined_nodes:
             if _node in self.schemaorg_nx.nodes():
@@ -218,11 +218,11 @@ class Schema():
                                    self.schemaorg_schema)
         # split the schema networkx into individual ones
         isolates = list(nx.isolates(self.schema_nx))
-        self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.node.items() if attrdict.get('type') == 'Class' and node not in isolates])
-        self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict.get('type') == 'Class'])
-        self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict.get('type') == 'Property'])
+        self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.nodes._nodes.items() if attrdict.get('type') == 'Class' and node not in isolates])
+        self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.nodes._nodes.items() if attrdict.get('type') == 'Class'])
+        self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.nodes._nodes.items() if attrdict.get('type') == 'Property'])
         # instantiate converters for classes and properties
-        self._all_class_uris = [node for node,attrdict in self.schema_nx.node.items() if attrdict.get('type') in ['Class', 'DataType']]
+        self._all_class_uris = [node for node,attrdict in self.schema_nx.nodes._nodes.items() if attrdict.get('type') in ['Class', 'DataType']]
         self.cls_converter = CurieUriConverter(self.context,
                                                self._all_class_uris)
         self._all_prop_uris = list(self.property_only_graph.nodes())
@@ -240,11 +240,11 @@ class Schema():
         self.schema_extension_nx = self.schemaorg_nx
         self.schema_nx = self.schemaorg_nx
         isolates = list(nx.isolates(self.schema_nx))
-        self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.node.items() if attrdict['type'] == 'Class' and node not in isolates])
-        self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Class'])
-        self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Property'])
+        self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.nodes._nodes.items() if attrdict['type'] == 'Class' and node not in isolates])
+        self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.nodes._nodes.items() if attrdict['type'] == 'Class'])
+        self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.nodes._nodes.items() if attrdict['type'] == 'Property'])
         # instantiate converters for classes and properties
-        self._all_class_uris = [node for node,attrdict in self.schema_nx.node.items() if attrdict['type'] in ['Class', 'DataType']]
+        self._all_class_uris = [node for node,attrdict in self.schema_nx.nodes._nodes.items() if attrdict['type'] in ['Class', 'DataType']]
         self.cls_converter = CurieUriConverter(self.context,
                                                self._all_class_uris)
         self._all_prop_uris = list(self.property_only_graph.nodes())
@@ -443,8 +443,8 @@ class SchemaClass():
         if not response:
             return response
         # classes might not have descriptions
-        if 'description' in self.se.full_class_only_graph.node[self.uri]:
-            return self.se.schema_nx.node[self.uri]['description']
+        if 'description' in self.se.full_class_only_graph.nodes._nodes[self.uri]:
+            return self.se.schema_nx.nodes._nodes[self.uri]['description']
         else:
             return None
 
@@ -667,8 +667,8 @@ class SchemaProperty():
         if not response:
             return response
         # some properties doesn't have descriptions
-        if 'description' in self.se.property_only_graph.node[self.uri]:
-            return self.se.property_only_graph.node[self.uri]['description']
+        if 'description' in self.se.property_only_graph.nodes._nodes[self.uri]:
+            return self.se.property_only_graph.nodes._nodes[self.uri]['description']
         else:
             return None
 
@@ -923,13 +923,36 @@ class SchemaValidator():
         else:
             pass
 
+    def merge_parent_validations(self, schema, schema_index, parent):
+        if parent and parent.get('$validation'):
+            self.extension_schema['schema']['@graph'][schema_index]['$validation'].update(parent['$validation'])
+
+    def merge_recursive_parents(self, record, schema_index):
+        parent_schema = None
+        parent_index = None
+        if record.get('rdfs:subClassOf'):
+            parent_index = next((parent_index for parent_index, schema in enumerate(self.extension_schema['schema']['@graph'])
+                                  if schema['@id'] == record.get('rdfs:subClassOf').get('@id')), None)
+            if parent_index:
+                parent_schema = self.extension_schema['schema']['@graph'][parent_index]
+        self.merge_parent_validations(record, schema_index, parent_schema)
+        if parent_schema and parent_index and parent_schema.get('rdfs:subClassOf'):
+            self.merge_recursive_parents(parent_schema, parent_index)
+
     def validate_full_schema(self):
         """ Main function to validate schema
         """
         #self.check_duplicate_labels()
-        for record in self.extension_schema['schema']['@graph']:
+        for count, record in enumerate(self.extension_schema['schema']['@graph']):
             self.check_whether_atid_and_label_match(record)
             if record['@type'] == "rdfs:Class":
+                # parent_schema = None
+                # if record.get('rdfs:subClassOf'):
+                #     parent_schema = next((schema for schema in self.extension_schema['schema']['@graph']
+                #                           if schema['@id'] == record.get('rdfs:subClassOf').get('@id')), None)
+                self.merge_recursive_parents(record, count)
+
+                #self.merge_parent_validations(record, count, parent_schema)
                 self.validate_class_schema(record)
                 self.validate_class_label(record["@id"])
                 self.validate_validation_field(record)

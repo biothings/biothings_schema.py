@@ -8,8 +8,8 @@ _ROOT = os.path.join(_CURRENT, os.pardir, os.pardir)
 sys.path.append(_ROOT)
 
 
-from schema_explorer.base import *
-from schema_explorer import SchemaValidator
+from biothings_schema.base import *
+from biothings_schema import SchemaValidator
 
 
 class TestSchemaValidator(unittest.TestCase):
