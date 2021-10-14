@@ -923,9 +923,22 @@ class SchemaValidator():
         else:
             pass
 
+    def merge(self, source, destination):
+        for key, value in source.items():
+            if isinstance(value, dict):
+                # get node or create one
+                node = destination.setdefault(key, {})
+                self.merge(value, node)
+            else:
+                if key not in destination:
+                    destination[key] = value
+
+        return destination
+
     def merge_parent_validations(self, schema, schema_index, parent):
         if parent and parent.get('$validation'):
-            self.extension_schema['schema']['@graph'][schema_index]['$validation'].update(parent['$validation'])
+            self.extension_schema['schema']['@graph'][schema_index]['$validation'] = \
+                self.merge(parent['$validation'], self.extension_schema['schema']['@graph'][schema_index]['$validation'])
 
     def merge_recursive_parents(self, record, schema_index):
         parent_schema = None
@@ -933,7 +946,7 @@ class SchemaValidator():
         if record.get('rdfs:subClassOf'):
             parent_index = next((parent_index for parent_index, schema in enumerate(self.extension_schema['schema']['@graph'])
                                   if schema['@id'] == record.get('rdfs:subClassOf').get('@id')), None)
-            if parent_index:
+            if parent_index is not None:
                 parent_schema = self.extension_schema['schema']['@graph'][parent_index]
         self.merge_parent_validations(record, schema_index, parent_schema)
         if parent_schema and parent_index and parent_schema.get('rdfs:subClassOf'):
