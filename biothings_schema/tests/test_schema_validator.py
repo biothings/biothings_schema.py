@@ -9,7 +9,7 @@ sys.path.append(_ROOT)
 
 
 from biothings_schema.base import *
-from biothings_schema import SchemaValidator
+from biothings_schema import SchemaValidator, Schema
 
 
 class TestSchemaValidator(unittest.TestCase):
@@ -20,12 +20,13 @@ class TestSchemaValidator(unittest.TestCase):
                                              'data',
                                              'biothings_test.jsonld')
         biothings_schema = load_json_or_yaml(biothings_jsonld_path)
-        self.sv = SchemaValidator(biothings_schema)
+        schema_nx = Schema(biothings_schema)
+        self.sv = SchemaValidator(biothings_schema, schema_nx)
         biothings_duplicate = os.path.join(_CURRENT,
                                            'data',
                                            'biothings_duplicate_test.jsonld')
         duplicate_schema = load_json_or_yaml(biothings_duplicate)
-        self.sv_duplicate = SchemaValidator(duplicate_schema)
+        self.sv_duplicate = SchemaValidator(duplicate_schema, schema_nx)
 
     def test_validate_class_label(self):
         """ Test validate_class_label function

@@ -109,3 +109,5 @@ schema_env/
 .mypy_cache/
 .DS_Store
 /venv37/
+/venv38/
+/venv310/

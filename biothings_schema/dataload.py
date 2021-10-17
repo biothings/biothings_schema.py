@@ -6,7 +6,7 @@ import networkx as nx
 
 from .utils import dict2list
 
-SCHEMAORG_PATH = 'https://schema.org/version/latest/schema.jsonld'
+SCHEMAORG_PATH = 'https://schema.org/version/latest/schemaorg-current-https.jsonld'
 
 DATATYPES = ["http://schema.org/DataType", "http://schema.org/Boolean",
              "http://schema.org/False", "http://schema.org/True",
