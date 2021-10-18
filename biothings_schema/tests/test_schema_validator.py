@@ -156,6 +156,90 @@ class TestSchemaValidator(unittest.TestCase):
         with self.assertRaises(ValidationError):
             self.sv.validate_property_schema(property_missing_range_json)
 
+    def test_schema_should_correctly_merge_validation_property_on_nested_classes(self):
+        """ Testing merge_recursive_parents function implicitly
+        """
+        nested_schema_path = os.path.join(_CURRENT,
+                                             'data',
+                                             'nested_schema.json')
+        nested_schema = load_json_or_yaml(nested_schema_path)
+
+        # test that data is correctly inserted beforehand
+        self.assertEqual(len(nested_schema['@graph'][0]['$validation']['properties']), 15)
+        self.assertEqual(nested_schema['@graph'][0]['$validation']['properties']['name']['description'],
+                         'The name of the Cvisb Dataset')
+        self.assertEqual(nested_schema['@graph'][0]['$validation']['properties']['name']['type'],
+                         'string')
+
+        self.assertEqual(len(nested_schema['@graph'][2]['$validation']['properties']), 1)
+        self.assertEqual(nested_schema['@graph'][2]['$validation']['properties']['name']['description'], 'Test description')
+        self.assertEqual(nested_schema['@graph'][2]['$validation']['properties']['name']['type'], 'number')
+
+        self.assertEqual(len(nested_schema['@graph'][3]['$validation']['properties']), 1)
+        self.assertEqual(nested_schema['@graph'][3]['$validation']['properties']['name']['type'], 'boolean')
+
+
+        schema_nx = Schema(nested_schema)
+
+        # make sure schema is correctly merged after
+
+        # Root class should stay the same
+        self.assertEqual(len(nested_schema['@graph'][0]['$validation']['properties']), 15)
+        self.assertEqual(nested_schema['@graph'][0]['$validation']['properties']['name']['description'],
+                         'The name of the Cvisb Dataset')
+        self.assertEqual(nested_schema['@graph'][0]['$validation']['properties']['name']['type'],
+                         'string')
+
+        # the rest of the properties should be inherited from the root class
+        self.assertEqual(len(nested_schema['@graph'][2]['$validation']['properties']), 15)
+        # description and type should override parent class
+        self.assertEqual(nested_schema['@graph'][2]['$validation']['properties']['name']['description'], 'Test description')
+        self.assertEqual(nested_schema['@graph'][2]['$validation']['properties']['name']['type'], 'number')
+
+        # the rest of the properties should be inherited from the root class
+        self.assertEqual(len(nested_schema['@graph'][3]['$validation']['properties']), 15)
+        # description should be inherited from the parent class
+        self.assertEqual(nested_schema['@graph'][3]['$validation']['properties']['name']['description'], 'Test description')
+        self.assertEqual(nested_schema['@graph'][3]['$validation']['properties']['name']['type'], 'boolean')
+
+    def test_schema_should_not_merge_validation_property_on_nested_classes_if_flag_set_to_false(self):
+        """ Testing merge_recursive_parents function implicitly with merging set to false
+        """
+        nested_schema_path = os.path.join(_CURRENT,
+                                             'data',
+                                             'nested_schema.json')
+        nested_schema = load_json_or_yaml(nested_schema_path)
+
+        # test that data is correctly inserted beforehand
+        self.assertEqual(len(nested_schema['@graph'][0]['$validation']['properties']), 15)
+        self.assertEqual(nested_schema['@graph'][0]['$validation']['properties']['name']['description'],
+                         'The name of the Cvisb Dataset')
+        self.assertEqual(nested_schema['@graph'][0]['$validation']['properties']['name']['type'],
+                         'string')
+
+        self.assertEqual(len(nested_schema['@graph'][2]['$validation']['properties']), 1)
+        self.assertEqual(nested_schema['@graph'][2]['$validation']['properties']['name']['description'], 'Test description')
+        self.assertEqual(nested_schema['@graph'][2]['$validation']['properties']['name']['type'], 'number')
+
+        self.assertEqual(len(nested_schema['@graph'][3]['$validation']['properties']), 1)
+        self.assertEqual(nested_schema['@graph'][3]['$validation']['properties']['name']['type'], 'boolean')
+
+        schema_nx = Schema(nested_schema, validation_merge=False)
+
+        # data should remain the same after schema creation
+        self.assertEqual(len(nested_schema['@graph'][0]['$validation']['properties']), 15)
+        self.assertEqual(nested_schema['@graph'][0]['$validation']['properties']['name']['description'],
+                         'The name of the Cvisb Dataset')
+        self.assertEqual(nested_schema['@graph'][0]['$validation']['properties']['name']['type'],
+                         'string')
+
+        self.assertEqual(len(nested_schema['@graph'][2]['$validation']['properties']), 1)
+        self.assertEqual(nested_schema['@graph'][2]['$validation']['properties']['name']['description'], 'Test description')
+        self.assertEqual(nested_schema['@graph'][2]['$validation']['properties']['name']['type'], 'number')
+
+        self.assertEqual(len(nested_schema['@graph'][3]['$validation']['properties']), 1)
+        self.assertEqual(nested_schema['@graph'][3]['$validation']['properties']['name']['type'], 'boolean')
+
 
 if __name__ == '__main__':
     unittest.main()

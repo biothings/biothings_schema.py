@@ -155,7 +155,8 @@ class Schema():
         "bts": "http://discovery.biothings.io/bts/"
     }
 
-    def __init__(self, schema=None, context=None):
+    def __init__(self, schema=None, context=None, validation_merge=True):
+        self.validation_merge = validation_merge
         self.default_schema_loaded = False
         self.context = self.CONTEXT
         if context:
@@ -212,7 +213,7 @@ class Schema():
         nx.set_node_attributes(self.schema_extension_nx, attr_dict)
         # merge networkx graph of user-defined schema with networkx graph of schema defined by Schema.org
         self.schema_nx = merge_schema_networkx(self.schemaorg_nx, self.schema_extension_nx)
-        SchemaValidator(self.schema_extension_only, self.schema_nx).validate_full_schema()
+        SchemaValidator(self.schema_extension_only, self.schema_nx, self.validation_merge).validate_full_schema()
         # merge together the given schema and the schema defined by schemaorg
         self.schema = merge_schema(self.schema_extension_only,
                                    self.schemaorg_schema)
@@ -772,7 +773,8 @@ class SchemaValidator():
       # TODO: Check if value of inverseof field is defined in the schema
       # TODO: Check inverseof from both properties
     """
-    def __init__(self, schema, schema_nx):
+    def __init__(self, schema, schema_nx, validation_merge=True):
+        self.validation_merge = validation_merge
         self.schemaorg = {'schema': load_schemaorg(version='8.0'),
                           'classes': [],
                           'properties': []}
@@ -963,7 +965,8 @@ class SchemaValidator():
                 # if record.get('rdfs:subClassOf'):
                 #     parent_schema = next((schema for schema in self.extension_schema['schema']['@graph']
                 #                           if schema['@id'] == record.get('rdfs:subClassOf').get('@id')), None)
-                self.merge_recursive_parents(record, count)
+                if self.validation_merge:
+                    self.merge_recursive_parents(record, count)
 
                 #self.merge_parent_validations(record, count, parent_schema)
                 self.validate_class_schema(record)

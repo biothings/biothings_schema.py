@@ -3,7 +3,7 @@ from setuptools import setup
 
 install_requires = [
     'jsonschema>=3.0.1',
-    'networkx==2.3',
+    'networkx==2.6',
     'PyYAML>=5.1',
     'requests>=2.21.0',
     'strict-rfc3339'
@@ -25,13 +25,9 @@ setup(
     packages=['biothings_schema'],
     classifiers=[
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: BSD License",
         "Operating System :: POSIX",
         "Operating System :: MacOS :: MacOS X",
