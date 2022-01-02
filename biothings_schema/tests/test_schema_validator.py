@@ -240,6 +240,10 @@ class TestSchemaValidator(unittest.TestCase):
         self.assertEqual(len(nested_schema['@graph'][3]['$validation']['properties']), 1)
         self.assertEqual(nested_schema['@graph'][3]['$validation']['properties']['name']['type'], 'boolean')
 
+    def test_extended_schema_validator_works_as_expected(self):
+        schema_extended_url = 'https://raw.githubusercontent.com/BioSchemas/specifications/master/Gene/jsonld/Gene_v1.0-RELEASE.json'
+        schema = Schema(schema_extended_url)
+
 
 if __name__ == '__main__':
     unittest.main()

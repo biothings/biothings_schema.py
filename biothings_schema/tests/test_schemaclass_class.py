@@ -1,7 +1,10 @@
+import os
 import unittest
 
+_CURRENT = os.path.abspath(os.path.dirname(__file__))
+
 from biothings_schema import Schema
-from biothings_schema import SchemaProperty
+from biothings_schema.base import *
 
 
 class TestSchemaClassClass(unittest.TestCase):
@@ -10,6 +13,15 @@ class TestSchemaClassClass(unittest.TestCase):
     def setUp(self):
         schema_url = 'https://raw.githubusercontent.com/data2health/schemas/biothings/biothings/biothings_curie_kevin.jsonld'
         self.se = Schema(schema_url)
+
+    def test_initialization_with_context_works(self):
+        biothings_jsonld_path = os.path.join(_CURRENT,
+                                             'data',
+                                             'biothings_test.jsonld')
+        schema_url = 'https://raw.githubusercontent.com/data2health/schemas/biothings/biothings/biothings_curie_kevin.jsonld'
+        biothings_schema = load_json_or_yaml(biothings_jsonld_path)
+        self.se_with_context = Schema(schema_url, biothings_schema['@context'])
+        self.assertEqual(self.se_with_context.schema, self.se.schema)
 
     def test_initialization(self):
         # if input class is not in schema, defined_in_schema should be False
