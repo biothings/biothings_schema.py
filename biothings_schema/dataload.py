@@ -1,4 +1,5 @@
 import json
+import os.path
 
 import requests
 import yaml
@@ -76,9 +77,9 @@ def construct_schemaorg_url(version):
 
 
 def load_schemaorg(version=None, verbose=False):
-    """Load SchemOrg vocabulary
+    """Load SchemaOrg vocabulary
 
-    :arg float version: The schemaorg schema version, e.g 3.7
+    :arg float version: The schemaorg schema version, e.g 13.0
     """
     # if version is not specified, use the latest one by default
     if not version:
@@ -93,6 +94,16 @@ def load_schemaorg(version=None, verbose=False):
         return load_json_or_yaml(url)
     except ValueError:
         raise ValueError("version {} is not valid! Current latest version is {}".format(version, get_latest_schemaorg_version()))
+
+
+def load_bioschemas(verbose=False):
+    """Load Bioschemas vocabulary, currently cached in data folder
+    """
+    _ROOT = os.path.abspath(os.path.dirname(__file__))
+    _path = os.path.join(_ROOT, "data","bioschemas.json")
+    if verbose:
+        print(f"Loading Bioschemas schema from {_path}")
+    return load_json_or_yaml(_path)
 
 
 def find_parent_child_relation(record, _type="Class"):
