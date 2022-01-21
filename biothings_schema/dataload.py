@@ -6,7 +6,8 @@ import networkx as nx
 
 from .utils import dict2list
 
-SCHEMAORG_PATH = 'https://schema.org/version/latest/schemaorg-current-https.jsonld'
+SCHEMAORG_JSONLD_BASE_URL = 'https://raw.githubusercontent.com/schemaorg/schemaorg/main/data/releases'
+SCHEMAORG_VERSION_URL = 'https://raw.githubusercontent.com/schemaorg/schemaorg/main/versions.json'
 
 DATATYPES = ["http://schema.org/DataType", "http://schema.org/Boolean",
              "http://schema.org/False", "http://schema.org/True",
@@ -58,19 +59,19 @@ def load_json_or_yaml(file_path):
 
 def get_latest_schemaorg_version():
     """Get the latest version of schemaorg from its github"""
-    # call "latest" and get version
-    _url = requests.get(SCHEMAORG_PATH).url
-    # parse url
-    return str(_url.split('/')[-2])
+    versions = requests.get(SCHEMAORG_VERSION_URL).json()["releaseLog"]
+    # skip pre-release entry like {"14.0": "2021-XX-XX"} and sort by the numeric version numbers
+    latest = sorted([version for version, date in versions.items() if date.find('X') == -1], key=float)[-1]
+    return latest
 
 
 def construct_schemaorg_url(version):
     """Construct url to schemaorg jsonld file"""
     if float(version) <= 8.0:
-        url = f"https://raw.githubusercontent.com/schemaorg/schemaorg/main/data/releases/{version}/all-layers.jsonld"
+        url = f"{SCHEMAORG_JSONLD_BASE_URL}/{version}/all-layers.jsonld"
     else:
         # >=9.0
-        url = f"https://raw.githubusercontent.com/schemaorg/schemaorg/main/data/releases/{version}/schemaorg-all-http.jsonld"
+        url = f"{SCHEMAORG_JSONLD_BASE_URL}/{version}/schemaorg-all-http.jsonld"
     return url
 
 
