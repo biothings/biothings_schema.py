@@ -66,7 +66,12 @@ def get_latest_schemaorg_version():
 
 def construct_schemaorg_url(version):
     """Construct url to schemaorg jsonld file"""
-    return "https://raw.githubusercontent.com/schemaorg/schemaorg/main/data/releases/{}/all-layers.jsonld".format(str(version))
+    if float(version) <= 8.0:
+        url = f"https://raw.githubusercontent.com/schemaorg/schemaorg/main/data/releases/{version}/all-layers.jsonld"
+    else:
+        # >=9.0
+        url = f"https://raw.githubusercontent.com/schemaorg/schemaorg/main/data/releases/{version}/schemaorg-all-http.jsonld"
+    return url
 
 
 def load_schemaorg(version=None, verbose=False):
@@ -79,7 +84,7 @@ def load_schemaorg(version=None, verbose=False):
         try:
             version = get_latest_schemaorg_version()
         except ValueError:
-            version = "8.0"
+            version = "13.0"
     url = construct_schemaorg_url(version)
     if verbose:
         print("Loading Schema.org schema from {}".format(url))
