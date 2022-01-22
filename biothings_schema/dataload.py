@@ -5,8 +5,9 @@ import requests
 import yaml
 import networkx as nx
 
-from .utils import dict2list
+from .utils import dict2list, merge_schema
 
+BASE_SCHEMA = ['schema.org', 'bioschemas']
 SCHEMAORG_JSONLD_BASE_URL = 'https://raw.githubusercontent.com/schemaorg/schemaorg/main/data/releases'
 SCHEMAORG_VERSION_URL = 'https://raw.githubusercontent.com/schemaorg/schemaorg/main/versions.json'
 
@@ -48,8 +49,8 @@ def load_json_or_yaml(file_path):
         if type(_data) == bytes:
             _data = _data.decode('utf-8')
         data = json.loads(_data)
-    except json.JSONDecodeError:   # for py>=3.5
     # except ValueError:               # for py<3.5
+    except json.JSONDecodeError:   # for py>=3.5
         try:
             data = yaml.load(_data, Loader=yaml.SafeLoader)
         except (yaml.scanner.ScannerError,
@@ -100,10 +101,28 @@ def load_bioschemas(verbose=False):
     """Load Bioschemas vocabulary, currently cached in data folder
     """
     _ROOT = os.path.abspath(os.path.dirname(__file__))
-    _path = os.path.join(_ROOT, "data","bioschemas.json")
+    _path = os.path.join(_ROOT, "data", "bioschemas.json")
     if verbose:
         print(f"Loading Bioschemas schema from {_path}")
     return load_json_or_yaml(_path)
+
+
+def load_base_schema(base_schema=None, verbose=False):
+    """Load base schema, schema contains base classes for
+       sub-classing in user schemas.
+    """
+    _base = base_schema or BASE_SCHEMA or []
+    _base_schema = []
+    if "schema.org" in _base:
+        _base_schema.append(
+            load_schemaorg(verbose=verbose)
+        )
+    if "bioschemas" in _base:
+        _base_schema.append(
+            load_bioschemas(verbose=verbose)
+        )
+    _base_schema = merge_schema(*_base_schema)
+    return _base_schema
 
 
 def find_parent_child_relation(record, _type="Class"):
