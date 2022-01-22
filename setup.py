@@ -15,7 +15,7 @@ extra_requires = [
 
 setup(
     name="biothings_schema",
-    version="0.0.2",
+    version="0.1.0",
     author="Jiwen Xin, Chunlei Wu",
     author_email="cwu@scripps.edu",
     description="Python Client for BioThings Schema",
