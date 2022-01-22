@@ -1,4 +1,3 @@
-import json
 import os
 from functools import wraps
 from jsonschema import validate
@@ -41,6 +40,7 @@ def require_optional(*module_list):
     """
     def _inner_require_optional(func):
         import importlib
+
         @wraps(func)
         def wrapper(*args, **kwargs):
             missing_module = False
@@ -48,7 +48,7 @@ def require_optional(*module_list):
                 try:
                     func.__globals__[mod] = importlib.import_module(mod)
                 except ImportError:
-                    print("Error: This func requires module \"{}\" to run.".format(mod))
+                    print(f'Error: This func requires module "{mod}" to run.')
                     missing_module = True
             if not missing_module:
                 return func(*args, **kwargs)
@@ -59,9 +59,9 @@ def require_optional(*module_list):
 @require_optional("graphviz")
 def visualize(edges, size=None):
     if size:
-        d = graphviz.Digraph(graph_attr=[('size', size)])    # pylint: disable=undefined-variable
+        d = graphviz.Digraph(graph_attr=[('size', size)])   # type: ignore  # pylint: disable=undefined-variable
     else:
-        d = graphviz.Digraph()                               # pylint: disable=undefined-variable
+        d = graphviz.Digraph()                              # type: ignore  # pylint: disable=undefined-variable
     for _item in edges:
         d.edge(_item[0], _item[1])
     return d
