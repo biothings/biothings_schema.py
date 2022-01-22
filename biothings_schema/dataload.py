@@ -6,20 +6,13 @@ import yaml
 import networkx as nx
 
 from .utils import dict2list, merge_schema
-
-BASE_SCHEMA = ['schema.org', 'bioschemas']
-SCHEMAORG_JSONLD_BASE_URL = 'https://raw.githubusercontent.com/schemaorg/schemaorg/main/data/releases'
-SCHEMAORG_VERSION_URL = 'https://raw.githubusercontent.com/schemaorg/schemaorg/main/versions.json'
-
-DATATYPES = ["http://schema.org/DataType", "http://schema.org/Boolean",
-             "http://schema.org/False", "http://schema.org/True",
-             "http://schema.org/Date", "http://schema.org/DateTime",
-             "http://schema.org/Number", "http://schema.org/Integer",
-             "http://schema.org/Float", "http://schema.org/Text",
-             "http://schema.org/CssSelectorType", "http://schema.org/URL",
-             "http://schema.org/XPathType", "http://schema.org/Time"]
-
-IGNORED_CLASS_PROPERTY = ["rdfs:Class", "rdf:type", "rdfs:label"]
+from .settings import (
+    BASE_SCHEMA,
+    SCHEMAORG_JSONLD_BASE_URL,
+    SCHEMAORG_VERSION_URL,
+    DATATYPES,
+    IGNORED_CLASS_PROPERTY
+)
 
 
 def load_json_or_yaml(file_path):

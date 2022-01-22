@@ -2,6 +2,7 @@ import re
 from collections import defaultdict
 
 from .utils import unlist
+from .settings import VALIDATION_FIELD, ALT_VALIDATION_FIELDS
 
 
 class CurieUriConverter():
@@ -19,12 +20,13 @@ class CurieUriConverter():
     def determine_id_type(self, _id):
         """Determine whether an ID is a curie or URI or none of them"""
         regex_url = re.compile(
-                r'^(?:http|ftp)s?://' # http:// or https://
-                r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-                r'localhost|' #localhost...
-                r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-                r'(?::\d+)?' # optional port
-                r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+            r'^(?:http|ftp)s?://'   # http:// or https://
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'   # domain...
+            r'localhost|'           # localhost...
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'   # ...or ip
+            r'(?::\d+)?'            # optional port
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE
+        )
         if re.match(regex_url, _id):
             return 'url'
         elif len(_id.split(":")) == 2 and type(_id.split(":")[0]) == str:
@@ -168,7 +170,7 @@ def preprocess_schema(schema):
             if isinstance(record["rdfs:label"], dict):
                 record["rdfs:label"] = record["rdfs:label"]["@value"]
             for k, v in record.items():
-                if k == "$validation":
+                if k == VALIDATION_FIELD or k in ALT_VALIDATION_FIELDS:
                     new_record[k] = v
                 elif isinstance(v, str):
                     new_record[expand_curie_to_uri(k, context)] = expand_curie_to_uri(v, context)

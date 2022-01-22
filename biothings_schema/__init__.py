@@ -7,6 +7,11 @@ import inspect
 import networkx as nx
 from jsonschema import validate, validators, FormatChecker
 
+from .settings import (
+    DATATYPES,
+    VALIDATION_FIELD,
+    ALT_VALIDATION_FIELDS
+)
 from .base import visualize
 from .utils import (
     dict2list,
@@ -16,7 +21,6 @@ from .utils import (
     str2list
 )
 from .dataload import (
-    DATATYPES,
     load_json_or_yaml,
     load_base_schema,
     load_schema_into_networkx
@@ -184,16 +188,16 @@ class Schema():
         """ Parse validation info from schema file"""
         validation_info = {}
         for _doc in self.schema['@graph']:
-            if "$validation" in _doc:
-                data = _doc["$validation"]
+            if VALIDATION_FIELD in _doc:
+                data = _doc[VALIDATION_FIELD]
                 # expand json schema definition from definitions field
-                if "definitions" in _doc["$validation"]:
-                    data = expand_ref(data, _doc["$validation"]["definitions"])
+                if "definitions" in _doc[VALIDATION_FIELD]:
+                    data = expand_ref(data, _doc[VALIDATION_FIELD]["definitions"])
                 validation_info[_doc["@id"]] = data
         for _doc in self.schema["@graph"]:
-            if "$validation" in _doc:
+            if VALIDATION_FIELD in _doc:
                 # if json schema is not defined for a field, look for definition somewhere else
-                for _item, _def in _doc['$validation']['properties'].items():
+                for _item, _def in _doc[VALIDATION_FIELD]['properties'].items():
                     if type(_def) == dict and set(_def.keys()) == set(['description']):
                         sp = self.get_property(_item)
                         if type(sp) != list:
@@ -595,7 +599,7 @@ class SchemaClass():
         :arg str class_uri: The URI of the class which has JSON schema
         """
         if self.uri not in self.se.validation:
-            raise RuntimeError("$validation is not defined for {} field; thus the json document could not be validated".format(self.name))
+            raise RuntimeError(f"{VALIDATION_FIELD} is not defined for {self.name} field; thus the json document could not be validated")
         else:
             validate(json_doc, self.se.validation[self.uri], format_checker=FormatChecker())
             print('The JSON document is valid')
@@ -887,7 +891,7 @@ class SchemaValidator():
         return validate(schema, json_schema)
 
     def validate_json_schema(self, json_schema):
-        """Make sure the json schema provided in the $validation field is valid
+        """Make sure the json schema provided in the VALIDATION_FIELD field is valid
 
         source code from: https://python-jsonschema.readthedocs.io/en/stable/_modules/jsonschema/validators/#validate
         TODO: Maybe add additional check,e.g. fields in "required" should appear in "properties"
@@ -901,13 +905,13 @@ class SchemaValidator():
         Make sure all properties specified are documented in schema
           TODO: 4. POTENTIALLY, VALUE OF $VALIDATION IS A URL
         """
-        if "$validation" in schema:
-            if 'properties' not in schema["$validation"]:
-                raise KeyError('properties not in $validation field')
+        if VALIDATION_FIELD in schema:
+            if 'properties' not in schema[VALIDATION_FIELD]:
+                raise KeyError(f'properties not in {VALIDATION_FIELD} field')
             else:
                 # validate the json schema
-                self.validate_json_schema(schema["$validation"])
-                properties = schema["$validation"]["properties"].keys()
+                self.validate_json_schema(schema[VALIDATION_FIELD])
+                properties = schema[VALIDATION_FIELD]["properties"].keys()
                 # find all parents of the class
                 paths = nx.all_simple_paths(self.schema_nx,
                                             source='http://schema.org/Thing',
@@ -927,7 +931,7 @@ class SchemaValidator():
                                 if record["@id"] in parent_classes:
                                     matched = True
                     if not matched:
-                        raise ValueError('field {} in $validation is not correctly documented'.format(_property))
+                        raise ValueError(f'field "{_property}" in "{VALIDATION_FIELD}" is not correctly documented')
         else:
             pass
 
@@ -944,9 +948,9 @@ class SchemaValidator():
         return destination
 
     def merge_parent_validations(self, schema, schema_index, parent):
-        if parent and parent.get('$validation'):
-            self.extension_schema['schema']['@graph'][schema_index]['$validation'] = \
-                self.merge(parent['$validation'], self.extension_schema['schema']['@graph'][schema_index]['$validation'])
+        if parent and parent.get(VALIDATION_FIELD):
+            self.extension_schema['schema']['@graph'][schema_index][VALIDATION_FIELD] = \
+                self.merge(parent[VALIDATION_FIELD], self.extension_schema['schema']['@graph'][schema_index][VALIDATION_FIELD])
 
     def merge_recursive_parents(self, record, schema_index):
         parent_schema = None
