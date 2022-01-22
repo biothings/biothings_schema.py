@@ -1,8 +1,6 @@
 import unittest
 
-from biothings_schema import Schema
-from biothings_schema import SchemaClass
-from biothings_schema import SchemaProperty
+from biothings_schema import Schema, SchemaClass, SchemaProperty
 
 
 class TestSchemaClass(unittest.TestCase):
@@ -43,7 +41,7 @@ class TestSchemaClass(unittest.TestCase):
 
     def test_get_class(self):
         """ Test get_class function"""
-        scls = self.se.get_class("Gene")
+        scls = self.se.get_class("schema:Gene")
         self.assertEqual(SchemaClass, type(scls))
 
     def test_get_property(self):
