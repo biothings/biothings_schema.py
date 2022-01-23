@@ -3,19 +3,19 @@ from setuptools import setup
 
 install_requires = [
     'jsonschema>=3.0.1',
-    'networkx==2.3',
+    'networkx==2.6.3',
     'PyYAML>=5.1',
-    'requests>=2.21.0',
-    'strict-rfc3339'
+    'requests>=2.26.0',
+    'strict-rfc3339>=0.7'
 ]
 
 extra_requires = [
-    'graphviz>=0.10.1'
+    'graphviz>=0.19.1'
 ]
 
 setup(
     name="biothings_schema",
-    version="0.0.1",
+    version="0.1.0",
     author="Jiwen Xin, Chunlei Wu",
     author_email="cwu@scripps.edu",
     description="Python Client for BioThings Schema",
@@ -25,13 +25,10 @@ setup(
     packages=['biothings_schema'],
     classifiers=[
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: BSD License",
         "Operating System :: POSIX",
         "Operating System :: MacOS :: MacOS X",

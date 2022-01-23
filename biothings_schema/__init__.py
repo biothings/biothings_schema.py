@@ -5,16 +5,31 @@ from functools import partial
 import inspect
 
 import networkx as nx
-import jsonschema
-from jsonschema import validate
-from jsonschema import validators
-# import tabletext
+from jsonschema import validate, validators, FormatChecker
 
-from .base import *
-from .utils import *
-from .dataload import *
-from .curies import *
-
+from .settings import (
+    DATATYPES,
+    VALIDATION_FIELD,
+    ALT_VALIDATION_FIELDS
+)
+from .base import visualize
+from .utils import (
+    dict2list,
+    expand_ref,
+    merge_schema,
+    merge_schema_networkx,
+    str2list
+)
+from .dataload import (
+    load_json_or_yaml,
+    load_base_schema,
+    load_schema_into_networkx
+)
+from .curies import (
+    preprocess_schema,
+    CurieUriConverter,
+    extract_name_from_uri_or_curie
+)
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -65,7 +80,7 @@ def transform_schemaclasses_lst(se, scls_list, output_type):
         return list(map(partial(SchemaClass, schema=se),
                         scls_list))
     else:
-        raise ValueError('output_type wrong. Should be one of uri, curie, label or PythonClass')
+        raise ValueError('Invalid "output_type" value. Should be one of "uri", "curie", "label" or "PythonClass"')
 
 
 def transform_property_info_list(se, prop_list, output_type):
@@ -155,34 +170,34 @@ class Schema():
         "bts": "http://discovery.biothings.io/bts/"
     }
 
-    def __init__(self, schema=None, context=None):
-        self.default_schema_loaded = False
+    def __init__(self, schema=None, context=None, validation_merge=True, base_schema=None):
+        self.validation_merge = validation_merge
+        self.base_schema_loaded = False
+        self.schema = None
+        self.validator = None
         self.context = self.CONTEXT
         if context:
             if not isinstance(context, dict):
                 raise ValueError("context should be a python dictionary, with namespace/prefix as key, and URI as value")
             else:
                 self.context.update(context)
-        if not schema:
-            self.load_default_schema()
-        else:
-            self.load_schema(schema)
+        self.load_schema(schema=schema, base_schema=base_schema)
 
     @property
     def validation(self):
         """ Parse validation info from schema file"""
         validation_info = {}
-        for _doc in self.schema_extension_only['@graph']:
-            if "$validation" in _doc:
-                data = _doc["$validation"]
+        for _doc in self.schema['@graph']:
+            if VALIDATION_FIELD in _doc:
+                data = _doc[VALIDATION_FIELD]
                 # expand json schema definition from definitions field
-                if "definitions" in _doc["$validation"]:
-                    data = expand_ref(data, _doc["$validation"]["definitions"])
+                if "definitions" in _doc[VALIDATION_FIELD]:
+                    data = expand_ref(data, _doc[VALIDATION_FIELD]["definitions"])
                 validation_info[_doc["@id"]] = data
-        for _doc in self.schema_extension_only["@graph"]:
-            if "$validation" in _doc:
+        for _doc in self.schema["@graph"]:
+            if VALIDATION_FIELD in _doc:
                 # if json schema is not defined for a field, look for definition somewhere else
-                for _item, _def in _doc['$validation']['properties'].items():
+                for _item, _def in _doc[VALIDATION_FIELD]['properties'].items():
                     if type(_def) == dict and set(_def.keys()) == set(['description']):
                         sp = self.get_property(_item)
                         if type(sp) != list:
@@ -193,64 +208,58 @@ class Schema():
                                     validation_info[_doc["@id"]]['properties'][_item].update(validation_info[_range.uri])
         return validation_info
 
-    def load_schema(self, schema):
+    def load_schema(self, schema=None, base_schema=None):
         """Load schema and convert it to networkx graph"""
-        if not self.default_schema_loaded:
-            self.load_default_schema()
-        # load JSON-LD file of user defined schema
-        self.schema_extension_only = preprocess_schema(load_json_or_yaml(schema))
-        if "@context" in self.schema_extension_only:
-            self.context.update(self.schema_extension_only["@context"])
+        if not self.base_schema_loaded:
+            self.load_base_schema(base_schema=base_schema)
+
+        if schema:
+            # load JSON-LD file of user defined schema
+            self.schema = preprocess_schema(load_json_or_yaml(schema))
+        else:
+            # set to an empty schema dictionary
+            self.schema = {"@context": {}, "@graph": []}
+
+        if "@context" in self.schema:
+            self.context.update(self.schema["@context"])
         # convert user defined schema into a networkx DiGraph
-        self.schema_extension_nx = load_schema_into_networkx(self.schema_extension_only)
+        self.schema_nx = load_schema_into_networkx(self.schema)
         # update undefined classes/properties
-        undefined_nodes = [node for node, attrdict in self.schema_extension_nx.node.items() if not attrdict]
+        undefined_nodes = [node for node, attrdict in self.schema_nx.nodes._nodes.items() if not attrdict]
         attr_dict = {}
         for _node in undefined_nodes:
-            if _node in self.schemaorg_nx.nodes():
-                attr_dict[_node] = self.schemaorg_nx.nodes[_node]
-        nx.set_node_attributes(self.schema_extension_nx, attr_dict)
-        # merge networkx graph of user-defined schema with networkx graph of schema defined by Schema.org
-        self.schema_nx = merge_schema_networkx(self.schemaorg_nx, self.schema_extension_nx)
-        SchemaValidator(self.schema_extension_only, self.schema_nx).validate_full_schema()
-        # merge together the given schema and the schema defined by schemaorg
-        self.schema = merge_schema(self.schema_extension_only,
-                                   self.schemaorg_schema)
+            if _node in self.base_schema_nx.nodes():
+                attr_dict[_node] = self.base_schema_nx.nodes[_node]
+        nx.set_node_attributes(self.schema_nx, attr_dict)
+        self.full_schema = merge_schema(self.base_schema, self.schema)
+        self.full_schema_nx = merge_schema_networkx(self.base_schema_nx, self.schema_nx)
+        self.validator = SchemaValidator(self.schema, self.full_schema_nx, self.base_schema, self.validation_merge)
+        self.validator.validate_full_schema()
+
         # split the schema networkx into individual ones
-        isolates = list(nx.isolates(self.schema_nx))
-        self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.node.items() if attrdict.get('type') == 'Class' and node not in isolates])
-        self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict.get('type') == 'Class'])
-        self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict.get('type') == 'Property'])
+        isolates = list(nx.isolates(self.full_schema_nx))
+        self.extended_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.nodes._nodes.items() if attrdict.get('type') == 'Class' and node not in isolates])
+        self.full_class_only_graph = self.full_schema_nx.subgraph([node for node, attrdict in self.full_schema_nx.nodes._nodes.items() if attrdict.get('type') == 'Class'])
+        self.property_only_graph = self.full_schema_nx.subgraph([node for node, attrdict in self.full_schema_nx.nodes._nodes.items() if attrdict.get('type') == 'Property'])
         # instantiate converters for classes and properties
-        self._all_class_uris = [node for node,attrdict in self.schema_nx.node.items() if attrdict.get('type') in ['Class', 'DataType']]
+        self._all_class_uris = [node for node, attrdict in self.full_schema_nx.nodes._nodes.items() if attrdict.get('type') in ['Class', 'DataType']]
         self.cls_converter = CurieUriConverter(self.context,
                                                self._all_class_uris)
         self._all_prop_uris = list(self.property_only_graph.nodes())
         self.prop_converter = CurieUriConverter(self.context,
                                                 self._all_prop_uris)
 
-    def load_default_schema(self):
-        """Load default schema, either schema.org or biothings"""
-        self.schema = preprocess_schema(load_schemaorg(version='8.0'))
-        self.schemaorg_schema = self.schema
-        if "@context" in self.schema:
-            self.context.update(self.schema["@context"])
-        self.schema_extension_only = self.schema
-        self.schemaorg_nx = load_schema_into_networkx(self.schema)
-        self.schema_extension_nx = self.schemaorg_nx
-        self.schema_nx = self.schemaorg_nx
-        isolates = list(nx.isolates(self.schema_nx))
-        self.extended_class_only_graph = self.schema_extension_nx.subgraph([node for node, attrdict in self.schema_extension_nx.node.items() if attrdict['type'] == 'Class' and node not in isolates])
-        self.full_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Class'])
-        self.property_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.node.items() if attrdict['type'] == 'Property'])
-        # instantiate converters for classes and properties
-        self._all_class_uris = [node for node,attrdict in self.schema_nx.node.items() if attrdict['type'] in ['Class', 'DataType']]
-        self.cls_converter = CurieUriConverter(self.context,
-                                               self._all_class_uris)
-        self._all_prop_uris = list(self.property_only_graph.nodes())
-        self.prop_converter = CurieUriConverter(self.context,
-                                                self._all_prop_uris)
-        self.default_schema_loaded = True
+    def load_base_schema(self, base_schema=None, verbose=False):
+        """
+        Load base schema, defined in self.BASE_SCHEMA,
+        but can be override in `base_schema` parameter.
+        """
+        _base_schema = load_base_schema(
+            base_schema=base_schema, verbose=verbose
+        )
+        self.base_schema = preprocess_schema(_base_schema)
+        self.base_schema_nx = load_schema_into_networkx(self.base_schema)
+        self.base_schema_loaded = True
 
     def full_schema_graph(self, size=None):
         """Visualize the full schema loaded using graphviz"""
@@ -262,9 +271,7 @@ class Schema():
         return visualize(curie_edges, size=size)
 
     def sub_schema_graph(self, source, include_parents=True, include_children=True, size=None):
-        """Visualize a sub-graph of the schema based on a specific node
-
-        """
+        """Visualize a sub-graph of the schema based on a specific node"""
         scls = SchemaClass(source, self)
         paths = scls.parent_classes
         parents = []
@@ -307,18 +314,18 @@ class Schema():
         return classes
 
     def list_all_defined_classes(self):
-        classes = [_item["@id"] for _item in self.schema_extension_only["@graph"] if "@type" in _item and _item["@type"] == "rdfs:Class" and _item["@id"] not in DATATYPES]
+        classes = [_item["@id"] for _item in self.schema["@graph"] if "@type" in _item and _item["@type"] == "rdfs:Class" and _item["@id"] not in DATATYPES]
         classes = [SchemaClass(_cls, self) for _cls in classes]
         return classes
 
     def list_all_defined_properties(self):
-        properties = [_item["@id"] for _item in self.schema_extension_only["@graph"] if "@type" in _item and _item["@type"] == "rdf:Property"]
+        properties = [_item["@id"] for _item in self.schema["@graph"] if "@type" in _item and _item["@type"] == "rdf:Property"]
         properties = [SchemaProperty(_cls, self) for _cls in properties]
         return properties
 
     def list_all_referenced_classes(self):
         all_classes = list(self.extended_class_only_graph.nodes())
-        defined_classes = [_item["@id"] for _item in self.schema_extension_only["@graph"] if "@type" in _item and _item["@type"] == "rdfs:Class" and _item["@id"] not in DATATYPES]
+        defined_classes = [_item["@id"] for _item in self.schema["@graph"] if "@type" in _item and _item["@type"] == "rdfs:Class" and _item["@id"] not in DATATYPES]
         reference_classes = [SchemaClass(_cls, self) for _cls in (set(all_classes) - set(defined_classes))]
         return reference_classes
 
@@ -386,7 +393,7 @@ class Schema():
     def update_class(self, class_info):
         """Add a new class into schema
         """
-        SchemaValidator(self.schema_extension_only, self.schema_nx).validate_class_schema(class_info)
+        self.validator.validate_class_schema(class_info)
         self.schema["@graph"].append(class_info)
         self.load_schema(self.schema)
         print("Updated the class {} successfully!".format(class_info["rdfs:label"]))
@@ -394,7 +401,7 @@ class Schema():
     def update_property(self, property_info):
         """Add a new property into schema
         """
-        SchemaValidator(self.schema_extension_only, self.full_schema_graph).validate_property_schema(property_info)
+        self.validator.validate_property_schema(property_info)
         self.schema["@graph"].append(property_info)
         self.load_schema(self.schema)
         print("Updated the property {} successfully!".format(property_info["rdfs:label"]))
@@ -420,7 +427,7 @@ class SchemaClass():
         self.output_type = output_type
 
     def __repr__(self):
-        return '<SchemaClass "' + self.name + '">'
+        return f'<SchemaClass "{self.name}">'
 
     def __str__(self):
         return str(self.name)
@@ -443,8 +450,8 @@ class SchemaClass():
         if not response:
             return response
         # classes might not have descriptions
-        if 'description' in self.se.full_class_only_graph.node[self.uri]:
-            return self.se.schema_nx.node[self.uri]['description']
+        if 'description' in self.se.full_class_only_graph.nodes._nodes[self.uri]:
+            return self.se.schema_nx.nodes._nodes[self.uri]['description']
         else:
             return None
 
@@ -505,7 +512,7 @@ class SchemaClass():
         paths = nx.all_simple_paths(self.se.full_class_only_graph,
                                     source=root_node,
                                     target=self.uri)
-        paths =  [_path[:-1] for _path in paths]
+        paths = [_path[:-1] for _path in paths]
         result = restructure_output(self,
                                     paths,
                                     inspect.stack()[0][3],
@@ -592,9 +599,9 @@ class SchemaClass():
         :arg str class_uri: The URI of the class which has JSON schema
         """
         if self.uri not in self.se.validation:
-            raise RuntimeError("$validation is not defined for {} field; thus the json document could not be validated".format(self.name))
+            raise RuntimeError(f"{VALIDATION_FIELD} is not defined for {self.name} field; thus the json document could not be validated")
         else:
-            validate(json_doc, self.se.validation[self.uri], format_checker=jsonschema.FormatChecker())
+            validate(json_doc, self.se.validation[self.uri], format_checker=FormatChecker())
             print('The JSON document is valid')
 
 
@@ -614,7 +621,7 @@ class SchemaProperty():
         self.output_type = output_type
 
     def __repr__(self):
-        return '<SchemaProperty "' + self.name + '"">'
+        return f'<SchemaProperty "{self.name}">'
 
     def __str__(self):
         return str(self.name)
@@ -667,8 +674,8 @@ class SchemaProperty():
         if not response:
             return response
         # some properties doesn't have descriptions
-        if 'description' in self.se.property_only_graph.node[self.uri]:
-            return self.se.property_only_graph.node[self.uri]['description']
+        if 'description' in self.se.property_only_graph.nodes._nodes[self.uri]:
+            return self.se.property_only_graph.nodes._nodes[self.uri]['description']
         else:
             return None
 
@@ -772,17 +779,22 @@ class SchemaValidator():
       # TODO: Check if value of inverseof field is defined in the schema
       # TODO: Check inverseof from both properties
     """
-    def __init__(self, schema, schema_nx):
-        self.schemaorg = {'schema': load_schemaorg(version='8.0'),
-                          'classes': [],
-                          'properties': []}
-        for _record in self.schemaorg['schema']['@graph']:
+    def __init__(self, schema, schema_nx, base_schema=None, validation_merge=True):
+        self.validation_merge = validation_merge
+        if base_schema is None or isinstance(base_schema, (list, tuple)):
+            base_schema = load_base_schema(base_schema=base_schema)
+        self.base_schema = {
+            'schema': preprocess_schema(base_schema),
+            'classes': [],
+            'properties': []
+        }
+        for _record in self.base_schema['schema']['@graph']:
             if "@type" in _record:
                 _type = str2list(_record["@type"])
                 if "rdfs:Property" in _type:
-                    self.schemaorg['properties'].append(_record["@id"])
+                    self.base_schema['properties'].append(_record["@id"])
                 elif "rdfs:Class" in _type:
-                    self.schemaorg['classes'].append(_record["@id"])
+                    self.base_schema['classes'].append(_record["@id"])
         self.extension_schema = {'schema': preprocess_schema(schema),
                                  'classes': [],
                                  'properties': []}
@@ -792,8 +804,8 @@ class SchemaValidator():
                 self.extension_schema['properties'].append(_record["@id"])
             elif "rdfs:Class" in _type:
                 self.extension_schema['classes'].append(_record["@id"])
-        self.all_classes = self.schemaorg['classes'] + self.extension_schema['classes']
-        self.all_schemas = self.schemaorg['schema']['@graph'] + self.extension_schema["schema"]["@graph"]
+        self.all_classes = self.base_schema['classes'] + self.extension_schema['classes']
+        self.all_schemas = self.base_schema['schema']['@graph'] + self.extension_schema["schema"]["@graph"]
         self.schema_nx = schema_nx
 
     def validate_class_label(self, label_uri):
@@ -879,7 +891,7 @@ class SchemaValidator():
         return validate(schema, json_schema)
 
     def validate_json_schema(self, json_schema):
-        """Make sure the json schema provided in the $validation field is valid
+        """Make sure the json schema provided in the VALIDATION_FIELD field is valid
 
         source code from: https://python-jsonschema.readthedocs.io/en/stable/_modules/jsonschema/validators/#validate
         TODO: Maybe add additional check,e.g. fields in "required" should appear in "properties"
@@ -893,13 +905,13 @@ class SchemaValidator():
         Make sure all properties specified are documented in schema
           TODO: 4. POTENTIALLY, VALUE OF $VALIDATION IS A URL
         """
-        if "$validation" in schema:
-            if 'properties' not in schema["$validation"]:
-                raise KeyError('properties not in $validation field')
+        if VALIDATION_FIELD in schema:
+            if 'properties' not in schema[VALIDATION_FIELD]:
+                raise KeyError(f'properties not in {VALIDATION_FIELD} field')
             else:
                 # validate the json schema
-                self.validate_json_schema(schema["$validation"])
-                properties = schema["$validation"]["properties"].keys()
+                self.validate_json_schema(schema[VALIDATION_FIELD])
+                properties = schema[VALIDATION_FIELD]["properties"].keys()
                 # find all parents of the class
                 paths = nx.all_simple_paths(self.schema_nx,
                                             source='http://schema.org/Thing',
@@ -919,17 +931,56 @@ class SchemaValidator():
                                 if record["@id"] in parent_classes:
                                     matched = True
                     if not matched:
-                        raise ValueError('field {} in $validation is not correctly documented'.format(_property))
+                        raise ValueError(f'field "{_property}" in "{VALIDATION_FIELD}" is not correctly documented')
         else:
             pass
+
+    def merge(self, source, destination):
+        for key, value in source.items():
+            if isinstance(value, dict):
+                # get node or create one
+                node = destination.setdefault(key, {})
+                self.merge(value, node)
+            else:
+                if key not in destination:
+                    destination[key] = value
+
+        return destination
+
+    def merge_parent_validations(self, schema, schema_index, parent):
+        if parent and parent.get(VALIDATION_FIELD):
+            self.extension_schema['schema']['@graph'][schema_index][VALIDATION_FIELD] = \
+                self.merge(parent[VALIDATION_FIELD], self.extension_schema['schema']['@graph'][schema_index][VALIDATION_FIELD])
+
+    def merge_recursive_parents(self, record, schema_index):
+        parent_schema = None
+        parent_index = None
+        if record.get('rdfs:subClassOf'):
+            parent_index = next((
+                parent_index for parent_index, schema in enumerate(self.extension_schema['schema']['@graph'])
+                if schema['@id'] == record.get('rdfs:subClassOf').get('@id')
+            ), None)
+            if parent_index is not None:
+                parent_schema = self.extension_schema['schema']['@graph'][parent_index]
+        self.merge_parent_validations(record, schema_index, parent_schema)
+        if parent_schema and parent_index and parent_schema.get('rdfs:subClassOf'):
+            self.merge_recursive_parents(parent_schema, parent_index)
 
     def validate_full_schema(self):
         """ Main function to validate schema
         """
         #self.check_duplicate_labels()
-        for record in self.extension_schema['schema']['@graph']:
+        for count, record in enumerate(self.extension_schema['schema']['@graph']):
             self.check_whether_atid_and_label_match(record)
             if record['@type'] == "rdfs:Class":
+                # parent_schema = None
+                # if record.get('rdfs:subClassOf'):
+                #     parent_schema = next((schema for schema in self.extension_schema['schema']['@graph']
+                #                           if schema['@id'] == record.get('rdfs:subClassOf').get('@id')), None)
+                if self.validation_merge:
+                    self.merge_recursive_parents(record, count)
+
+                #self.merge_parent_validations(record, count, parent_schema)
                 self.validate_class_schema(record)
                 self.validate_class_label(record["@id"])
                 self.validate_validation_field(record)

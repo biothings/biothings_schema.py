@@ -1,14 +1,18 @@
+import os.path
 import unittest
 
 from biothings_schema import Schema, SchemaClass, SchemaProperty
 
+_CURRENT = os.path.abspath(os.path.dirname(__file__))
 
 class TestSchemaClass(unittest.TestCase):
     """Test Schema Validator Class
     """
     def setUp(self):
-        schema_url = 'https://raw.githubusercontent.com/data2health/schemas/biothings/biothings/biothings_curie_kevin.jsonld'
-        self.se = Schema(schema_url)
+        schema_file = os.path.join(_CURRENT,
+                     'data',
+                     'extend_from_bioschemas.json')
+        self.se = Schema(schema_file)
 
     def test_list_all_classes(self):
         """ Test list_all_classes function
@@ -16,13 +20,9 @@ class TestSchemaClass(unittest.TestCase):
         all_cls = self.se.list_all_classes()
         all_cls_names = [_cls.name for _cls in all_cls]
         # assert root level Class in all classes
-        self.assertIn('schema:Thing', all_cls_names)
-        # assert class "Gene" in all classes
-        self.assertIn('bts:Gene', all_cls_names)
-        # class 'ffff' should not be one of the classes
-        self.assertNotIn('bts:ffff', all_cls_names)
+        self.assertIn('bioschemas:Gene', all_cls_names)
         # class name should be curie
-        self.assertNotIn('Thing', all_cls_names)
+        self.assertNotIn('Gene', all_cls_names)
         # assert type of the class is SchemaClass
         self.assertEqual(SchemaClass, type(all_cls[0]))
 
@@ -41,12 +41,12 @@ class TestSchemaClass(unittest.TestCase):
 
     def test_get_class(self):
         """ Test get_class function"""
-        scls = self.se.get_class("schema:Gene")
+        scls = self.se.get_class("bioschemas:Gene")
         self.assertEqual(SchemaClass, type(scls))
 
     def test_get_property(self):
         """ Test get_property function"""
-        sp = self.se.get_property("ensembl")
+        sp = self.se.get_property("bioschemas:encodesBioChemEntity")
         self.assertEqual(SchemaProperty, type(sp))
 
 

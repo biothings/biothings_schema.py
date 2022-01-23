@@ -1,6 +1,7 @@
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
+.idea/
 *.py[cod]
 *$py.class
 
@@ -85,8 +86,10 @@ celerybeat-schedule
 # Environments
 .env
 .venv
+.venv37
 env/
 venv/
+.venv37/
 ENV/
 env.bak/
 venv.bak/
@@ -105,3 +108,8 @@ schema_env/
 # mypy
 .mypy_cache/
 .DS_Store
+/venv37/
+/venv38/
+/venv310/
+/venv36/
+.vscode/

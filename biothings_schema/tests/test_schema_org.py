@@ -7,8 +7,8 @@ class TestSchemaOrg(unittest.TestCase):
     """Using SchemaOrg Schema to test all functions in biothings_schema
     """
     def setUp(self):
-        # preload schemaorg schema
-        self.se = Schema()
+        # preload schemaorg-only schema
+        self.se = Schema(base_schema=["schema.org"])
         # test list_all_classes
         self.clses = self.se.list_all_classes()
         # test list_all_properties

@@ -1,22 +1,18 @@
 import json
+import os.path
 
 import requests
 import yaml
 import networkx as nx
 
-from .utils import dict2list
-
-SCHEMAORG_PATH = 'https://schema.org/version/latest/schema.jsonld'
-
-DATATYPES = ["http://schema.org/DataType", "http://schema.org/Boolean",
-             "http://schema.org/False", "http://schema.org/True",
-             "http://schema.org/Date", "http://schema.org/DateTime",
-             "http://schema.org/Number", "http://schema.org/Integer",
-             "http://schema.org/Float", "http://schema.org/Text",
-             "http://schema.org/CssSelectorType", "http://schema.org/URL",
-             "http://schema.org/XPathType", "http://schema.org/Time"]
-
-IGNORED_CLASS_PROPERTY = ["rdfs:Class", "rdf:type", "rdfs:label"]
+from .utils import dict2list, merge_schema
+from .settings import (
+    BASE_SCHEMA,
+    SCHEMAORG_JSONLD_BASE_URL,
+    SCHEMAORG_VERSION_URL,
+    DATATYPES,
+    IGNORED_CLASS_PROPERTY
+)
 
 
 def load_json_or_yaml(file_path):
@@ -46,8 +42,8 @@ def load_json_or_yaml(file_path):
         if type(_data) == bytes:
             _data = _data.decode('utf-8')
         data = json.loads(_data)
-    except json.JSONDecodeError:   # for py>=3.5
     # except ValueError:               # for py<3.5
+    except json.JSONDecodeError:   # for py>=3.5
         try:
             data = yaml.load(_data, Loader=yaml.SafeLoader)
         except (yaml.scanner.ScannerError,
@@ -58,28 +54,33 @@ def load_json_or_yaml(file_path):
 
 def get_latest_schemaorg_version():
     """Get the latest version of schemaorg from its github"""
-    # call "latest" and get version
-    _url = requests.get(SCHEMAORG_PATH).url
-    # parse url
-    return str(_url.split('/')[-2])
+    versions = requests.get(SCHEMAORG_VERSION_URL).json()["releaseLog"]
+    # skip pre-release entry like {"14.0": "2021-XX-XX"} and sort by the numeric version numbers
+    latest = sorted([version for version, date in versions.items() if date.find('X') == -1], key=float)[-1]
+    return latest
 
 
 def construct_schemaorg_url(version):
     """Construct url to schemaorg jsonld file"""
-    return "https://raw.githubusercontent.com/schemaorg/schemaorg/main/data/releases/{}/all-layers.jsonld".format(str(version))
+    if float(version) <= 8.0:
+        url = f"{SCHEMAORG_JSONLD_BASE_URL}/{version}/all-layers.jsonld"
+    else:
+        # >=9.0
+        url = f"{SCHEMAORG_JSONLD_BASE_URL}/{version}/schemaorg-all-http.jsonld"
+    return url
 
 
 def load_schemaorg(version=None, verbose=False):
-    """Load SchemOrg vocabulary
+    """Load SchemaOrg vocabulary
 
-    :arg float version: The schemaorg schema version, e.g 3.7
+    :arg float version: The schemaorg schema version, e.g 13.0
     """
     # if version is not specified, use the latest one by default
     if not version:
         try:
             version = get_latest_schemaorg_version()
         except ValueError:
-            version = "8.0"
+            version = "13.0"
     url = construct_schemaorg_url(version)
     if verbose:
         print("Loading Schema.org schema from {}".format(url))
@@ -87,6 +88,34 @@ def load_schemaorg(version=None, verbose=False):
         return load_json_or_yaml(url)
     except ValueError:
         raise ValueError("version {} is not valid! Current latest version is {}".format(version, get_latest_schemaorg_version()))
+
+
+def load_bioschemas(verbose=False):
+    """Load Bioschemas vocabulary, currently cached in data folder
+    """
+    _ROOT = os.path.abspath(os.path.dirname(__file__))
+    _path = os.path.join(_ROOT, "data", "bioschemas.json")
+    if verbose:
+        print(f"Loading Bioschemas schema from {_path}")
+    return load_json_or_yaml(_path)
+
+
+def load_base_schema(base_schema=None, verbose=False):
+    """Load base schema, schema contains base classes for
+       sub-classing in user schemas.
+    """
+    _base = base_schema or BASE_SCHEMA or []
+    _base_schema = []
+    if "schema.org" in _base:
+        _base_schema.append(
+            load_schemaorg(verbose=verbose)
+        )
+    if "bioschemas" in _base:
+        _base_schema.append(
+            load_bioschemas(verbose=verbose)
+        )
+    _base_schema = merge_schema(*_base_schema)
+    return _base_schema
 
 
 def find_parent_child_relation(record, _type="Class"):

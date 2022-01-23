@@ -2,14 +2,19 @@ import json
 import networkx as nx
 
 
-def merge_schema(schema1, schema2):
-    """Merge two schemas together"""
+def merge_schema(*schema_list):
+    """Merge a list of schemas together"""
     new_schema = {"@context": {},
                   "@graph": [],
                   "@id": "merged"}
-    new_schema["@context"] = schema1["@context"]
-    new_schema["@context"].update(schema2["@context"])
-    new_schema["@graph"] = schema1["@graph"] + schema2["@graph"]
+    _ids = ["merged"]
+    for schema in schema_list:
+        new_schema["@context"].update(schema.get("@context", {}))
+        new_schema["@graph"].extend(schema.get("@graph", []))
+        _id = schema.get('@id', None)
+        if _id:
+            _ids.append(_id)
+    new_schema["@id"] = "_".join(_ids)
     return new_schema
 
 
