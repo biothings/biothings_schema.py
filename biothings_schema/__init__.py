@@ -451,7 +451,7 @@ class SchemaClass():
             return response
         # classes might not have descriptions
         if 'description' in self.se.full_class_only_graph.nodes._nodes[self.uri]:
-            return self.se.schema_nx.nodes._nodes[self.uri]['description']
+            return self.se.full_schema_nx.nodes._nodes[self.uri]['description']
         else:
             return None
 
