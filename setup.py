@@ -3,7 +3,7 @@ from setuptools import setup
 
 install_requires = [
     'jsonschema>=3.0.1',
-    'networkx==2.6.3',
+    'networkx>=2.5.1',   # py3.6 support dropped since 2.6.x
     'PyYAML>=5.1',
     'requests>=2.26.0',
     'strict-rfc3339>=0.7'
@@ -25,6 +25,7 @@ setup(
     packages=['biothings_schema'],
     classifiers=[
         "Programming Language :: Python",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
