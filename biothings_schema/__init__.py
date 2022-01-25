@@ -307,10 +307,13 @@ class Schema():
                                 self.cls_converter.get_label(_edge[1])))
         return visualize(curie_edges, size=size)
 
-    def list_all_classes(self):
-        """Find all classes defined in the schema"""
-        classes = list(self.extended_class_only_graph.nodes())
-        classes = [SchemaClass(_cls, self) for _cls in classes]
+    def list_all_classes(self, include_base=False):
+        """Find all classes defined in the schema
+           if "include_base" is True, it return every classes from the base_schema
+           (e.g. schema.org)
+        """
+        _graph = self.full_class_only_graph if include_base else self.extended_class_only_graph
+        classes = [SchemaClass(_cls, self) for _cls in _graph.nodes()]
         return classes
 
     def list_all_defined_classes(self):
