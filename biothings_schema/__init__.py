@@ -923,6 +923,8 @@ class SchemaValidator():
                 for _path in paths:
                     for _item in _path:
                         parent_classes.add(_item)
+                if not parent_classes:
+                    raise ValueError('Class "%s" has no path to the root "schema:Thing" class', schema["@id"])
                 # loop through all properties and check if the value of
                 # domainIncludes belong to one of the parent_classes
                 for _property in properties:
@@ -934,7 +936,7 @@ class SchemaValidator():
                                 if record["@id"] in parent_classes:
                                     matched = True
                     if not matched:
-                        raise ValueError(f'field "{_property}" in "{VALIDATION_FIELD}" is not correctly documented')
+                        raise ValueError(f'field "{_property}" in "{VALIDATION_FIELD}" is not defined in this class or any of its parent classes')
         else:
             pass
 
