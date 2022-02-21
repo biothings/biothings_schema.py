@@ -103,8 +103,16 @@ def load_bioschemas(verbose=False):
 def load_base_schema(base_schema=None, verbose=False):
     """Load base schema, schema contains base classes for
        sub-classing in user schemas.
+       base_schema can be:
+          None - load default BASE_SCHEMA
+          []   - empty list, do not load any base schemas
+          ["schema.org, "bioschemas"]  - load specified base schemas
     """
-    _base = base_schema or BASE_SCHEMA or []
+    if base_schema == []:
+        _base = []
+    else:
+        _base = base_schema or BASE_SCHEMA or []
+
     _base_schema = []
     if "schema.org" in _base:
         _base_schema.append(
