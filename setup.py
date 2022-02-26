@@ -2,8 +2,10 @@ from setuptools import setup
 
 
 install_requires = [
-    'jsonschema==3.2.0',  # py3.6 support dropped since v4.0.0
-    'networkx>=2.5.1',    # py3.6 support dropped since 2.6.x
+    'jsonschema>=4.4.0; python_version >= "3.7.0"',
+    'networkx>=2.6.3; python_version >= "3.7.0"',
+    'jsonschema<4.0.0; python_version < "3.7.0"',
+    'networkx<2.6; python_version < "3.7.0"',
     'PyYAML>=5.1',
     'requests>=2.26.0',
     'strict-rfc3339>=0.7'
