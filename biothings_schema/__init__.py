@@ -238,9 +238,15 @@ class Schema():
 
         # split the schema networkx into individual ones
         isolates = list(nx.isolates(self.full_schema_nx))
-        self.extended_class_only_graph = self.schema_nx.subgraph([node for node, attrdict in self.schema_nx.nodes._nodes.items() if attrdict.get('type') == 'Class' and node not in isolates])
-        self.full_class_only_graph = self.full_schema_nx.subgraph([node for node, attrdict in self.full_schema_nx.nodes._nodes.items() if attrdict.get('type') == 'Class'])
-        self.property_only_graph = self.full_schema_nx.subgraph([node for node, attrdict in self.full_schema_nx.nodes._nodes.items() if attrdict.get('type') == 'Property'])
+        self.extended_class_only_graph = self.schema_nx.subgraph(
+            [node for node, attrdict in self.schema_nx.nodes._nodes.items() if attrdict.get('type') == 'Class' and node not in isolates]
+        )
+        self.full_class_only_graph = self.full_schema_nx.subgraph(
+            [node for node, attrdict in self.full_schema_nx.nodes._nodes.items() if attrdict.get('type') == 'Class']
+        )
+        self.property_only_graph = self.full_schema_nx.subgraph(
+            [node for node, attrdict in self.full_schema_nx.nodes._nodes.items() if attrdict.get('type') == 'Property']
+        )
         # instantiate converters for classes and properties
         self._all_class_uris = [node for node, attrdict in self.full_schema_nx.nodes._nodes.items() if attrdict.get('type') in ['Class', 'DataType']]
         self.cls_converter = CurieUriConverter(self.context,
@@ -328,7 +334,9 @@ class Schema():
 
     def list_all_referenced_classes(self):
         all_classes = list(self.extended_class_only_graph.nodes())
-        defined_classes = [_item["@id"] for _item in self.schema["@graph"] if "@type" in _item and _item["@type"] == "rdfs:Class" and _item["@id"] not in DATATYPES]
+        defined_classes = [
+            _item["@id"] for _item in self.schema["@graph"] if "@type" in _item and _item["@type"] == "rdfs:Class" and _item["@id"] not in DATATYPES
+        ]
         reference_classes = [SchemaClass(_cls, self) for _cls in (set(all_classes) - set(defined_classes))]
         return reference_classes
 
