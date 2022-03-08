@@ -1,6 +1,7 @@
 BASE_SCHEMA = ['schema.org', 'bioschemas']
 SCHEMAORG_JSONLD_BASE_URL = 'https://raw.githubusercontent.com/schemaorg/schemaorg/main/data/releases'
-SCHEMAORG_VERSION_URL = 'https://raw.githubusercontent.com/schemaorg/schemaorg/main/versions.json'
+# SCHEMAORG_VERSION_URL = 'https://raw.githubusercontent.com/schemaorg/schemaorg/main/versions.json'
+SCHEMAORG_VERSION_URL = 'https://api.github.com/repos/schemaorg/schemaorg/releases/latest'
 
 DATATYPES = ["http://schema.org/DataType", "http://schema.org/Boolean",
              "http://schema.org/False", "http://schema.org/True",

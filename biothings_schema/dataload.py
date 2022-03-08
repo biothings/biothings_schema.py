@@ -1,5 +1,6 @@
 import json
 import os.path
+import re
 
 import requests
 import yaml
@@ -54,9 +55,15 @@ def load_json_or_yaml(file_path):
 
 def get_latest_schemaorg_version():
     """Get the latest version of schemaorg from its github"""
+    '''
     versions = requests.get(SCHEMAORG_VERSION_URL).json()["releaseLog"]
     # skip pre-release entry like {"14.0": "2021-XX-XX"} and sort by the numeric version numbers
     latest = sorted([version for version, date in versions.items() if date.find('X') == -1], key=float)[-1]
+    '''
+    tag_name = requests.get(SCHEMAORG_VERSION_URL).json()["tag_name"]     # "v13.0-release"
+    mat = re.match(r'v([\d.]+)-release', tag_name)
+    assert mat, f'Unrecognized release tag name "{tag_name}"'
+    latest = mat.group(1)
     return latest
 
 
