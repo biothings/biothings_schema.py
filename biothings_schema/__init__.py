@@ -10,7 +10,8 @@ from jsonschema import validate, validators, FormatChecker
 from .settings import (
     DATATYPES,
     VALIDATION_FIELD,
-    ALT_VALIDATION_FIELDS
+    # ALT_VALIDATION_FIELDS,
+    DEFAULT_JSONSCHEMA_METASCHEMA
 )
 from .base import visualize
 from .utils import (
@@ -190,6 +191,9 @@ class Schema():
         for _doc in self.schema['@graph']:
             if VALIDATION_FIELD in _doc:
                 data = _doc[VALIDATION_FIELD]
+                if "$schema" not in data:
+                    # add missing metaschema specified by $schema
+                    data['$schema'] = DEFAULT_JSONSCHEMA_METASCHEMA
                 # expand json schema definition from definitions field
                 if "definitions" in _doc[VALIDATION_FIELD]:
                     data = expand_ref(data, _doc[VALIDATION_FIELD]["definitions"])
@@ -794,30 +798,28 @@ class SchemaValidator():
         self.validation_merge = validation_merge
         if base_schema is None or isinstance(base_schema, (list, tuple)):
             base_schema = load_base_schema(base_schema=base_schema)
-        self.base_schema = {
-            'schema': preprocess_schema(base_schema),
-            'classes': [],
-            'properties': []
-        }
-        for _record in self.base_schema['schema']['@graph']:
-            if "@type" in _record:
-                _type = str2list(_record["@type"])
-                if "rdfs:Property" in _type:
-                    self.base_schema['properties'].append(_record["@id"])
-                elif "rdfs:Class" in _type:
-                    self.base_schema['classes'].append(_record["@id"])
-        self.extension_schema = {'schema': preprocess_schema(schema),
-                                 'classes': [],
-                                 'properties': []}
-        for _record in self.extension_schema['schema']["@graph"]:
-            _type = str2list(_record["@type"])
-            if "rdfs:Property" in _type:
-                self.extension_schema['properties'].append(_record["@id"])
-            elif "rdfs:Class" in _type:
-                self.extension_schema['classes'].append(_record["@id"])
+
+        self.base_schema = self._process_schema(base_schema)
+        self.extension_schema = self._process_schema(schema)
         self.all_classes = self.base_schema['classes'] + self.extension_schema['classes']
         self.all_schemas = self.base_schema['schema']['@graph'] + self.extension_schema["schema"]["@graph"]
         self.schema_nx = schema_nx
+
+    @staticmethod
+    def _process_schema(schema):
+        _schema = {
+            'schema': preprocess_schema(schema),
+            'classes': [],
+            'properties': []
+        }
+        for _record in _schema['schema']['@graph']:
+            if "@type" in _record:
+                _type = str2list(_record["@type"])
+                if "rdfs:Property" in _type:
+                    _schema['properties'].append(_record["@id"])
+                elif "rdfs:Class" in _type:
+                    _schema['classes'].append(_record["@id"])
+        return _schema
 
     def validate_class_label(self, label_uri):
         """ Check if the first character of class label is capitalized
@@ -932,7 +934,7 @@ class SchemaValidator():
                     for _item in _path:
                         parent_classes.add(_item)
                 if not parent_classes:
-                    raise ValueError('Class "%s" has no path to the root "schema:Thing" class', schema["@id"])
+                    raise ValueError(f'Class "{schema["@id"]}" has no path to the root "schema:Thing" class')
                 # loop through all properties and check if the value of
                 # domainIncludes belong to one of the parent_classes
                 for _property in properties:

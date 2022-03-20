@@ -18,3 +18,6 @@ VALIDATION_FIELD = "$validation"
 # a list of alternative validation fields for back-compatibility
 # in case that we change the default VALIDATION_FIELD at some point
 ALT_VALIDATION_FIELDS = []
+
+# the default $schema value if not provided in validation json schema
+DEFAULT_JSONSCHEMA_METASCHEMA = "https://json-schema.org/draft/2020-12/schema"

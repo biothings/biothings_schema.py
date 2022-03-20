@@ -29,7 +29,7 @@ def load_json_or_yaml(file_path):
         with requests.get(file_path) as url:
             # check if http requests returns a success status code
             if url.status_code != 200:
-                raise ValueError("Invalid URL!")
+                raise ValueError(f"Invalid URL [{url.status_code}]!")
             else:
                 _data = url.content
     # handle file path
