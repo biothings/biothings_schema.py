@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
     "@id": {
@@ -24,6 +24,9 @@
           "type": "string"
         },
         {
+          "$ref": "#/definitions/multi_language"
+        },
+        {
           "type": "null"
         }
       ]
@@ -34,19 +37,7 @@
           "type": "string"
         },
         {
-          "type": "object",
-          "properties": {
-            "@language": {
-              "type": "string"
-            },
-            "@value": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "@language",
-            "@value"
-          ]
+          "$ref": "#/definitions/multi_language"
         }
       ]
     },
@@ -149,15 +140,35 @@
       ]
     },
     "rdfs:subPropertyOf": {
-      "type": "object",
-      "properties": {
-        "@id": {
-          "type": "string"
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "@id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "@id"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "@id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "@id"
+            ]
+          }
         }
-      },
-      "required": [
-        "@id"
+
       ]
+
     },
     "http://schema.org/category": {
       "anyOf": [
@@ -171,19 +182,7 @@
           }
         },
         {
-          "type": "object",
-          "properties": {
-            "@language": {
-              "type": "string"
-            },
-            "@value": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "@language",
-            "@value"
-          ]
+          "$ref": "#/definitions/multi_language"
         }
       ]
     },
@@ -268,5 +267,22 @@
     "rdfs:label",
     "http://schema.org/domainIncludes",
     "http://schema.org/rangeIncludes"
-  ]
+  ],
+  "definitions": {
+    "multi_language": {
+      "type": "object",
+      "properties": {
+        "@language": {
+          "type": "string"
+        },
+        "@value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "@language",
+        "@value"
+      ]
+    }
+  }
 }
