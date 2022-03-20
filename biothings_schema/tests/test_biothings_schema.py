@@ -22,7 +22,7 @@ class TestSchemaOrg(unittest.TestCase):
             # test get_class
             scls = self.se.get_class(_cls.name)
             # test describe function
-            describe = scls.describe()
+            scls.describe()
 
     def test_schemaproperty_class(self):
         """ Test the SchemaProperty Class using all classes in BioThings schema
@@ -32,7 +32,7 @@ class TestSchemaOrg(unittest.TestCase):
             # test get_property
             sp = self.se.get_property(_prop.name)
             # test describe function
-            describe = sp.describe()
+            sp.describe()
 
 
 if __name__ == '__main__':

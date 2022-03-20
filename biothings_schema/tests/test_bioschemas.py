@@ -5,13 +5,14 @@ from biothings_schema import Schema, SchemaClass, SchemaProperty
 
 _CURRENT = os.path.abspath(os.path.dirname(__file__))
 
+
 class TestSchemaClass(unittest.TestCase):
     """Test Schema Validator Class
     """
     def setUp(self):
-        schema_file = os.path.join(_CURRENT,
-                     'data',
-                     'extend_from_bioschemas.json')
+        schema_file = os.path.join(
+            _CURRENT, 'data', 'extend_from_bioschemas.json'
+        )
         self.se = Schema(schema_file)
 
     def test_list_all_classes(self):

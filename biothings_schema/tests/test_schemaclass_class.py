@@ -1,10 +1,11 @@
 import os
 import unittest
 
-_CURRENT = os.path.abspath(os.path.dirname(__file__))
-
 from biothings_schema import Schema
 from biothings_schema.base import load_json_or_yaml
+
+
+_CURRENT = os.path.abspath(os.path.dirname(__file__))
 
 
 class TestSchemaClassClass(unittest.TestCase):

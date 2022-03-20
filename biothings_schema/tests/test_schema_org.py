@@ -28,6 +28,7 @@ class TestSchemaOrg(unittest.TestCase):
             describe = scls.describe()
             scls = self.se.get_class(_cls.name, output_type="label")
             describe = scls.describe()
+            del describe
 
     def test_schemaproperty_class(self):
         """ Test the SchemaProperty Class using all classes in Schemaorg schema
@@ -47,6 +48,7 @@ class TestSchemaOrg(unittest.TestCase):
             sp = self.se.get_property(_prop.name, output_type="label")
             # test describe function
             describe = sp.describe()
+            del describe
 
 
 if __name__ == '__main__':
