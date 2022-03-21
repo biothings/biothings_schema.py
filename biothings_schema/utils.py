@@ -4,7 +4,7 @@ try:
     from time import monotonic_ns     # For Python >=3.7
 except ImportError:
     from time import monotonic
-    monotomic_ns = lambda: monotonic() * 10 ** 9     # noqa
+    monotonic_ns = lambda: monotonic() * 10 ** 9     # noqa
 
 import networkx as nx
 
