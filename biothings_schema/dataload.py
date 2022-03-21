@@ -6,7 +6,7 @@ import requests
 import yaml
 import networkx as nx
 
-from .utils import dict2list, merge_schema
+from .utils import dict2list, merge_schema, timed_lru_cache
 from .settings import (
     BASE_SCHEMA,
     SCHEMAORG_JSONLD_BASE_URL,
@@ -53,6 +53,7 @@ def load_json_or_yaml(file_path):
     return data
 
 
+@timed_lru_cache(seconds=3600, maxsize=10)      # caching for 1hr
 def get_latest_schemaorg_version():
     """Get the latest version of schemaorg from its github"""
     '''
