@@ -167,8 +167,8 @@ class Schema():
         "bts": "http://discovery.biothings.io/bts/"
     }
 
-    def __init__(self, schema=None, context=None, validation_merge=True, base_schema=None):
-        self.validation_merge = validation_merge
+    def __init__(self, schema=None, context=None, base_schema=None, validator_options=None):
+        self.validator_options = validator_options or {}
         self.base_schema_loaded = False
         self.schema = None
         self.validator = None
@@ -233,7 +233,7 @@ class Schema():
         nx.set_node_attributes(self.schema_nx, attr_dict)
         self.full_schema = merge_schema(self.base_schema, self.schema)
         self.full_schema_nx = merge_schema_networkx(self.base_schema_nx, self.schema_nx)
-        self.validator = SchemaValidator(self.schema, self.full_schema_nx, self.base_schema, self.validation_merge)
+        self.validator = SchemaValidator(self.schema, self.full_schema_nx, self.base_schema, **self.validator_options)
         self.validator.validate_full_schema()
 
         # split the schema networkx into individual ones

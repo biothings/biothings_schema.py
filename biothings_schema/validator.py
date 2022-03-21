@@ -1,7 +1,7 @@
 import os.path
-import warnings
+# import warnings
 
-from jsonschema import validate, validators
+import jsonschema
 import networkx as nx
 
 from .settings import (
@@ -26,6 +26,26 @@ from .curies import (
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
+
+class SchemaValidationError(ValueError):
+    def __init__(self, message="", error_type=None, field=None, record_id=None, long_message=None, warning=False):
+        self.message = message
+        self.error_type = error_type            # the optional error_type
+        self.field = field                      # the specific field name with the error, if applicable
+        self.record_id = record_id              # @id field of a class or property record with the error, if applicable
+        self.long_message = long_message        # optional longer description of the error message
+        self.warning = warning                  # True if it's a warning, the exception will not be raised, only recorded.
+        super(SchemaValidationError, self).__init__(message)
+
+    def __repr__(self):
+        _msg = f'"{self.message}"'
+        for attr in ['error_type', 'field', 'record_id']:
+            if getattr(self, attr, None):
+                _msg += f', {attr}="{getattr(self, attr)}"'
+        return f"<{self.__class__.__name__}({_msg})>"
+
+class SchemaValidationWarning(SchemaValidationError):
+    pass
 
 class SchemaValidator():
     """Validate Schema against SchemaOrg standard
@@ -56,7 +76,7 @@ class SchemaValidator():
       # TODO: Check if value of inverseof field is defined in the schema
       # TODO: Check inverseof from both properties
     """
-    def __init__(self, schema, schema_nx, base_schema=None, validation_merge=True):
+    def __init__(self, schema, schema_nx, base_schema=None, validation_merge=True, raise_on_validation_error=True):
         self.validation_merge = validation_merge
         if base_schema is None or isinstance(base_schema, (list, tuple)):
             base_schema = load_base_schema(base_schema=base_schema)
@@ -66,6 +86,9 @@ class SchemaValidator():
         self.all_classes = self.base_schema['classes'] + self.extension_schema['classes']
         self.all_schemas = self.base_schema['schema']['@graph'] + self.extension_schema["schema"]["@graph"]
         self.schema_nx = schema_nx
+
+        self.validation_errors = []        # store all validation errors
+        self.raise_on_validation_error = raise_on_validation_error      # If True, raise except at the first error
 
     @staticmethod
     def _process_schema(schema):
@@ -83,19 +106,38 @@ class SchemaValidator():
                     _schema['classes'].append(_record["@id"])
         return _schema
 
+    def report_validation_error(self, err_msg, **kwargs):
+        '''Report valiation error, either keep it in self.validation_errors or raise an exception.
+           if warning is True, do not raise an exception regardless self.raise_on_validation_error
+        '''
+
+        err = SchemaValidationWarning(err_msg, **kwargs) if kwargs.get('warning', False) else SchemaValidationError(err_msg, **kwargs)
+        if not err.warning and self.raise_on_validation_error:
+            raise err
+        else:
+            self.validation_errors.append(err)
+
     def validate_class_label(self, label_uri):
         """ Check if the first character of class label is capitalized
         """
         label = extract_name_from_uri_or_curie(label_uri)
         if not label[0].isupper():
-            raise ValueError('Class label {} is incorrect. The first letter of each word should be capitalized!'.format(label))
+            # raise ValueError('Class label {} is incorrect. The first letter of each word should be capitalized!'.format(label))
+            self.report_validation_error(
+                f'Class label {label} is incorrect. The first letter of each word should be capitalized.',
+                error_type="invalid_class_label", record_id=label_uri
+            )
 
     def validate_property_label(self, label_uri):
         """ Check if the first character of property label is lower case
         """
         label = extract_name_from_uri_or_curie(label_uri)
         if not label[0].islower():
-            raise ValueError('Property label {} is incorrect. The first letter of the first word should be lower case!'.format(label))
+            # raise ValueError('Property label {} is incorrect. The first letter of the first word should be lower case!'.format(label))
+            self.report_validation_error(
+                f'Property label {label} is incorrect. The first letter of the first word should be lower case.',
+                error_type="invalid_property_label", record_id=label_uri
+            )
 
     def validate_subclassof_field(self, subclassof_value):
         """ Check if the value of "subclassof" is included in the schema file
@@ -103,65 +145,89 @@ class SchemaValidator():
         subclassof_value = dict2list(subclassof_value)
         for record in subclassof_value:
             if record["@id"] not in self.all_classes:
-                raise KeyError('Value of subclassof : {} is not defined in the schema.'.format(record["@id"]))
+                # raise KeyError('Value of subclassof : {} is not defined in the schema.'.format(record["@id"]))
+                self.report_validation_error('Value of subclassof : {} is not defined in the schema.'.format(record["@id"]))
 
-    def validate_domainIncludes_field(self, domainincludes_value):
-        """ Check if the value of "domainincludes" is included in the schema
-        file
-        """
-        domainincludes_value = dict2list(domainincludes_value)
-        for record in domainincludes_value:
-            if record["@id"] not in self.all_classes:
-                raise KeyError('Value of domainincludes: {} is not defined in the schema.'.format(record["@id"]))
+    def validate_domainIncludes_field(self, record):
+        """ Check if the value of "domainincludes" is a defined class"""
+        domainincludes_value = record.get("http://schema.org/domainIncludes", {})
+        if domainincludes_value:
+            domainincludes_value = dict2list(domainincludes_value)
+            for cls in domainincludes_value:
+                if cls["@id"] not in self.all_classes:
+                    # raise KeyError('Value of domainincludes: {} is not defined in the schema.'.format(cls["@id"]))
+                    self.report_validation_error(
+                        f"Value of domainincludes: \"{cls['@id']}\" is not defined in the schema.",
+                        error_type="undefined_domainincludes_class", record_id=record['@id']
+                    )
+        else:
+            # raise a warning
+            self.report_validation_error('Missing "domainIncludes"', error_type="missing_domainincludes", record_id=record["@id"], warning=True)
 
-    def validate_rangeIncludes_field(self, rangeincludes_value):
-        """ Check if the value of "rangeincludes" is included in the schema
-        file
-        """
-        rangeincludes_value = dict2list(rangeincludes_value)
-        for record in rangeincludes_value:
-            if record["@id"] not in self.all_classes:
-                # raise KeyError('Value of rangeincludes: {} is not defined in the schema.'.format(record["@id"]))
-                pass
+    def validate_rangeIncludes_field(self, record):
+        """ Check if the value of "rangeincludes" is defined"""
+        rangeincludes_value = record.get("http://schema.org/rangeIncludes", {})
+        if rangeincludes_value:
+            rangeincludes_value = dict2list(rangeincludes_value)
+            for cls in rangeincludes_value:
+                if cls["@id"] not in self.all_classes:
+                    # raise KeyError('Value of rangeincludes: {} is not defined in the schema.'.format(cls["@id"]))
+                    self.report_validation_error(
+                        f"Value of rangeincludes: \"{cls['@id']}\" is not defined in the schema.",
+                        error_type="undefined_rangeincludes", record_id=record['@id'], warning=True)
+        else:
+            # raise a warning
+            self.report_validation_error('Missing "rangeIncludes"', error_type="missing_rangeincludes", record_id=record["@id"], warning=True)
 
     def check_whether_atid_and_label_match(self, record):
         """ Check if @id field matches with the "rdfs:label" field
         """
         _id = extract_name_from_uri_or_curie(record["@id"])
         if _id != record["rdfs:label"]:
-            raise ValueError("id and label not match: {}".format(record))
+            # raise ValueError("id and label not match: {}".format(record))
+            self.report_validation_error(f'id and label not match: {record["rdfs:label"]}', error_type="unmatched_label", record_id=_id)
 
     def check_duplicate_labels(self):
-        #Check for duplication in the schema
+        """Check for duplication labels in the schema"""
         labels = [_record['rdfs:label'] for _record in self.extension_schema["schema"]["@graph"]]
         duplicates = find_duplicates(labels)
         if duplicates:
-            raise ValueError('Duplicates detected in graph: {}'.format(duplicates))
+            # raise ValueError('Duplicates detected in graph: {}'.format(duplicates))
+            self.report_validation_error(f'Duplicates labels detected in @graph: {duplicates}', error_type="dup_label")
 
     def validate_schema(self, schema):
-        """Validate schema against SchemaORG standard
+        """Validate schema against SchemaORG-style JSON-LD
         """
         json_schema_path = os.path.join(_ROOT, 'data', 'schema.json')
         json_schema = load_json_or_yaml(json_schema_path)
-        return validate(schema, json_schema)
+        try:
+            jsonschema.validate(schema, json_schema)
+        except jsonschema.ValidationError as err:
+            self.report_validation_error(repr(err), long_message=str(err))
 
-    def validate_property_schema(self, schema):
+    def validate_property_schema(self, record):
         """Validate schema against SchemaORG property definition standard
         """
         json_schema_path = os.path.join(_ROOT,
                                         'data',
                                         'property_json_schema.json')
         json_schema = load_json_or_yaml(json_schema_path)
-        return validate(schema, json_schema)
+        try:
+            jsonschema.validate(record, json_schema)
+        except jsonschema.ValidationError as err:
+            self.report_validation_error(repr(err), error_type="invalid_property", record_id=record["@id"], long_message=str(err))
 
-    def validate_class_schema(self, schema):
+    def validate_class_schema(self, record):
         """Validate schema against SchemaORG class definition standard
         """
         json_schema_path = os.path.join(_ROOT,
                                         'data',
                                         'class_json_schema.json')
         json_schema = load_json_or_yaml(json_schema_path)
-        return validate(schema, json_schema)
+        try:
+            jsonschema.validate(record, json_schema)
+        except jsonschema.ValidationError as err:
+            self.report_validation_error(repr(err), error_type="invalid_class", record_id=record["@id"], long_message=str(err))
 
     def validate_json_schema(self, json_schema):
         """Make sure the json schema provided in the VALIDATION_FIELD field is valid
@@ -169,32 +235,46 @@ class SchemaValidator():
         source code from: https://python-jsonschema.readthedocs.io/en/stable/_modules/jsonschema/validators/#validate
         TODO: Maybe add additional check,e.g. fields in "required" should appear in "properties"
         """
-        cls = validators.validator_for(json_schema)
-        cls.check_schema(json_schema)
+        cls = jsonschema.validators.validator_for(json_schema)
+        try:
+            cls.check_schema(json_schema)
+        except jsonschema.SchemaError as err:
+            self.report_validation_error(repr(err), error_type="invalid_validation_schema", long_message=str(err))
 
-    def validate_validation_field(self, schema):
-        """Validate the $validation field
+    def validate_validation_field(self, record):
+        """Validate the VALIDATION_FIELD
         Validation creteria:
-        Make sure all properties specified are documented in schema
+            * must include a "properties" field
+            * must be a valid jsonschema schema
+            * all properties specified must be defined in its class or parent classes
           TODO: 4. POTENTIALLY, VALUE OF $VALIDATION IS A URL
         """
-        if VALIDATION_FIELD in schema:
-            if 'properties' not in schema[VALIDATION_FIELD]:
-                raise KeyError(f'properties not in {VALIDATION_FIELD} field')
+        _id = record["@id"]
+        if VALIDATION_FIELD in record:
+            if 'properties' not in record[VALIDATION_FIELD]:
+                # raise KeyError(f'properties not in {VALIDATION_FIELD} field')
+                self.report_validation_error(
+                    f'"properties" not found in {VALIDATION_FIELD} field',
+                    error_type="invalid_validation_schema", record_id=_id
+                )
             else:
                 # validate the json schema
-                self.validate_json_schema(schema[VALIDATION_FIELD])
-                properties = schema[VALIDATION_FIELD]["properties"].keys()
+                self.validate_json_schema(record[VALIDATION_FIELD])
+                properties = record[VALIDATION_FIELD]["properties"].keys()
                 # find all parents of the class
                 paths = nx.all_simple_paths(self.schema_nx,
                                             source='http://schema.org/Thing',
-                                            target=schema["@id"])
+                                            target=_id)
                 parent_classes = set()
                 for _path in paths:
                     for _item in _path:
                         parent_classes.add(_item)
                 if not parent_classes:
-                    raise ValueError(f'Class "{schema["@id"]}" has no path to the root "schema:Thing" class')
+                    # raise ValueError(f'Class "{_id}" has no path to the root "schema:Thing" class')
+                    self.report_validation_error(
+                        f'Class "{_id}" has no path to the root "schema:Thing" class',
+                        error_type="no_path_to_root", record_id=_id
+                    )
                 # loop through all properties and check if the value of
                 # domainIncludes belong to one of the parent_classes
                 for _property in properties:
@@ -202,11 +282,15 @@ class SchemaValidator():
                     for _record in self.all_schemas:
                         if _record["rdfs:label"] == _property:
                             domainincludes_value = dict2list(_record["http://schema.org/domainIncludes"])
-                            for record in domainincludes_value:
-                                if record["@id"] in parent_classes:
+                            for cls in domainincludes_value:
+                                if cls["@id"] in parent_classes:
                                     matched = True
                     if not matched:
-                        raise ValueError(f'field "{_property}" in "{VALIDATION_FIELD}" is not defined in this class or any of its parent classes')
+                        # raise ValueError(f'field "{_property}" in "{VALIDATION_FIELD}" is not defined in this class or any of its parent classes')
+                        self.report_validation_error(
+                            f'field "{_property}" in "{VALIDATION_FIELD}" is not defined in this class or any of its parent classes',
+                            error_type="invalid_validation_schema", field=_property, record_id=_id
+                        )
         else:
             pass
 
@@ -262,7 +346,10 @@ class SchemaValidator():
             elif record['@type'] == "rdf:Property":
                 self.validate_property_schema(record)
                 self.validate_property_label(record["@id"])
-                self.validate_domainIncludes_field(record["http://schema.org/domainIncludes"])
-                self.validate_rangeIncludes_field(record["http://schema.org/rangeIncludes"])
-            # else:
-            #     warnings.warn(f"@type value (\"{record['@type']}\") is neither \"rdfs:Class\" nor \"rdf:Property\": \"{record['@id']}\"")
+                self.validate_domainIncludes_field(record)
+                self.validate_rangeIncludes_field(record)
+            else:
+                self.report_validation_error(
+                    f"@type value (\"{record['@type']}\") is neither \"rdfs:Class\" nor \"rdf:Property\": \"{record['@id']}\"",
+                    error_type="non_class_or_property_@type", record_id=record["@id"], warning=True
+                )
