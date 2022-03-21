@@ -44,8 +44,10 @@ class SchemaValidationError(ValueError):
                 _msg += f', {attr}="{getattr(self, attr)}"'
         return f"<{self.__class__.__name__}({_msg})>"
 
+
 class SchemaValidationWarning(SchemaValidationError):
     pass
+
 
 class SchemaValidator():
     """Validate Schema against SchemaOrg standard
