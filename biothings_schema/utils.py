@@ -1,4 +1,5 @@
 import json
+
 import networkx as nx
 
 
@@ -23,12 +24,26 @@ def merge_schema_networkx(g1, g2):
     return nx.compose(g1, g2)
 
 
-def find_duplicates(_list):
-    """Find duplicate items in a list
+def find_duplicates_0(_list):
+    """ deprecated.
+    Find duplicate items in a list
 
     :arg list _list: a python list
     """
     return set([x for x in _list if _list.count(x) > 1])
+
+
+def find_duplicates(_list):
+    """a more efficient way to return duplicated items
+    ref: https://www.iditect.com/guide/python/python_howto_find_the_duplicates_in_a_list.html
+
+    :arg list _list: a python list
+    """
+    first_seen = set()
+    first_seen_add = first_seen.add
+    duplicates = set(i for i in _list if i in first_seen or first_seen_add(i))
+    # turn the set into a list (as requested)
+    return duplicates
 
 
 def dict2list(dictionary):
