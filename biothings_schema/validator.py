@@ -44,6 +44,17 @@ class SchemaValidationError(ValueError):
                 _msg += f', {attr}="{getattr(self, attr)}"'
         return f"<{self.__class__.__name__}({_msg})>"
 
+    def to_dict(self):
+        err = {
+            "message": self.message
+        }
+        for attr in ['error_type', 'field', 'record_id', "long_message"]:
+            if getattr(self, attr, None):
+                err[attr] = getattr(self, attr)
+        if self.warning:
+            err["warning"] = True
+        return err
+
 
 class SchemaValidationWarning(SchemaValidationError):
     pass
