@@ -26,7 +26,10 @@ def merge_schema(*schema_list):
 
 
 def merge_schema_networkx(g1, g2):
-    """Merge two networkx DiGraphs"""
+    """
+    Merge two networkx DiGraphs
+    For duplicated nodes/edges, the attributes from g2 take precedent over g1.
+    """
     return nx.compose(g1, g2)
 
 

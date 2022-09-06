@@ -11,8 +11,9 @@ from .settings import (
     BASE_SCHEMA,
     SCHEMAORG_JSONLD_BASE_URL,
     SCHEMAORG_VERSION_URL,
+    DDE_SCHEMA_BASE_URL,
     DATATYPES,
-    IGNORED_CLASS_PROPERTY
+    IGNORED_CLASS_PROPERTY,
 )
 
 
@@ -108,6 +109,30 @@ def load_bioschemas(verbose=False):
     return load_json_or_yaml(_path)
 
 
+@timed_lru_cache(seconds=3600, maxsize=10)      # caching for 1hr
+def registered_dde_schemas(verbose=False):
+    """Return a list of schema namespaces registered in DDE"""
+    url = DDE_SCHEMA_BASE_URL + "?field=_id&size=20"
+    if verbose:
+        print(f'Loading registered DDE schema list from "{url}"')
+    data = load_json_or_yaml(url)
+    return [s['namespace'] for s in data['hits']]
+
+
+def is_a_dde_schema(schema):
+    """Return True/False if a schema is registered in DDE or not"""
+    return schema in registered_dde_schemas()
+
+
+@timed_lru_cache(seconds=3600, maxsize=10)      # caching for 1hr
+def load_dde_schemas(schema, verbose=False):
+    """Load a registered schema from DDE schema API"""
+    url = DDE_SCHEMA_BASE_URL + schema
+    if verbose:
+        print(f'Loading registered DDE schema from "{url}"')
+    return load_json_or_yaml(url)["source"]
+
+
 def load_base_schema(base_schema=None, verbose=False):
     """Load base schema, schema contains base classes for
        sub-classing in user schemas.
@@ -122,14 +147,26 @@ def load_base_schema(base_schema=None, verbose=False):
         _base = base_schema or BASE_SCHEMA or []
 
     _base_schema = []
-    if "schema.org" in _base:
-        _base_schema.append(
-            load_schemaorg(verbose=verbose)
-        )
-    if "bioschemas" in _base:
-        _base_schema.append(
-            load_bioschemas(verbose=verbose)
-        )
+    # if "schema.org" in _base or "schema" in _base:
+    #     _base_schema.append(
+    #         load_schemaorg(verbose=verbose)
+    #     )
+    # if "bioschemas" in _base:
+    #     _base_schema.append(
+    #         load_bioschemas(verbose=verbose)
+    #     )
+
+    for _sc in _base:
+        if _sc == "schema" or _sc == "schema.org":
+            _base_schema.append(
+                load_schemaorg(verbose=verbose)
+            )
+            continue
+        elif _sc in registered_dde_schemas():
+            _base_schema.append(
+                load_dde_schemas(_sc, verbose=verbose)
+            )
+
     _base_schema = merge_schema(*_base_schema)
     return _base_schema
 

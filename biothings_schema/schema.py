@@ -7,6 +7,7 @@ import networkx as nx
 from jsonschema import validate, FormatChecker
 
 from .settings import (
+    COMMON_NAMESPACES,
     DATATYPES,
     VALIDATION_FIELD,
     # ALT_VALIDATION_FIELDS,
@@ -162,23 +163,28 @@ class Schema():
     """Class representing schema
     """
     # URI -> prefix conversion dict
-    CONTEXT = {
-        "schema": "http://schema.org/",
-        "bts": "http://discovery.biothings.io/bts/"
-    }
+    # CONTEXT = {
+    #     "schema": "http://schema.org/",
+    #     "bts": "http://discovery.biothings.io/bts/"
+    # }
 
     def __init__(self, schema=None, context=None, base_schema=None, validator_options=None):
         self.validator_options = validator_options or {}
         self.base_schema_loaded = False
         self.schema = None
         self.validator = None
-        self.context = self.CONTEXT
+        _schema = load_json_or_yaml(schema) if schema else {}
+        # self.context = self.CONTEXT
+        self.context = _schema.get("@context", {})
         if context:
             if not isinstance(context, dict):
                 raise ValueError("context should be a python dictionary, with namespace/prefix as key, and URI as value")
             else:
                 self.context.update(context)
-        self.load_schema(schema=schema, base_schema=base_schema)
+        self.namespace = self.get_schema_namespace(_schema)
+        base_schema = base_schema or self.get_base_schema_list(_schema)
+        # print(self.namespace, base_schema)
+        self.load_schema(schema=_schema, base_schema=base_schema, verbose=False)
 
     @property
     def validation(self):
@@ -208,10 +214,10 @@ class Schema():
                                     validation_info[_doc["@id"]]['properties'][_item].update(validation_info[_range.uri])
         return validation_info
 
-    def load_schema(self, schema=None, base_schema=None):
+    def load_schema(self, schema=None, base_schema=None, verbose=False):
         """Load schema and convert it to networkx graph"""
         if not self.base_schema_loaded:
-            self.load_base_schema(base_schema=base_schema)
+            self.load_base_schema(base_schema=base_schema, verbose=verbose)
 
         if schema:
             # load JSON-LD file of user defined schema
@@ -254,6 +260,31 @@ class Schema():
         self._all_prop_uris = list(self.property_only_graph.nodes())
         self.prop_converter = CurieUriConverter(self.context,
                                                 self._all_prop_uris)
+
+    def get_schema_namespace(self, schema):
+        """
+        Get the namespace defined in a given schema
+        It checks the prefix of @id fields of each defined classes and properies
+        If the prefixes are not consistent (>1 namespace), None is returned
+        with a warning message.
+        """
+        if isinstance(schema, dict) and "@graph" in schema:
+            namespace_set = list(set([_doc["@id"].split(":", maxsplit=1)[0] for _doc in schema['@graph']]))
+            if len(namespace_set) == 1:
+                return namespace_set[0]
+            else:
+                warnings.warn(f"Found multiple namespace prefixes defined in the schema: f{namespace_set}")
+
+    def get_base_schema_list(self, schema, include_current=True):
+        """
+        Get the list of referenced base schemas based on the "@context" field
+        """
+        _base_schema = [namespace for namespace in self.context if namespace not in COMMON_NAMESPACES]
+        if not include_current:
+            _current_namespace = self.get_schema_namespace(schema)
+            if _current_namespace in _base_schema:
+                _base_schema.remove(_current_namespace)
+        return _base_schema
 
     def load_base_schema(self, base_schema=None, verbose=False):
         """

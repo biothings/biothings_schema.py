@@ -1,7 +1,6 @@
 import unittest
 
-from biothings_schema import Schema
-from biothings_schema import SchemaProperty
+from biothings_schema import Schema, SchemaProperty
 
 
 class TestSchemaPropertyClass(unittest.TestCase):

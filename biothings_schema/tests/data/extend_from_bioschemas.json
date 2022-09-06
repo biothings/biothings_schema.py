@@ -12,7 +12,7 @@
       "rdfs:comment": "Bioschemas profile describing a Gene in Life Sciences. This Gene profile specification presents the markup for describing a Gene and is based on the 1.0 release",
       "rdfs:label": "Gene",
       "rdfs:subClassOf": {
-        "@id": "bioschemas:BioChemEntity"
+        "@id": "bioschemas:MolecularEntity"
       },
       "$validation": {
         "$schema": "http://json-schema.org/draft-07/schema#",
