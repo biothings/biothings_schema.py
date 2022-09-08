@@ -89,7 +89,7 @@ def load_schemaorg(version=None, verbose=False):
         try:
             version = get_latest_schemaorg_version()
         except ValueError:
-            version = "13.0"
+            version = "14.0"
     url = construct_schemaorg_url(version)
     if verbose:
         print("Loading Schema.org schema from {}".format(url))
