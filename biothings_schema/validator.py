@@ -278,6 +278,7 @@ class SchemaValidator():
                 paths = nx.all_simple_paths(self.schema_nx,
                                             source='http://schema.org/Thing',
                                             target=_id)
+                # print(f"{_id}: {nx.ancestors(self.schema_nx, _id)}")
                 parent_classes = set()
                 for _path in paths:
                     for _item in _path:

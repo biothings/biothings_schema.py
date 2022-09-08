@@ -1,0 +1,36 @@
+{
+    "@context": {
+      "schema": "http://schema.org/",
+      "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+      "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+      "bioschemas": "https://discovery.biothings.io/view/bioschemas/"
+    },
+    "@graph": [
+        {
+        "@id": "bioschemas:Gene",
+        "@type": "rdfs:Class",
+        "rdfs:comment": "Updated comment here",
+        "rdfs:label": "Gene",
+        "rdfs:subClassOf": {
+          "@id": "bioschemas:Gene"
+        }
+      },
+      {
+        "@id": "bioschemas:encodesBioChemEntity",
+        "@type": "rdf:Property",
+        "rdfs:comment": "Updated comment here",
+        "rdfs:label": "encodesBioChemEntity",
+        "schema:domainIncludes": {
+          "@id": "bioschemas:Gene"
+        },
+        "schema:rangeIncludes": [
+          {
+            "@id": "bioschemas:BioChemEntity"
+          },
+          {
+            "@id": "schema:Text"
+          }
+        ]
+      }
+    ]
+  }
