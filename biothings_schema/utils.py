@@ -1,4 +1,5 @@
 import json
+from copy import copy
 from functools import lru_cache, wraps
 try:
     from time import monotonic_ns     # For Python >=3.7
@@ -101,6 +102,7 @@ def export_json(json_doc, file_path):
 
 def expand_ref(json_obj, definition):
     """expand the $ref in json schema"""
+    json_obj = copy(json_obj)    # make a copy so we don't change the input json_obj
     if isinstance(json_obj, dict):
         for key in list(json_obj.keys()):
             if key == "$ref":
