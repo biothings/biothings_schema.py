@@ -200,18 +200,22 @@ class Schema():
                 if "definitions" in _doc[VALIDATION_FIELD]:
                     data = expand_ref(data, _doc[VALIDATION_FIELD]["definitions"])
                 validation_info[_doc["@id"]] = data
-        for _doc in self.schema["@graph"]:
-            if VALIDATION_FIELD in _doc:
-                # if json schema is not defined for a field, look for definition somewhere else
-                for _item, _def in _doc[VALIDATION_FIELD]['properties'].items():
-                    if type(_def) == dict and set(_def.keys()) == set(['description']):
-                        sp = self.get_property(_item)
-                        if type(sp) != list:
-                            sp = [sp]
-                        for _sp in sp:
-                            for _range in _sp.range:
-                                if _range.uri in validation_info:
-                                    validation_info[_doc["@id"]]['properties'][_item].update(validation_info[_range.uri])
+
+        # NOTE: the reference of "validation_info[_range.uri]" below causes circular reference,
+        #       also this block of code does not seems relevant any more. validation schemas from
+        #       the parent classes are now premerged in Validator class.
+        # for _doc in self.schema["@graph"]:
+        #     if VALIDATION_FIELD in _doc:
+        #         # if json schema is not defined for a field, look for definition somewhere else
+        #         for _item, _def in _doc[VALIDATION_FIELD]['properties'].items():
+        #             if type(_def) == dict and set(_def.keys()) == set(['description']):
+        #                 sp = self.get_property(_item)
+        #                 if type(sp) != list:
+        #                     sp = [sp]
+        #                 for _sp in sp:
+        #                     for _range in _sp.range:
+        #                         if _range.uri in validation_info:
+        #                             validation_info[_doc["@id"]]['properties'][_item].update(validation_info[_range.uri])
         return validation_info
 
     def load_schema(self, schema=None, base_schema=None, verbose=False):
