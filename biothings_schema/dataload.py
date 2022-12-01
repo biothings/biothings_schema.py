@@ -30,7 +30,7 @@ def load_json_or_yaml(file_path):
         with requests.get(file_path) as url:
             # check if http requests returns a success status code
             if url.status_code != 200:
-                raise ValueError(f"Invalid URL [{url.status_code}]!")
+                raise ValueError(f"Invalid URL [{url.status_code}]: {file_path} !")
             else:
                 _data = url.content
     # handle file path
@@ -107,6 +107,67 @@ def load_bioschemas(verbose=False):
     if verbose:
         print(f"Loading Bioschemas schema from {_path}")
     return load_json_or_yaml(_path)
+
+
+class BaseSchemaLoader:
+    """A customizable class for loading base schemas (those schemas
+       you can reference and extend in your own schema, for example,
+       all schemas registered in Data Discovery Engine (DDE) are extensible.
+    """
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+
+    @property
+    @timed_lru_cache(seconds=3600, maxsize=10)      # caching for 1hr
+    def registered_dde_schemas(self):
+        """Return a list of schema namespaces registered in DDE"""
+        url = DDE_SCHEMA_BASE_URL + "?field=_id&size=20"
+        if self.verbose:
+            print(f'Loading registered DDE schema list from "{url}"')
+        data = load_json_or_yaml(url)
+        return [s['namespace'] for s in data['hits']]
+
+    def is_a_dde_schema(self, schema):
+        """Return True/False if a schema (as a namespace string) is
+           registered in DDE or not
+        """
+        return schema in self.registered_dde_schemas
+
+    @timed_lru_cache(seconds=3600, maxsize=10)      # caching for 1hr
+    def load_dde_schemas(self, schema):
+        """Load a registered schema from DDE schema API"""
+        url = DDE_SCHEMA_BASE_URL + schema
+        if self.verbose:
+            print(f'Loading registered DDE schema from "{url}"')
+        return load_json_or_yaml(url)["source"]
+
+    def load(self, base_schema):
+        """Load base schema, schema contains base classes for
+        sub-classing in user schemas.
+        base_schema can be:
+            None - load default BASE_SCHEMA
+            []   - empty list, do not load any base schemas
+            ["schema.org, "bioschemas"]  - load specified base schemas
+        """
+        if base_schema == []:
+            _base = []
+        else:
+            _base = base_schema or BASE_SCHEMA or []
+
+        _base_schema = []
+        for _sc in _base:
+            if _sc == "schema" or _sc == "schema.org":
+                _base_schema.append(
+                    load_schemaorg(verbose=self.verbose)
+                )
+                continue
+            elif self.is_a_dde_schema(_sc):
+                _base_schema.append(
+                    self.load_dde_schemas(_sc)
+                )
+
+        _base_schema = merge_schema(*_base_schema)
+        return _base_schema
 
 
 @timed_lru_cache(seconds=3600, maxsize=10)      # caching for 1hr

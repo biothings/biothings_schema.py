@@ -20,8 +20,8 @@ from .utils import (
     merge_schema_networkx
 )
 from .dataload import (
+    BaseSchemaLoader,
     load_json_or_yaml,
-    load_base_schema,
     load_schema_into_networkx
 )
 from .curies import (
@@ -168,11 +168,12 @@ class Schema():
     #     "bts": "http://discovery.biothings.io/bts/"
     # }
 
-    def __init__(self, schema=None, context=None, base_schema=None, validator_options=None):
+    def __init__(self, schema=None, context=None, base_schema=None, validator_options=None, base_schema_loader=None):
         self.validator_options = validator_options or {}
         self.base_schema_loaded = False
         self.schema = None
         self.validator = None
+        self.base_schema_loader = base_schema_loader or BaseSchemaLoader()
         _schema = load_json_or_yaml(schema) if schema else {}
         # self.context = self.CONTEXT
         self.context = _schema.get("@context", {})
@@ -184,7 +185,7 @@ class Schema():
         self.namespace = self.get_schema_namespace(_schema)
         base_schema = base_schema or self.get_base_schema_list(_schema)
         # print(self.namespace, base_schema)
-        self.load_schema(schema=_schema, base_schema=base_schema, verbose=False)
+        self.load_schema(schema=_schema, base_schema=base_schema)
 
     @property
     def validation(self):
@@ -218,10 +219,10 @@ class Schema():
         #                             validation_info[_doc["@id"]]['properties'][_item].update(validation_info[_range.uri])
         return validation_info
 
-    def load_schema(self, schema=None, base_schema=None, verbose=False):
+    def load_schema(self, schema=None, base_schema=None):
         """Load schema and convert it to networkx graph"""
         if not self.base_schema_loaded:
-            self.load_base_schema(base_schema=base_schema, verbose=verbose)
+            self.load_base_schema(base_schema=base_schema)
 
         if schema:
             # load JSON-LD file of user defined schema
@@ -290,14 +291,12 @@ class Schema():
                 _base_schema.remove(_current_namespace)
         return _base_schema
 
-    def load_base_schema(self, base_schema=None, verbose=False):
+    def load_base_schema(self, base_schema=None):
         """
         Load base schema, defined in self.BASE_SCHEMA,
         but can be override in `base_schema` parameter.
         """
-        _base_schema = load_base_schema(
-            base_schema=base_schema, verbose=verbose
-        )
+        _base_schema = self.base_schema_loader.load(base_schema=base_schema)
         self.base_schema = preprocess_schema(_base_schema)
         self.base_schema_nx = load_schema_into_networkx(self.base_schema)
         self.base_schema_loaded = True
@@ -661,7 +660,7 @@ class SchemaProperty():
         self.name = self.se.prop_converter.get_curie(property_name)
         # if property is not defined in schema, raise ValueError
         if self.uri not in self.se.property_only_graph:
-            #raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
+            # raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
             warnings.warn('Property {} is not defined in Schema. Could not access it'.format(self.name))
             self.defined_in_schema = False
         self.output_type = output_type

@@ -278,7 +278,7 @@ class SchemaValidator():
                 paths = nx.all_simple_paths(self.schema_nx,
                                             source='http://schema.org/Thing',
                                             target=_id)
-                # print(f"{_id}: {nx.ancestors(self.schema_nx, _id)}")
+                # print(f"{_id}: {nx.ancestors(self.schema_nx, _id)}")      # a useful debug line in case needed
                 parent_classes = set()
                 for _path in paths:
                     for _item in _path:
@@ -353,7 +353,7 @@ class SchemaValidator():
                 if self.validation_merge:
                     self.merge_recursive_parents(record, count)
 
-                #self.merge_parent_validations(record, count, parent_schema)
+                # self.merge_parent_validations(record, count, parent_schema)
                 self.validate_class_schema(record)
                 self.validate_class_label(record["@id"])
                 self.validate_validation_field(record)
