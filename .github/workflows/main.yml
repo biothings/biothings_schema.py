@@ -28,7 +28,7 @@ jobs:
       - run: pip install -r requirements.txt
       - run: pip install coverage
       - run: coverage run --source . -m unittest discover biothings_schema/tests
-      - run: bash <(curl -Ls https://coverage.codacy.com/get.sh)    # upload coverage to codacy
+      - run: bash <(curl -Ls https://coverage.codacy.com/get.sh) -r ./.coverage    # upload coverage to codacy
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
 
