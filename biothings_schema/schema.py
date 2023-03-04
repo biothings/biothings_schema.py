@@ -181,9 +181,8 @@ class Schema():
                 raise ValueError("context should be a python dictionary, with namespace/prefix as key, and URI as value")
             else:
                 self.context.update(context)
-        if "schema" not in self.context:
-            # make sure self.context includes at least schema.org namespace
-            self.context.update(self.DEFAULT_CONTEXT["schema"])
+        # make sure self.context includes at least schema.org namespace
+        self.context.setdefault("schema", self.DEFAULT_CONTEXT["schema"])
         self.namespace = self.get_schema_namespace(_schema)
         base_schema = base_schema or self.get_base_schema_list(_schema)
         # print(self.namespace, base_schema)

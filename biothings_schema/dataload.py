@@ -69,7 +69,7 @@ def get_latest_schemaorg_version():
     return latest
 
 
-def get_schemaorg_version(schema):
+def get_schemaorg_version():
     """Get the current version of schemaorg"""
     try:
         version = get_latest_schemaorg_version()
