@@ -8,9 +8,7 @@ SCHEMAORG_JSONLD_BASE_URL = (
 # SCHEMAORG_VERSION_URL = 'https://raw.githubusercontent.com/schemaorg/schemaorg/main/versions.json'
 # Note that github API has 60/hr rate-limit for unauthorized API call
 # we use utils.timed_lru_cache to avoid calling this API too many times
-SCHEMAORG_VERSION_URL = (
-    "https://api.github.com/repos/schemaorg/schemaorg/releases/latest"
-)
+SCHEMAORG_VERSION_URL = "https://api.github.com/repos/schemaorg/schemaorg/releases/latest"
 # By default we always load the latest version of schema.org, however, we can also
 # set a default schema.org version to load if the latest version failed to load
 # We should update this version after we tested a recent version.

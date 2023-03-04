@@ -31,9 +31,7 @@ def load_json_or_yaml(file_path):
         with requests.get(file_path) as url:
             # check if http requests returns a success status code
             if url.status_code != 200:
-                raise ValueError(
-                    f"Invalid URL [{url.status_code}]: {file_path} !"
-                )
+                raise ValueError(f"Invalid URL [{url.status_code}]: {file_path} !")
             else:
                 _data = url.content
     # handle file path
@@ -64,9 +62,7 @@ def get_latest_schemaorg_version():
     # skip pre-release entry like {"14.0": "2021-XX-XX"} and sort by the numeric version numbers
     latest = sorted([version for version, date in versions.items() if date.find('X') == -1], key=float)[-1]
     """
-    tag_name = requests.get(SCHEMAORG_VERSION_URL).json()[
-        "tag_name"
-    ]  # "v13.0-release"
+    tag_name = requests.get(SCHEMAORG_VERSION_URL).json()["tag_name"]  # "v13.0-release"
     mat = re.match(r"v([\d.]+)-release", tag_name)
     assert mat, f'Unrecognized release tag name "{tag_name}"'
     latest = mat.group(1)
@@ -88,9 +84,7 @@ def construct_schemaorg_url(version):
         url = f"{SCHEMAORG_JSONLD_BASE_URL}/{version}/all-layers.jsonld"
     else:
         # >=9.0
-        url = (
-            f"{SCHEMAORG_JSONLD_BASE_URL}/{version}/schemaorg-all-http.jsonld"
-        )
+        url = f"{SCHEMAORG_JSONLD_BASE_URL}/{version}/schemaorg-all-http.jsonld"
     return url
 
 
@@ -177,9 +171,7 @@ class BaseSchemaLoader:
             if _sc == "schema" or _sc == "schema.org":
                 self.schema_org_version = get_schemaorg_version()
                 _base_schema.append(
-                    load_schemaorg(
-                        version=self.schema_org_version, verbose=self.verbose
-                    )
+                    load_schemaorg(version=self.schema_org_version, verbose=self.verbose)
                 )
                 continue
             elif self.is_a_dde_schema(_sc):
@@ -282,30 +274,22 @@ def find_domain_range(record):
     response = {"domain": [], "range": []}
     if "http://schema.org/domainIncludes" in record:
         if isinstance(record["http://schema.org/domainIncludes"], dict):
-            response["domain"] = [
-                record["http://schema.org/domainIncludes"]["@id"]
-            ]
+            response["domain"] = [record["http://schema.org/domainIncludes"]["@id"]]
         elif isinstance(record["http://schema.org/domainIncludes"], list):
             response["domain"] = [
-                _item["@id"]
-                for _item in record["http://schema.org/domainIncludes"]
+                _item["@id"] for _item in record["http://schema.org/domainIncludes"]
             ]
     if "http://schema.org/rangeIncludes" in record:
         if isinstance(record["http://schema.org/rangeIncludes"], dict):
-            response["range"] = [
-                record["http://schema.org/rangeIncludes"]["@id"]
-            ]
+            response["range"] = [record["http://schema.org/rangeIncludes"]["@id"]]
         elif isinstance(record["http://schema.org/rangeIncludes"], list):
             response["range"] = [
-                _item["@id"]
-                for _item in record["http://schema.org/rangeIncludes"]
+                _item["@id"] for _item in record["http://schema.org/rangeIncludes"]
             ]
     return (response["domain"], response["range"])
 
 
-def load_schema_into_networkx(
-    schema, load_class=True, load_property=True, load_datatype=True
-):
+def load_schema_into_networkx(schema, load_class=True, load_property=True, load_datatype=True):
     """Construct networkx DiGraph based on Schema provided"""
     # initialize DiGraph for classes, properties and data types
     G = nx.DiGraph()
@@ -383,9 +367,7 @@ def load_schema_class_into_networkx(schema, preload_schemaorg=False):
     """Constuct networkx DiGraph based on Schema provided"""
     # preload all schema from schemaorg latest version
     if preload_schemaorg:
-        G = load_schema_class_into_networkx(
-            preload_schemaorg, preload_schemaorg=False
-        )
+        G = load_schema_class_into_networkx(preload_schemaorg, preload_schemaorg=False)
     else:
         G = nx.DiGraph()
     for record in schema["@graph"]:
@@ -399,9 +381,7 @@ def load_schema_class_into_networkx(schema, preload_schemaorg=False):
                 elif isinstance(parents, dict):
                     G.add_edge(parents["@id"], record["@id"])
                 else:
-                    raise ValueError(
-                        '"dictionary" input is not a list or dict'
-                    )
+                    raise ValueError('"dictionary" input is not a list or dict')
             else:
                 pass
     return G
@@ -411,9 +391,7 @@ def load_schema_property_into_networkx(schema, preload_schemaorg=False):
     """Constuct networkx DiGraph based on Schema provided"""
     # preload all schema from schemaorg latest version
     if preload_schemaorg:
-        G = load_schema_property_into_networkx(
-            preload_schemaorg, preload_schemaorg=False
-        )
+        G = load_schema_property_into_networkx(preload_schemaorg, preload_schemaorg=False)
     else:
         G = nx.DiGraph()
     for record in schema["@graph"]:
@@ -431,9 +409,7 @@ def load_schema_property_into_networkx(schema, preload_schemaorg=False):
                 elif isinstance(parents, dict):
                     G.add_edge(parents["@id"], record["@id"])
                 else:
-                    raise ValueError(
-                        '"dictionary" input is not a list or dict'
-                    )
+                    raise ValueError('"dictionary" input is not a list or dict')
             else:
                 pass
     return G
@@ -455,10 +431,7 @@ def load_schema_datatype_into_networkx(schema):
                 for _parent in parents:
                     if _parent["@id"] != "rdfs:Class":
                         G.add_edge(_parent["@id"], record["@id"])
-            elif (
-                "@type" in record
-                and "http://schema.org/DataType" in record["@type"]
-            ):
+            elif "@type" in record and "http://schema.org/DataType" in record["@type"]:
                 G.add_edge("http://schema.org/DataType", record["@id"])
     return G
 
@@ -475,10 +448,7 @@ def get_clean_schema_context(schema):
             if graph.find(prefix + ":") != -1:
                 used_prefix_li.append(prefix)
         clean_context = {
-            "@context": {
-                prefix: context[prefix]
-                for prefix in sorted(set(used_prefix_li))
-            }
+            "@context": {prefix: context[prefix] for prefix in sorted(set(used_prefix_li))}
         }
         return clean_context
     else:
