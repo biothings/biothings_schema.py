@@ -25,6 +25,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           # architecture: x64
+        env: # Or as an environment variable
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
       - run: pip install -r requirements.txt
       - run: pip install coverage
       - run: coverage run --source . -m unittest discover biothings_schema/tests
