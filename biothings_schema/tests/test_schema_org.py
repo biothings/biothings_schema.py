@@ -20,6 +20,7 @@ class TestSchemaOrg(unittest.TestCase):
         for _cls in self.clses:
             # test get_class
             scls = self.se.get_class(_cls.name)
+            self.assertEqual(scls.prefix, "schema")
             # test describe function
             describe = scls.describe()
             scls = self.se.get_class(_cls.name, output_type="curie")
@@ -37,6 +38,7 @@ class TestSchemaOrg(unittest.TestCase):
         for _prop in self.props:
             # test get_property
             sp = self.se.get_property(_prop.name)
+            self.assertEqual(sp.prefix, "schema")
             # test describe function
             describe = sp.describe()
             sp = self.se.get_property(_prop.name, output_type="curie")
