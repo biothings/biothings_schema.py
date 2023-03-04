@@ -58,6 +58,11 @@ def require_optional(*module_list):
 
 @require_optional("graphviz")
 def visualize(edges, size=None):
+    try:
+        import graphviz
+    except ImportError:
+        print('"graphviz" is not installed, please install it first.')
+
     if size:
         d = graphviz.Digraph(graph_attr=[('size', size)])   # type: ignore  # pylint: disable=undefined-variable
     else:

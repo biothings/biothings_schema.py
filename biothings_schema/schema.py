@@ -384,7 +384,7 @@ class Schema():
     def get_class(self, class_name, output_type="PythonClass"):
         """Return a SchemaClass instance of the class"""
         uris = self.cls_converter.get_uri(class_name)
-        if type(uris) == list:
+        if isinstance(uris, list):
             warnings.warn("Found more than 1 classes defined within schema using label {}".format(class_name))
             return [SchemaClass(_item, self, output_type) for _item in uris]
         else:

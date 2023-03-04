@@ -8,9 +8,9 @@ from .settings import VALIDATION_FIELD, ALT_VALIDATION_FIELDS
 class CurieUriConverter():
     """Converte between Curies, URIs and names"""
 
-    def __init__(self, context, uri_list=[]):
+    def __init__(self, context, uri_list=None):
         self.context = context
-        self.uri_list = uri_list
+        self.uri_list = uri_list or []
         # map URI to its corresponding names
         self.name_dict = defaultdict(list)
         for _uri in self.uri_list:
@@ -29,7 +29,7 @@ class CurieUriConverter():
         )
         if re.match(regex_url, _id):
             return 'url'
-        elif len(_id.split(":")) == 2 and type(_id.split(":")[0]) == str:
+        elif len(_id.split(":")) == 2 and isinstance(_id.split(":")[0], str):
             return 'curie'
         else:
             return 'name'
@@ -96,7 +96,7 @@ class CurieUriConverter():
             return _input.split(':')[0]
         # if input type is URI, try convert to CUIRE, if not, return URI
         elif _type == "url":
-            uri, name = _input.rsplit('/', 1)
+            uri = _input.rsplit('/', 1)[0]
             uri += '/'
             prefix = None
             for k, v in self.context.items():
@@ -140,7 +140,7 @@ def expand_curie_to_uri(curie, context_info):
     PREFIXES_NOT_EXPAND = ["rdf", "rdfs", "xsd"]
     if not curie:
         return curie
-    if type(curie) == int:
+    if isinstance(curie, int):
         curie = str(curie)
     # determine if a value is curie
     if len(curie.split(':')) == 2:
