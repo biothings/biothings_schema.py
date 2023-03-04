@@ -7,3 +7,14 @@ profile = "black"
 combine_as_imports = true
 line_length = 159
 src_paths = ["."]
+
+[tool.flake8]
+# Let Black handle all the formatting.
+ignore = "E,W503"
+exclude = """
+  tests/snapshots,
+  .svn,CVS,.bzr,.hg,.git,__pycache__,.tox,.eggs,*.egg
+"""
+
+[tool.pylint.FORMAT]
+max-line-length = 159
