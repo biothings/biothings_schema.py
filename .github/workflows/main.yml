@@ -26,4 +26,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           # architecture: x64
       - run: pip install -r requirements.txt
-      - run: python -m unittest discover biothings_schema/tests
+      - run: pip install coverage
+      - run: coverage run --source . -m unittest discover biothings_schema/tests
+      - run: bash <(curl -Ls https://coverage.codacy.com/get.sh)    # upload coverage to codacy
+
