@@ -105,13 +105,13 @@ def load_schemaorg(version=None, verbose=False):
         )
 
 
-def load_bioschemas(verbose=False):
-    """Load Bioschemas vocabulary, currently cached in data folder"""
-    _ROOT = os.path.abspath(os.path.dirname(__file__))
-    _path = os.path.join(_ROOT, "data", "bioschemas.json")
-    if verbose:
-        print(f"Loading Bioschemas schema from {_path}")
-    return load_json_or_yaml(_path)
+# def load_bioschemas(verbose=False):
+#     """Deprecated! Load Bioschemas vocabulary, currently cached in data folder"""
+#     _ROOT = os.path.abspath(os.path.dirname(__file__))
+#     _path = os.path.join(_ROOT, "data", "bioschemas.json")
+#     if verbose:
+#         print(f"Loading Bioschemas schema from {_path}")
+#     return load_json_or_yaml(_path)
 
 
 class BaseSchemaLoader:
