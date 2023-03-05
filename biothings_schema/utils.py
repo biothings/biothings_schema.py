@@ -1,25 +1,25 @@
 import json
 from copy import copy
 from functools import lru_cache, wraps
+
 try:
-    from time import monotonic_ns     # For Python >=3.7
+    from time import monotonic_ns  # For Python >=3.7
 except ImportError:
     from time import monotonic
-    monotonic_ns = lambda: monotonic() * 10 ** 9     # noqa
+
+    monotonic_ns = lambda: monotonic() * 10**9  # noqa
 
 import networkx as nx
 
 
 def merge_schema(*schema_list):
     """Merge a list of schemas together"""
-    new_schema = {"@context": {},
-                  "@graph": [],
-                  "@id": "merged"}
+    new_schema = {"@context": {}, "@graph": [], "@id": "merged"}
     _ids = ["merged"]
     for schema in schema_list:
         new_schema["@context"].update(schema.get("@context", {}))
         new_schema["@graph"].extend(schema.get("@graph", []))
-        _id = schema.get('@id', None)
+        _id = schema.get("@id", None)
         if _id:
             _ids.append(_id)
     new_schema["@id"] = "_".join(_ids)
@@ -35,7 +35,7 @@ def merge_schema_networkx(g1, g2):
 
 
 def find_duplicates_0(_list):
-    """ deprecated.
+    """deprecated.
     Find duplicate items in a list
 
     :arg list _list: a python list
@@ -83,7 +83,7 @@ def str2list(_str):
 
 
 def unlist(_list):
-    """ if list is of length 1, return only the first item
+    """if list is of length 1, return only the first item
 
     :arg list _list: a python list
     """
@@ -95,19 +95,18 @@ def unlist(_list):
 
 def export_json(json_doc, file_path):
     """Export JSON doc to file"""
-    with open(file_path, 'w') as f:
-        json.dump(json_doc, f, sort_keys=True,
-                  indent=4, ensure_ascii=False)
+    with open(file_path, "w") as f:
+        json.dump(json_doc, f, sort_keys=True, indent=4, ensure_ascii=False)
 
 
 def expand_ref(json_obj, definition):
     """expand the $ref in json schema"""
-    json_obj = copy(json_obj)    # make a copy so we don't change the input json_obj
+    json_obj = copy(json_obj)  # make a copy so we don't change the input json_obj
     if isinstance(json_obj, dict):
         for key in list(json_obj.keys()):
             if key == "$ref":
                 if json_obj[key].startswith("#/definitions/"):
-                    concept = json_obj[key].split('/')[-1]
+                    concept = json_obj[key].split("/")[-1]
                     if concept in definition:
                         json_obj.pop("$ref")
                         json_obj.update(definition[concept])
@@ -117,12 +116,12 @@ def expand_ref(json_obj, definition):
                 resolved = expand_ref(json_obj[key], definition)
                 json_obj[key] = resolved
             elif isinstance(json_obj[key], list):
-                for (k, v) in enumerate(json_obj[key]):
+                for k, v in enumerate(json_obj[key]):
                     resolved = expand_ref(v, definition)
                     if resolved:
                         json_obj[key][k] = resolved
     elif isinstance(json_obj, list):
-        for (key, value) in enumerate(json_obj):
+        for key, value in enumerate(json_obj):
             resolved = expand_ref(value, definition)
             if resolved:
                 json_obj[key] = resolved
@@ -130,9 +129,7 @@ def expand_ref(json_obj, definition):
 
 
 # From: https://gist.github.com/Morreski/c1d08a3afa4040815eafd3891e16b945?permalink_comment_id=3521580#gistcomment-3521580
-def timed_lru_cache(
-    _func=None, *, seconds: int = 600, maxsize: int = 128, typed: bool = False
-):
+def timed_lru_cache(_func=None, *, seconds: int = 600, maxsize: int = 128, typed: bool = False):
     """Extension of functools lru_cache with a timeout
 
     Parameters:
@@ -144,7 +141,7 @@ def timed_lru_cache(
 
     def wrapper_cache(f):
         f = lru_cache(maxsize=maxsize, typed=typed)(f)
-        f.delta = seconds * 10 ** 9
+        f.delta = seconds * 10**9
         f.expiration = monotonic_ns() + f.delta
 
         @wraps(f)

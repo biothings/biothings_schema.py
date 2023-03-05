@@ -1,11 +1,11 @@
 import re
 from collections import defaultdict
 
+from .settings import ALT_VALIDATION_FIELDS, VALIDATION_FIELD
 from .utils import unlist
-from .settings import VALIDATION_FIELD, ALT_VALIDATION_FIELDS
 
 
-class CurieUriConverter():
+class CurieUriConverter:
     """Converte between Curies, URIs and names"""
 
     def __init__(self, context, uri_list=None):
@@ -20,19 +20,20 @@ class CurieUriConverter():
     def determine_id_type(self, _id):
         """Determine whether an ID is a curie or URI or none of them"""
         regex_url = re.compile(
-            r'^(?:http|ftp)s?://'   # http:// or https://
-            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'   # domain...
-            r'localhost|'           # localhost...
-            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'   # ...or ip
-            r'(?::\d+)?'            # optional port
-            r'(?:/?|[/?]\S+)$', re.IGNORECASE
+            r"^(?:http|ftp)s?://"  # http:// or https://
+            r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|"  # domain...
+            r"localhost|"  # localhost...
+            r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"  # ...or ip
+            r"(?::\d+)?"  # optional port
+            r"(?:/?|[/?]\S+)$",
+            re.IGNORECASE,
         )
         if re.match(regex_url, _id):
-            return 'url'
+            return "url"
         elif len(_id.split(":")) == 2 and isinstance(_id.split(":")[0], str):
-            return 'curie'
+            return "curie"
         else:
-            return 'name'
+            return "name"
 
     def get_uri(self, _input):
         """Convert input to URI format"""
@@ -43,11 +44,11 @@ class CurieUriConverter():
             return _input
         # if input type is curie, try convert to URI, if not, return curie
         elif _type == "curie":
-            prefix, suffix = _input.split(':')
+            prefix, suffix = _input.split(":")
             if prefix in self.context:
                 namespace_url = self.context[prefix]
-                if not namespace_url.endswith('/'):
-                    namespace_url += '/'
+                if not namespace_url.endswith("/"):
+                    namespace_url += "/"
                 return namespace_url + suffix
             else:
                 return _input
@@ -67,14 +68,14 @@ class CurieUriConverter():
             return _input
         # if input type is URI, try convert to CUIRE, if not, return URI
         elif _type == "url":
-            uri, name = _input.rsplit('/', 1)
-            uri += '/'
+            uri, name = _input.rsplit("/", 1)
+            uri += "/"
             prefix = None
             for k, v in self.context.items():
                 if v == uri:
                     prefix = k
             if prefix:
-                return prefix + ':' + name
+                return prefix + ":" + name
             else:
                 return _input
         else:
@@ -93,11 +94,11 @@ class CurieUriConverter():
         _type = self.determine_id_type(_input)
         # if input type is CURIE, return itself
         if _type == "curie":
-            return _input.split(':')[0]
+            return _input.split(":")[0]
         # if input type is URI, try convert to CUIRE, if not, return URI
         elif _type == "url":
-            uri = _input.rsplit('/', 1)[0]
-            uri += '/'
+            uri = _input.rsplit("/", 1)[0]
+            uri += "/"
             prefix = None
             for k, v in self.context.items():
                 if v == uri:
@@ -122,12 +123,12 @@ class CurieUriConverter():
         """
         # first determine the type of input, e.g. URI, CURIE, or Name
         _type = self.determine_id_type(_input)
-        if _type == 'name':
+        if _type == "name":
             return _input
-        elif _type == 'url':
-            return _input.split('/')[-1]
+        elif _type == "url":
+            return _input.split("/")[-1]
         else:
-            return _input.split(':')[-1]
+            return _input.split(":")[-1]
 
 
 def expand_curie_to_uri(curie, context_info):
@@ -143,11 +144,11 @@ def expand_curie_to_uri(curie, context_info):
     if isinstance(curie, int):
         curie = str(curie)
     # determine if a value is curie
-    if len(curie.split(':')) == 2:
+    if len(curie.split(":")) == 2:
         prefix, value = curie.split(":")
         if prefix in context_info and prefix not in PREFIXES_NOT_EXPAND:
             return context_info[prefix] + value
-    # if the input is not curie, return the input unmodified
+        # if the input is not curie, return the input unmodified
         else:
             return curie
     else:
@@ -160,8 +161,7 @@ def preprocess_schema(schema):
     :arg dict schema: A JSON-LD object representing the schema
     """
     context = schema["@context"]
-    new_schema = {"@context": context,
-                  "@graph": []}
+    new_schema = {"@context": context, "@graph": []}
     for record in schema["@graph"]:
         # if a class is superseded, no need to load into graph
         if "http://schema.org/supersededBy" not in record:
@@ -178,11 +178,17 @@ def preprocess_schema(schema):
                     if isinstance(v[0], dict):
                         new_record[expand_curie_to_uri(k, context)] = []
                         for _item in v:
-                            new_record[expand_curie_to_uri(k, context)].append({"@id": expand_curie_to_uri(_item["@id"], context)})
+                            new_record[expand_curie_to_uri(k, context)].append(
+                                {"@id": expand_curie_to_uri(_item["@id"], context)}
+                            )
                     else:
-                        new_record[expand_curie_to_uri(k, context)] = [expand_curie_to_uri(_item, context) for _item in v]
+                        new_record[expand_curie_to_uri(k, context)] = [
+                            expand_curie_to_uri(_item, context) for _item in v
+                        ]
                 elif isinstance(v, dict) and "@id" in v:
-                    new_record[expand_curie_to_uri(k, context)] = {"@id": expand_curie_to_uri(v["@id"], context)}
+                    new_record[expand_curie_to_uri(k, context)] = {
+                        "@id": expand_curie_to_uri(v["@id"], context)
+                    }
                 elif v is None:
                     new_record[expand_curie_to_uri(k, context)] = None
                 else:
@@ -201,17 +207,17 @@ def extract_name_from_uri_or_curie(item, schema=None):
     """
     # if schema is provided, look into the schema for the label
     if schema:
-        name = [record["rdfs:label"] for record in schema["@graph"] if record['@id'] == item]
+        name = [record["rdfs:label"] for record in schema["@graph"] if record["@id"] == item]
         if name:
             return name[0]
         else:
             return extract_name_from_uri_or_curie(item)
     # handle curie, get the last element after ":"
-    elif 'http' not in item and len(item.split(":")) == 2:
+    elif "http" not in item and len(item.split(":")) == 2:
         return item.split(":")[-1]
     # handle URI, get the last element after "/"
-    elif len(item.split("//")[-1].split('/')) > 1:
-        return item.split("//")[-1].split('/')[-1]
+    elif len(item.split("//")[-1].split("/")) > 1:
+        return item.split("//")[-1].split("/")[-1]
     # otherwise, rsise ValueError
     else:
-        raise ValueError('{} should be converted to either URI or curie'.format(item))
+        raise ValueError("{} should be converted to either URI or curie".format(item))
