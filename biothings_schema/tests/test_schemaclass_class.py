@@ -2,7 +2,7 @@ import os
 import unittest
 
 from biothings_schema import Schema
-from biothings_schema.base import load_json_or_yaml
+from biothings_schema.dataload import load_json_or_yaml
 
 
 _CURRENT = os.path.abspath(os.path.dirname(__file__))

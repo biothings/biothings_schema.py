@@ -64,9 +64,9 @@ def require_optional(*module_list):
 def visualize(edges, size=None):
     """Visualize the schema using graphviz"""
     if size:
-        d = graphviz.Digraph(graph_attr=[("size", size)])  # type: ignore  # pylint: disable=undefined-variable
+        d = graphviz.Digraph(graph_attr=[("size", size)])  # noqa  # type: ignore  # pylint: disable=undefined-variable
     else:
-        d = graphviz.Digraph()  # type: ignore  # pylint: disable=undefined-variable
+        d = graphviz.Digraph()  # noqa # type: ignore  # pylint: disable=undefined-variable
     for _item in edges:
         d.edge(_item[0], _item[1])
     return d

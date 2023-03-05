@@ -2,7 +2,7 @@ import unittest
 import os
 import sys
 
-from biothings_schema.base import load_json_or_yaml
+from biothings_schema.dataload import load_json_or_yaml
 from biothings_schema import SchemaValidator, Schema, SchemaValidationError
 
 
