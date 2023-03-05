@@ -15,6 +15,10 @@ class TestSchemaOrg(unittest.TestCase):
         # test list_all_properties
         self.props = self.se.list_all_properties()
 
+    def test_schema_org_version(self):
+        self.assertTrue(self.se.base_schema_loader.schema_org_version is not None)
+        self.assertGreaterEqual(float(self.se.base_schema_loader.schema_org_version), 15)
+
     def test_schemaclass_class(self):
         """ Test the SchemaClass Class using all classes in BioThings schema"""
         # loop through all classes
