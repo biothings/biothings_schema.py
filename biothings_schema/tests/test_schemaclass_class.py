@@ -4,24 +4,21 @@ import unittest
 from biothings_schema import Schema
 from biothings_schema.dataload import load_json_or_yaml
 
-
 _CURRENT = os.path.abspath(os.path.dirname(__file__))
 
 
 class TestSchemaClassClass(unittest.TestCase):
-    """Test SchemaClass Class
-    """
+    """Test SchemaClass Class"""
+
     def setUp(self):
-        schema_url = 'https://raw.githubusercontent.com/data2health/schemas/biothings/biothings/biothings_curie_kevin.jsonld'
+        schema_url = "https://raw.githubusercontent.com/data2health/schemas/biothings/biothings/biothings_curie_kevin.jsonld"
         self.se = Schema(schema_url)
 
     def test_initialization_with_context_works(self):
-        biothings_jsonld_path = os.path.join(_CURRENT,
-                                             'data',
-                                             'biothings_test.jsonld')
-        schema_url = 'https://raw.githubusercontent.com/data2health/schemas/biothings/biothings/biothings_curie_kevin.jsonld'
+        biothings_jsonld_path = os.path.join(_CURRENT, "data", "biothings_test.jsonld")
+        schema_url = "https://raw.githubusercontent.com/data2health/schemas/biothings/biothings/biothings_curie_kevin.jsonld"
         biothings_schema = load_json_or_yaml(biothings_jsonld_path)
-        self.se_with_context = Schema(schema_url, biothings_schema['@context'])
+        self.se_with_context = Schema(schema_url, biothings_schema["@context"])
         self.assertEqual(self.se_with_context.schema, self.se.schema)
 
     def test_initialization(self):
@@ -45,12 +42,11 @@ class TestSchemaClassClass(unittest.TestCase):
         self.assertEqual(scls.label, "Gene")
 
     def test_parent_classes(self):
-        """ Test parent_classes function
-        """
+        """Test parent_classes function"""
         scls = self.se.get_class("bts:Gene")
         parents = scls.parent_classes
         # check the first item of should be 'Thing'
-        self.assertEqual(parents[0][0].name, 'schema:Thing')
+        self.assertEqual(parents[0][0].name, "schema:Thing")
         # if input is the root class, should return empty list
         scls = self.se.get_class("Thing")
         parents = scls.parent_classes
@@ -64,34 +60,34 @@ class TestSchemaClassClass(unittest.TestCase):
         scls = self.se.get_class("bts:Gene", output_type="uri")
         parents = scls.parent_classes
         # check the first item of should be 'Thing'
-        self.assertEqual(parents[0][0], 'http://schema.org/Thing')
+        self.assertEqual(parents[0][0], "http://schema.org/Thing")
         ###############################
         # test if output_type is label
         scls = self.se.get_class("bts:Gene", output_type="label")
         parents = scls.parent_classes
         # check the first item of should be 'Thing'
-        self.assertEqual(parents[0][0], 'Thing')
+        self.assertEqual(parents[0][0], "Thing")
         ###############################
         # test if output_type is curie
         scls = self.se.get_class("bts:Gene", output_type="curie")
         parents = scls.parent_classes
         # check the first item of should be 'Thing'
-        self.assertEqual(parents[0][0], 'schema:Thing')
+        self.assertEqual(parents[0][0], "schema:Thing")
 
     def test_ancestor_classes(self):
-        """ Test ancestor_classes function"""
+        """Test ancestor_classes function"""
         ###############################
         # test if output_type is python class
         scls = self.se.get_class("bts:MolecularEntity")
         ancestors = scls.ancestor_classes
         ancestor_names = [_item.name for _item in ancestors]
         # check if gene is in ancestors
-        self.assertIn('schema:Thing', ancestor_names)
-        self.assertIn('bts:BiologicalEntity', ancestor_names)
+        self.assertIn("schema:Thing", ancestor_names)
+        self.assertIn("bts:BiologicalEntity", ancestor_names)
         # check if Gene is in ancestors (Gene is its child classs)
-        self.assertNotIn('bts:Gene', ancestor_names)
+        self.assertNotIn("bts:Gene", ancestor_names)
         # check itself should not in ancestors
-        self.assertNotIn('bts:MolecularEntity', ancestor_names)
+        self.assertNotIn("bts:MolecularEntity", ancestor_names)
         # test if input class is the root class
         scls = self.se.get_class("Thing")
         self.assertEqual(scls.ancestor_classes, [])
@@ -103,38 +99,36 @@ class TestSchemaClassClass(unittest.TestCase):
         scls = self.se.get_class("bts:MolecularEntity", output_type="curie")
         ancestors = scls.ancestor_classes
         # check if BiologicalEntity is in descendants
-        self.assertIn('bts:BiologicalEntity', ancestors)
-        self.assertIn('schema:Thing', ancestors)
+        self.assertIn("bts:BiologicalEntity", ancestors)
+        self.assertIn("schema:Thing", ancestors)
         ###############################
         # test if output_type is label
         scls = self.se.get_class("bts:MolecularEntity", output_type="label")
         ancestors = scls.ancestor_classes
         # check if Thing is in ancestors
-        self.assertIn('Thing', ancestors)
-        self.assertIn('BiologicalEntity', ancestors)
+        self.assertIn("Thing", ancestors)
+        self.assertIn("BiologicalEntity", ancestors)
         ###############################
         # test if output_type is uri
         scls = self.se.get_class("bts:MolecularEntity", output_type="uri")
         ancestors = scls.ancestor_classes
         # check if gene is in descendants
-        self.assertIn('http://schema.biothings.io/BiologicalEntity',
-                      ancestors)
-        self.assertIn('http://schema.org/Thing',
-                      ancestors)
+        self.assertIn("http://schema.biothings.io/BiologicalEntity", ancestors)
+        self.assertIn("http://schema.org/Thing", ancestors)
 
     def test_descendant_classes(self):
-        """ Test descendant_classes function"""
+        """Test descendant_classes function"""
         ###############################
         # test if output_type is python class
         scls = self.se.get_class("bts:MolecularEntity")
         descendants = scls.descendant_classes
         descendant_names = [_item.name for _item in descendants]
         # check if gene is in descendants
-        self.assertIn('bts:Gene', descendant_names)
+        self.assertIn("bts:Gene", descendant_names)
         # check if Thing is in descendants (Thing is its parent classs)
-        self.assertNotIn('schema:Thing', descendant_names)
+        self.assertNotIn("schema:Thing", descendant_names)
         # check itself should not in descendants
-        self.assertNotIn('bts:MolecularEntity', descendant_names)
+        self.assertNotIn("bts:MolecularEntity", descendant_names)
         # test if input class is the leaf class
         scls = self.se.get_class("bts:Gene")
         descendants = scls.descendant_classes
@@ -148,35 +142,35 @@ class TestSchemaClassClass(unittest.TestCase):
         scls = self.se.get_class("bts:MolecularEntity", output_type="curie")
         descendants = scls.descendant_classes
         # check if gene is in descendants
-        self.assertIn('bts:Gene', descendants)
+        self.assertIn("bts:Gene", descendants)
         ###############################
         # test if output_type is label
         scls = self.se.get_class("bts:MolecularEntity", output_type="label")
         descendants = scls.descendant_classes
         # check if gene is in descendants
-        self.assertIn('Gene', descendants)
+        self.assertIn("Gene", descendants)
         ###############################
         # test if output_type is uri
         scls = self.se.get_class("bts:MolecularEntity", output_type="uri")
         descendants = scls.descendant_classes
         # check if gene is in descendants
-        self.assertIn('http://schema.biothings.io/Gene', descendants)
+        self.assertIn("http://schema.biothings.io/Gene", descendants)
 
     def test_child_classes(self):
-        """ Test child_classes function"""
+        """Test child_classes function"""
         ###############################
         # test if output_type is python class
         scls = self.se.get_class("bts:MolecularEntity")
         children = scls.child_classes
         children_names = [_item.name for _item in children]
         # check if GeneFamily is in children
-        self.assertIn('bts:GeneFamily', children_names)
+        self.assertIn("bts:GeneFamily", children_names)
         # check if gene is in children (gene is descendant)
-        self.assertNotIn('bts:Gene', children_names)
+        self.assertNotIn("bts:Gene", children_names)
         # check if Thing is in children (Thing is its parent classs)
-        self.assertNotIn('schema:Thing', children_names)
+        self.assertNotIn("schema:Thing", children_names)
         # check itself should not in children
-        self.assertNotIn('bts:MolecularEntity', children_names)
+        self.assertNotIn("bts:MolecularEntity", children_names)
         # test if input class is the leaf class
         scls = self.se.get_class("bts:Gene")
         children = scls.child_classes
@@ -190,22 +184,22 @@ class TestSchemaClassClass(unittest.TestCase):
         scls = self.se.get_class("bts:MolecularEntity", output_type="curie")
         children = scls.child_classes
         # check if GeneFamily is in children
-        self.assertIn('bts:GeneFamily', children)
+        self.assertIn("bts:GeneFamily", children)
         ###############################
         # test if output_type is uri
         scls = self.se.get_class("bts:MolecularEntity", output_type="uri")
         children = scls.child_classes
         # check if GeneFamily is in children
-        self.assertIn('http://schema.biothings.io/GeneFamily', children)
+        self.assertIn("http://schema.biothings.io/GeneFamily", children)
         ###############################
         # test if output_type is label
         scls = self.se.get_class("bts:MolecularEntity", output_type="label")
         children = scls.child_classes
         # check if GeneFamily is in children
-        self.assertIn('GeneFamily', children)
+        self.assertIn("GeneFamily", children)
 
     def test_used_by(self):
-        """ Test used_by function"""
+        """Test used_by function"""
         scls = self.se.get_class("bts:GenomicEntity")
         usage = scls.used_by()
         self.assertTrue(len(usage) > 1)
@@ -222,5 +216,5 @@ class TestSchemaClassClass(unittest.TestCase):
         self.assertEqual(describe, {})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

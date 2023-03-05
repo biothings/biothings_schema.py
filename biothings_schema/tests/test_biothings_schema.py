@@ -4,11 +4,11 @@ from biothings_schema import Schema
 
 
 class TestSchemaOrg(unittest.TestCase):
-    """Using SchemaOrg Schema to test all functions in biothings_schema
-    """
+    """Using SchemaOrg Schema to test all functions in biothings_schema"""
+
     def setUp(self):
         # preload biothings schema
-        PATH = 'https://raw.githubusercontent.com/data2health/schemas/biothings/biothings/biothings_curie_kevin.jsonld'
+        PATH = "https://raw.githubusercontent.com/data2health/schemas/biothings/biothings/biothings_curie_kevin.jsonld"
         self.se = Schema(PATH)
         # test list_all_classes
         self.clses = self.se.list_all_classes()
@@ -20,7 +20,7 @@ class TestSchemaOrg(unittest.TestCase):
         self.assertGreaterEqual(float(self.se.base_schema_loader.schema_org_version), 15)
 
     def test_schemaclass_class(self):
-        """ Test the SchemaClass Class using all classes in BioThings schema"""
+        """Test the SchemaClass Class using all classes in BioThings schema"""
         # loop through all classes
         for _cls in self.clses:
             # test get_class
@@ -29,8 +29,7 @@ class TestSchemaOrg(unittest.TestCase):
             scls.describe()
 
     def test_schemaproperty_class(self):
-        """ Test the SchemaProperty Class using all classes in BioThings schema
-        """
+        """Test the SchemaProperty Class using all classes in BioThings schema"""
         # loop through all properties
         for _prop in self.props:
             # test get_property
@@ -39,5 +38,5 @@ class TestSchemaOrg(unittest.TestCase):
             sp.describe()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
