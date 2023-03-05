@@ -1,17 +1,11 @@
-import os.path
-
 import jsonschema
 import networkx as nx
 
 from .curies import extract_name_from_uri_or_curie, preprocess_schema
-from .dataload import load_base_schema, load_json_or_yaml
+from .dataload import load_base_schema
 from .settings import VALIDATION_FIELD  # ALT_VALIDATION_FIELDS,; DEFAULT_JSONSCHEMA_METASCHEMA
 from .utils import dict2list, find_duplicates, str2list
-
-# import warnings
-
-
-_ROOT = os.path.abspath(os.path.dirname(__file__))
+from .validator_schemas import class_json_schema, property_json_schema, schema_org_json_schema
 
 
 class SchemaValidationError(ValueError):
@@ -239,19 +233,15 @@ class SchemaValidator:
 
     def validate_schema(self, schema):
         """Validate schema against SchemaORG-style JSON-LD"""
-        json_schema_path = os.path.join(_ROOT, "data", "schema.json")
-        json_schema = load_json_or_yaml(json_schema_path)
         try:
-            jsonschema.validate(schema, json_schema)
+            jsonschema.validate(schema, schema_org_json_schema)
         except jsonschema.ValidationError as err:
             self.report_validation_error(repr(err), long_message=str(err))
 
     def validate_property_schema(self, record):
         """Validate schema against SchemaORG property definition standard"""
-        json_schema_path = os.path.join(_ROOT, "data", "property_json_schema.json")
-        json_schema = load_json_or_yaml(json_schema_path)
         try:
-            jsonschema.validate(record, json_schema)
+            jsonschema.validate(record, property_json_schema)
         except jsonschema.ValidationError as err:
             self.report_validation_error(
                 repr(err),
@@ -262,10 +252,8 @@ class SchemaValidator:
 
     def validate_class_schema(self, record):
         """Validate schema against SchemaORG class definition standard"""
-        json_schema_path = os.path.join(_ROOT, "data", "class_json_schema.json")
-        json_schema = load_json_or_yaml(json_schema_path)
         try:
-            jsonschema.validate(record, json_schema)
+            jsonschema.validate(record, class_json_schema)
         except jsonschema.ValidationError as err:
             self.report_validation_error(
                 repr(err),
