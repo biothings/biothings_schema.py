@@ -441,7 +441,7 @@ class Schema:
     def get_property(self, property_name, output_type="PythonClass"):
         """Return a SchemaProperty instance of the property"""
         uris = self.prop_converter.get_uri(property_name)
-        if type(uris) == list:
+        if isinstance(uris, list):
             warnings.warn(
                 "Found more than 1 properties defined within schema using label {}".format(
                     property_name

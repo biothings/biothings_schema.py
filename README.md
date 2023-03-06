@@ -1,3 +1,6 @@
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/a181e07380c2450eab1e26837f0322de)](https://www.codacy.com/gh/biothings/biothings_schema.py/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=biothings/biothings_schema.py&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/a181e07380c2450eab1e26837f0322de)](https://www.codacy.com/gh/biothings/biothings_schema.py/dashboard?utm_source=github.com&utm_medium=referral&utm_content=biothings/biothings_schema.py&utm_campaign=Badge_Coverage)
+
 biothings_schema
 ==========================
 
@@ -23,7 +26,7 @@ In [4]: scls = se.get_class("Gene")
 
 In [5]: scls.parent_classes
 
-Out [5]: 
+Out [5]:
 [[<SchemaClass "Thing">,
   <SchemaClass "BiologicalEntity">,
   <SchemaClass "MolecularEntity">,
@@ -68,7 +71,7 @@ In [8]: scls = se.get_class("Gene")
 
 In [9]: scls.list_properties(group_by_class=False)
 
-Out [9]: 
+Out [9]:
 [<SchemaProperty "mgi"">,
  <SchemaProperty "pombase"">,
  <SchemaProperty "rgd"">,
