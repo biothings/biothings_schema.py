@@ -1,6 +1,7 @@
 biothings_schema
 ==========================
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/1c2beb0afade4a158b1008c7df0ae4c8)](https://app.codacy.com/gh/biothings/biothings_schema.py?utm_source=github.com&utm_medium=referral&utm_content=biothings/biothings_schema.py&utm_campaign=Badge_Grade_Settings)
 [![image](https://raw.githubusercontent.com/biothings/biothings_schema.py/master/docs/images/descendant_classes.png)](https://github.com/biothings/biothings_schema.py)
 
 biothings_schema is a Python package for the creation, extension and exploration of the schemas defined using the [schema.org](http://schema.org) standard.
