@@ -9,3 +9,5 @@ __all__ = [
     "SchemaValidationError",
     "SchemaValidationWarning",
 ]
+
+__version__ = "1.0.0"

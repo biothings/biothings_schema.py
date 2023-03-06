@@ -20,8 +20,7 @@ class_json_schema = {
         },
         "http://schema.org/supersededBy": {
             "anyOf": [
-                {"type": "object", "properties": {
-                    "@id": {"type": "string"}}, "required": ["@id"]},
+                {"type": "object", "properties": {"@id": {"type": "string"}}, "required": ["@id"]},
                 {
                     "type": "array",
                     "items": {
@@ -34,8 +33,7 @@ class_json_schema = {
         },
         "rdfs:subClassOf": {
             "anyOf": [
-                {"type": "object", "properties": {
-                    "@id": {"type": "string"}}, "required": ["@id"]},
+                {"type": "object", "properties": {"@id": {"type": "string"}}, "required": ["@id"]},
                 {
                     "type": "array",
                     "items": {
@@ -56,8 +54,7 @@ class_json_schema = {
                         "required": ["@id"],
                     },
                 },
-                {"type": "object", "properties": {
-                    "@id": {"type": "string"}}, "required": ["@id"]},
+                {"type": "object", "properties": {"@id": {"type": "string"}}, "required": ["@id"]},
             ]
         },
         "http://schema.org/category": {
@@ -78,8 +75,7 @@ class_json_schema = {
         },
         "http://www.w3.org/2004/02/skos/core#closeMatch": {
             "anyOf": [
-                {"type": "object", "properties": {
-                    "@id": {"type": "string"}}, "required": ["@id"]},
+                {"type": "object", "properties": {"@id": {"type": "string"}}, "required": ["@id"]},
                 {
                     "type": "array",
                     "items": {
@@ -121,8 +117,7 @@ property_json_schema = {
         "rdfs:label": {"anyOf": [{"type": "string"}, {"$ref": "#/definitions/multi_language"}]},
         "http://schema.org/supersededBy": {
             "anyOf": [
-                {"type": "object", "properties": {
-                    "@id": {"type": "string"}}, "required": ["@id"]},
+                {"type": "object", "properties": {"@id": {"type": "string"}}, "required": ["@id"]},
                 {
                     "type": "array",
                     "items": {
@@ -135,8 +130,7 @@ property_json_schema = {
         },
         "http://schema.org/domainIncludes": {
             "anyOf": [
-                {"type": "object", "properties": {
-                    "@id": {"type": "string"}}, "required": ["@id"]},
+                {"type": "object", "properties": {"@id": {"type": "string"}}, "required": ["@id"]},
                 {
                     "type": "array",
                     "items": {
@@ -149,8 +143,7 @@ property_json_schema = {
         },
         "http://schema.org/rangeIncludes": {
             "anyOf": [
-                {"type": "object", "properties": {
-                    "@id": {"type": "string"}}, "required": ["@id"]},
+                {"type": "object", "properties": {"@id": {"type": "string"}}, "required": ["@id"]},
                 {
                     "type": "array",
                     "items": {
@@ -168,8 +161,7 @@ property_json_schema = {
         },
         "rdfs:subPropertyOf": {
             "anyOf": [
-                {"type": "object", "properties": {
-                    "@id": {"type": "string"}}, "required": ["@id"]},
+                {"type": "object", "properties": {"@id": {"type": "string"}}, "required": ["@id"]},
                 {
                     "type": "array",
                     "items": {
@@ -199,8 +191,7 @@ property_json_schema = {
         },
         "http://www.w3.org/2004/02/skos/core#closeMatch": {
             "anyOf": [
-                {"type": "object", "properties": {
-                    "@id": {"type": "string"}}, "required": ["@id"]},
+                {"type": "object", "properties": {"@id": {"type": "string"}}, "required": ["@id"]},
                 {
                     "type": "array",
                     "items": {
