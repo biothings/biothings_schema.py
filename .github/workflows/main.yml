@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.7', '3.8', '3.9', '3.10', "3.11" ]
+        python-version: [ "3.7", "3.8", "3.9", "3.10", "3.11" ]
     name: Python ${{ matrix.python-version }} sample
     steps:
       - uses: actions/checkout@v3
@@ -26,11 +26,17 @@ jobs:
           python-version: ${{ matrix.python-version }}
           # architecture: x64
       - run: pip install -r requirements.txt
-      - run: pip install coverage
-      - run: coverage run --source . -m unittest discover biothings_schema/tests
-      - run: coverage report -m
-      - run: coverage xml    # generate coverage.xml output
-      - run: bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml    # upload coverage to codacy
+      - name: Run Tests and Coverage
+        run: |
+          pip install coverage
+          coverage run --source . -m unittest discover biothings_schema/tests
+          coverage report -m
+          coverage xml    # generate coverage.xml output
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml    # upload coverage to codacy
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
-
+        if: matrix.python-version == "3.10"
+      - name: Run Tests Only
+        run: |
+          python -m unittest discover biothings_schema/tests
+        if: matrix.python-version != "3.10"
