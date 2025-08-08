@@ -342,6 +342,12 @@ class SchemaValidator:
                 # get node or create one
                 node = destination.setdefault(key, {})
                 self.merge(value, node)
+            elif isinstance(value, list):
+                if key not in destination:
+                    destination[key] = list(value)
+                elif isinstance(destination[key], list):
+                    combined = list(set(destination[key] + value))
+                    destination[key] = combined
             else:
                 if key not in destination:
                     destination[key] = value
@@ -355,19 +361,23 @@ class SchemaValidator:
                 self.extension_schema["schema"]["@graph"][schema_index][VALIDATION_FIELD],
             )
 
-    def merge_recursive_parents(self, record, schema_index):
+    def merge_recursive_parents(self, record, schema_index, visited=None):
+        if visited is None:
+            visited = set()
+
         subclass_of = record.get("rdfs:subClassOf")
         if not subclass_of:
             return
 
-        # Normalize to a list of dicts
         if isinstance(subclass_of, dict):
             subclass_of = [subclass_of]
 
         for parent_ref in subclass_of:
             parent_id = parent_ref.get("@id")
-            if not parent_id:
+            if not parent_id or parent_id in visited:
                 continue
+
+            visited.add(parent_id)
 
             parent_index = next(
                 (
@@ -378,31 +388,15 @@ class SchemaValidator:
                 None
             )
 
-            if parent_index is not None:
-                parent_schema = self.extension_schema["schema"]["@graph"][parent_index]
-                self.merge_parent_validations(record, schema_index, parent_schema)
+            if parent_index is None:
+                continue
 
-                # Recurse up the parent chain
-                if parent_schema.get("rdfs:subClassOf"):
-                    self.merge_recursive_parents(parent_schema, parent_index)
-        # parent_schema = None
-        # parent_index = None
-        # if record.get("rdfs:subClassOf"):
-        #     parent_index = next(
-        #         (
-        #             parent_index
-        #             for parent_index, schema in enumerate(
-        #                 self.extension_schema["schema"]["@graph"]
-        #             )
-        #             if schema["@id"] == record.get("rdfs:subClassOf").get("@id")
-        #         ),
-        #         None,
-        #     )
-        #     if parent_index is not None:
-        #         parent_schema = self.extension_schema["schema"]["@graph"][parent_index]
-        # self.merge_parent_validations(record, schema_index, parent_schema)
-        # if parent_schema and parent_index and parent_schema.get("rdfs:subClassOf"):
-        #     self.merge_recursive_parents(parent_schema, parent_index)
+            parent_schema = self.extension_schema["schema"]["@graph"][parent_index]
+
+            self.merge_parent_validations(record, schema_index, parent_schema)
+
+            # Recurse up the tree
+            self.merge_recursive_parents(parent_schema, parent_index, visited)
 
     def validate_full_schema(self):
         """Main function to validate schema"""
