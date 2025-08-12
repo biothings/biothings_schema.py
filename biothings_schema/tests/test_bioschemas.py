@@ -57,9 +57,8 @@ class TestSchemaBasics(unittest.TestCase):
     def test_get_class(self):
         """Test get_class function"""
         scls = self.se.get_class("bts:Gene")
-        self.assertIsInstance(scls, SchemaClass), (
-            "Returned class is not a SchemaClass"
-        )
+        self.assertIsInstance(scls, SchemaClass, 
+                            "Returned class is not a SchemaClass")
 
 
     def test_get_property(self):
