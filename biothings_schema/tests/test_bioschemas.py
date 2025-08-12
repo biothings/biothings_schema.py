@@ -1,4 +1,4 @@
-import pytest
+import unittest
 
 from biothings_schema import Schema, SchemaClass, SchemaProperty
 
@@ -13,61 +13,57 @@ def load_schema(path_or_url: str) -> Schema:
     return Schema(path_or_url)
 
 
-@pytest.fixture(scope="module")
-def se():
-    """Shared Schema instance for tests."""
-    return load_schema(SCHEMA_URL)
+
+class TestSchemaBasics(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.se = load_schema(SCHEMA_URL)
 
 
-def test_list_all_classes(se):
-    """Test list_all_classes function"""
-    all_cls = se.list_all_classes()
-    all_cls_names = [_cls.name for _cls in all_cls]
+    def test_list_all_classes(self):
+        """Test list_all_classes function"""
+        all_cls = self.se.list_all_classes()
+        all_cls_names = [_cls.name for _cls in all_cls]
 
-    # Assert root-level CURIE class is included
-    assert "bts:PlanetaryEntity" in all_cls_names, (
-            "'bts:PlanetaryEntity' not found in class names"
+        # Root-level CURIE class is included
+        self.assertIn("bts:PlanetaryEntity", all_cls_names,
+                        "'bts:PlanetaryEntity' not found in class names")
+        # Raw label name is NOT present
+        self.assertNotIn("Gene", all_cls_names,
+                            "'Gene' (non-CURIE) unexpectedly found in class names")
+        # All classes are SchemaClass instances
+        for cls in all_cls:
+            self.assertIsInstance(cls, SchemaClass,
+                                    "Not all classes are SchemaClass instances")
+
+
+    def test_list_all_properties(self):
+        """Test list_all_properties function"""
+        all_props = self.se.list_all_properties()
+        all_prop_names = [_prop.name for _prop in all_props]
+
+        self.assertIn("schema:author", all_prop_names,
+                        "'schema:author' not found in properties")
+        self.assertNotIn("name", all_prop_names,
+                            "Unexpected plain 'name' found in properties")
+        self.assertNotIn("bts:ffff", all_prop_names,
+                            "Fake property 'bts:ffff' should not exist")
+
+        self.assertGreater(len(all_props), 0, "No properties returned")
+        self.assertIsInstance(all_props[0], SchemaProperty,
+                                "First property is not a SchemaProperty")
+
+
+    def test_get_class(self):
+        """Test get_class function"""
+        scls = self.se.get_class("bts:Gene")
+        self.assertIsInstance(scls, SchemaClass), (
+            "Returned class is not a SchemaClass"
         )
-    # Assert raw label name is NOT present
-    assert "Gene" not in all_cls_names, (
-            "'Gene' (non-CURIE) unexpectedly found in class names"
-        )
-    # Assert all classes are SchemaClass instances
-    assert all(isinstance(cls, SchemaClass) for cls in all_cls), (
-            "Not all classes are SchemaClass instances"
-        )
 
 
-def test_list_all_properties(se):
-    """Test list_all_properties function"""
-    all_props = se.list_all_properties()
-    all_prop_names = [_prop.name for _prop in all_props]
-
-    assert "schema:author" in all_prop_names, (
-        "'schema:author' not found in properties"
-    )
-    assert "name" not in all_prop_names, (
-        "Unexpected plain 'name' found in properties"
-    )
-    assert "bts:ffff" not in all_prop_names, (
-        "Fake property 'bts:ffff' should not exist"
-    )
-    assert isinstance(all_props[0], SchemaProperty), (
-        "First property is not a SchemaProperty"
-    )
-
-
-def test_get_class(se):
-    """Test get_class function"""
-    scls = se.get_class("bts:Gene")
-    assert isinstance(scls, SchemaClass), (
-        "Returned class is not a SchemaClass"
-    )
-
-
-def test_get_property(se):
-    """Test get_property function"""
-    sp = se.get_property("bts:geneticallyInteractsWith")
-    assert isinstance(sp, SchemaProperty), (
-            "Returned property is not a SchemaProperty"
-        )
+    def test_get_property(self):
+        """Test get_property function"""
+        sp = self.se.get_property("bts:geneticallyInteractsWith")
+        self.assertIsInstance(sp, SchemaProperty,
+                            "Returned property is not a SchemaProperty")
