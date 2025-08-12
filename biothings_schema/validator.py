@@ -339,19 +339,29 @@ class SchemaValidator:
             pass
 
     def _norm_id(self, _id: str) -> str:
+        """
+        Normalize an identifier, _id.
+        """
         if not _id:
             return _id
-        # expand CURIEs using known prefixes
-        # e.g., self.namespaces like {"schema": "https://schema.org/", "bts": "..."}
-        if ":" in _id and not _id.startswith("http"):
+        _id = _id.strip()
+
+        # Expand CURIEs via known prefixes
+        if ":" in _id and not _id.startswith(("http://", "https://")):
             prefix, local = _id.split(":", 1)
-            base = self.namespaces.get(prefix)
+            base = getattr(self, "namespaces", {}).get(prefix)
             if base:
-                return base.rstrip("/") + "/" + local
-        # unify schema.org http/https
-        return _id.replace("http://schema.org/", "https://schema.org/").rstrip("/")
+                _id = base.rstrip("/") + "/" + local
+
+        # Normalize schema.org variants
+        _id = _id.replace("http://schema.org/", "https://schema.org/")
+        _id = _id.replace("https://www.schema.org/", "https://schema.org/")
+        return _id.rstrip("/")
 
     def _merge_lists(self, left, right):
+        """
+        Merges two lists into one, removing duplicates.
+        """
         if not left:
             return list(right)
         # If any element is a dict/list, use JSON string as a stable key
