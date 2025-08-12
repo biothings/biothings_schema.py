@@ -1,5 +1,7 @@
 import jsonschema
 import networkx as nx
+import json
+import copy
 
 from .curies import extract_name_from_uri_or_curie, preprocess_schema
 from .dataload import load_base_schema
@@ -336,6 +338,40 @@ class SchemaValidator:
         else:
             pass
 
+    def _norm_id(self, _id: str) -> str:
+        if not _id:
+            return _id
+        # expand CURIEs using known prefixes
+        # e.g., self.namespaces like {"schema": "https://schema.org/", "bts": "..."}
+        if ":" in _id and not _id.startswith("http"):
+            prefix, local = _id.split(":", 1)
+            base = self.namespaces.get(prefix)
+            if base:
+                return base.rstrip("/") + "/" + local
+        # unify schema.org http/https
+        return _id.replace("http://schema.org/", "https://schema.org/").rstrip("/")
+
+    def _merge_lists(self, left, right):
+        if not left:
+            return list(right)
+        # If any element is a dict/list, use JSON string as a stable key
+        complex_items = any(isinstance(x, (dict, list)) for x in left + right)
+        out, seen = [], set()
+        for item in left + right:
+            if complex_items:
+                try:
+                    marker = json.dumps(item, sort_keys=True)
+                except TypeError:
+                    # Fallback if something isn’t JSON-serializable
+                    marker = str(item)
+            else:
+                marker = item
+            if marker in seen:
+                continue
+            seen.add(marker)
+            out.append(item)
+        return out
+
     def merge(self, source, destination):
         for key, value in source.items():
             if isinstance(value, dict):
@@ -344,14 +380,12 @@ class SchemaValidator:
                 self.merge(value, node)
             elif isinstance(value, list):
                 if key not in destination:
-                    destination[key] = list(value)
+                    destination[key] = copy.deepcopy(value)
                 elif isinstance(destination[key], list):
-                    combined = list(set(destination[key] + value))
-                    destination[key] = combined
+                    destination[key] = self._merge_lists(destination[key], value)
             else:
                 if key not in destination:
                     destination[key] = value
-
         return destination
 
     def merge_parent_validations(self, schema, schema_index, parent):
@@ -372,8 +406,11 @@ class SchemaValidator:
         if isinstance(subclass_of, dict):
             subclass_of = [subclass_of]
 
+        graph = self.extension_schema["schema"]["@graph"]
+
         for parent_ref in subclass_of:
-            parent_id = parent_ref.get("@id")
+            raw_parent_id = parent_ref.get("@id")
+            parent_id = self._norm_id(raw_parent_id)
             if not parent_id or parent_id in visited:
                 continue
 
@@ -382,16 +419,16 @@ class SchemaValidator:
             parent_index = next(
                 (
                     idx
-                    for idx, schema in enumerate(self.extension_schema["schema"]["@graph"])
-                    if schema["@id"] == parent_id
+                    for idx, schema in enumerate(graph)
+                    if self._norm_id(schema.get("@id")) == parent_id
                 ),
-                None
+                None,
             )
 
             if parent_index is None:
                 continue
 
-            parent_schema = self.extension_schema["schema"]["@graph"][parent_index]
+            parent_schema = graph[parent_index]
 
             self.merge_parent_validations(record, schema_index, parent_schema)
 
