@@ -431,12 +431,16 @@ class Schema:
         """Return a SchemaClass instance of the class"""
         uris = self.cls_converter.get_uri(class_name)
         if isinstance(uris, list):
+            if not uris:
+                return []  # stay empty
             warnings.warn(
                 "Found more than 1 classes defined within schema using label {}".format(class_name)
             )
             return [SchemaClass(_item, self, output_type) for _item in uris]
         else:
             return SchemaClass(class_name, self, output_type)
+
+        return []  # None or empty -> empty list
 
     def get_property(self, property_name, output_type="PythonClass"):
         """Return a SchemaProperty instance of the property"""
