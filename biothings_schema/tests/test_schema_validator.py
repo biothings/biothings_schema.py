@@ -22,6 +22,12 @@ class TestSchemaValidator(unittest.TestCase):
         duplicate_schema = load_json_or_yaml(biothings_duplicate)
         self.sv_duplicate = SchemaValidator(duplicate_schema, schema_nx)
 
+        # Load mock schema for testing recursive parent validation merging
+        mock_schema_path = os.path.join(_CURRENT, "data", "mock_multi-inheritance_schema.jsonld")
+        self.mock_schema = load_json_or_yaml(mock_schema_path)
+        mock_schema_nx = Schema(self.mock_schema)
+        self.mock_sv = SchemaValidator(self.mock_schema, mock_schema_nx)
+
     def test_validate_class_label(self):
         """Test validate_class_label function"""
         with self.assertRaises(SchemaValidationError):
@@ -319,6 +325,47 @@ class TestSchemaValidator(unittest.TestCase):
         schema_extended_url = "https://raw.githubusercontent.com/BioSchemas/specifications/master/Gene/jsonld/Gene_v1.0-RELEASE.json"
         schema = Schema(schema_extended_url)
         del schema
+
+    def test_merge_recursive_parents(self):
+        """Test recursive merging of parent validations"""
+        graph = self.mock_schema["@graph"]
+        class_a_index = next(
+            idx for idx, schema in enumerate(graph) if schema["@id"] == "example:Class_A"
+        )
+        class_a = graph[class_a_index]
+
+        # Call merge_recursive_parents
+        self.mock_sv.merge_recursive_parents(class_a, class_a_index)
+
+        # Check if validations are merged correctly
+        merged_validations = class_a["$validation"]["required"]
+        print(">>",merged_validations)
+
+        self.assertIn("f1", merged_validations, "Validation field 'f1' not inherited")
+        self.assertIn("f2", merged_validations, "Validation field 'f2' not inherited")
+        self.assertIn("f3", merged_validations, "Validation field 'f3' not present")
+
+    def test_merge_all_parent_validations(self):
+        """Test merging of parent validations"""
+        graph = self.mock_schema["@graph"]
+        class_a_index = next(
+            idx for idx, schema in enumerate(graph) if schema["@id"] == "example:Class_A"
+        )
+        class_a = graph[class_a_index]
+
+        class_a0_index = next(
+            idx for idx, schema in enumerate(graph) if schema["@id"] == "example:Class_A0"
+        )
+        class_a0 = graph[class_a0_index]
+
+        # Call merge_parent_validations
+        self.mock_sv.merge_parent_validations(class_a, class_a_index, class_a0)
+
+        # Check if validations are merged correctly
+        merged_validations = class_a["$validation"]["required"]
+        self.assertIn("f1", merged_validations, "Validation field 'f1' not inherited from Class_A1")
+        self.assertIn("f2", merged_validations, "Validation field 'f2' not inherited")
+        self.assertIn("f3", merged_validations, "Validation field 'f3' not present")
 
 
 if __name__ == "__main__":

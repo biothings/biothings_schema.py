@@ -50,11 +50,11 @@ class TestSchemaClassClass(unittest.TestCase):
         # if input is the root class, should return empty list
         scls = self.se.get_class("Thing")
         parents = scls.parent_classes
-        self.assertTrue(parents == [] or parents == [[]])
+        self.assertEqual(parents, [])
         # check the response if class not exist
         scls = self.se.get_class("dd")
         parents = scls.parent_classes
-        self.assertTrue(parents == [] or parents == [[]])
+        self.assertEqual(parents, [])
         ###############################
         # test if output_type is uri
         scls = self.se.get_class("bts:Gene", output_type="uri")
