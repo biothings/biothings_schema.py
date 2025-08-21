@@ -6,9 +6,10 @@ build-backend = "setuptools.build_meta"
 name="biothings_schema"
 authors = [
     {name = "Jiwen Xin"},
-    {name = "Chunlei Wu", email = "cwu@scripps.edu"}
+    {name = "Chunlei Wu", email = "cwu@scripps.edu"},
+    {name = "Nichollette Acosta"}
 ]
-requires-python = ">=3.6"
+requires-python = ">=3.8"
 description = "Python Client for BioThings Schema"
 readme = "README.md"
 license = { text = "Apache License 2.0" }
@@ -16,11 +17,11 @@ keywords = ["schema",  "biothings"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: POSIX",
     "Operating System :: MacOS :: MacOS X",
@@ -33,13 +34,10 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "jsonschema>=4.4.0; python_version >= \"3.7.0\"",
-    "networkx>=2.6.3; python_version >= \"3.7.0\"",
-    "jsonschema<4.0.0; python_version < \"3.7.0\"",
-    "networkx<2.6; python_version < \"3.7.0\"",
+    "jsonschema[format]>=4.4.0",
+    "networkx>=2.6.3",
     "PyYAML>=5.1",
-    "requests>=2.26.0",
-    "strict-rfc3339>=0.7"
+    "requests>=2.26.0"
 ]
 
 [project.optional-dependencies]
@@ -60,7 +58,7 @@ version = {attr = "biothings_schema.__version__"}
 
 [tool.black]
 line-length = 99
-target-version = ["py36", "py37", "py38", "py39", "py310"]
+target-version = [ "py39", "py310", "py311", "py312", "py13"]
 
 [tool.isort]
 profile = "black"
