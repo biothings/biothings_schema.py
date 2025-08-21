@@ -1,0 +1,84 @@
+{
+  "@context": {
+    "schema": "http://schema.org/",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "example": "http://example.org/"
+  },
+  "@graph": [
+    {
+      "@id": "schema:Thing",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Thing",
+      "rdfs:comment": "Schema.org root class"
+    },
+
+    {  "@id": "example:f1",
+      "@type": "rdf:Property",
+      "rdfs:label": "f1",
+      "rdfs:comment": "Mock property f1",
+      "schema:domainIncludes": [{ "@id": "example:Class_A1" }],
+      "schema:rangeIncludes": [{ "@id": "schema:Text" }]
+    },
+    {  "@id": "example:f2",
+      "@type": "rdf:Property",
+      "rdfs:label": "f2",
+      "rdfs:comment": "Mock property f2",
+      "schema:domainIncludes": [{ "@id": "example:Class_A0" }],
+      "schema:rangeIncludes": [{ "@id": "schema:Text" }]
+    },
+    {  "@id": "example:f3",
+      "@type": "rdf:Property",
+      "rdfs:label": "f3",
+      "rdfs:comment": "Mock property f3",
+      "schema:domainIncludes": [{ "@id": "example:Class_A" }],
+      "schema:rangeIncludes": [{ "@id": "schema:Text" }]
+    },
+
+    {
+      "@id": "example:Class_A0",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Class_A0",
+      "rdfs:comment": "Parent A0",
+      "rdfs:subClassOf": { "@id": "schema:Thing" },
+      "example:field_1": "Field 1 description",
+      "$validation": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": { "f2": { "type": "string" } },
+        "required": ["f2"]
+      }
+    },
+    {
+      "@id": "example:Class_A1",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Class_A1",
+      "rdfs:comment": "Parent A1",
+      "rdfs:subClassOf": { "@id": "schema:Thing" },
+      "example:field_2": "Field 2 description",
+      "$validation": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": { "f1": { "type": "string" } },
+        "required": ["f1"]
+      }
+    },
+    {
+      "@id": "example:Class_A",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Class_A",
+      "rdfs:comment": "Test class A with two parents",
+      "rdfs:subClassOf": [
+        { "@id": "example:Class_A0" },
+        { "@id": "example:Class_A1" }
+      ],
+      "example:field_3": "Field 3 description",
+      "$validation": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": { "f3": { "type": "string" } },
+        "required": ["f3"]
+      }
+    }
+  ]
+}

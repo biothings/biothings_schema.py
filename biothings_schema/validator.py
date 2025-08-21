@@ -1,5 +1,7 @@
 import jsonschema
 import networkx as nx
+import json
+import copy
 
 from .curies import extract_name_from_uri_or_curie, preprocess_schema
 from .dataload import load_base_schema
@@ -336,16 +338,64 @@ class SchemaValidator:
         else:
             pass
 
+    def _norm_id(self, _id: str) -> str:
+        """
+        Normalize an identifier, _id.
+        """
+        if not _id:
+            return _id
+        _id = _id.strip()
+
+        # Expand CURIEs via known prefixes
+        if ":" in _id and not _id.startswith(("http://", "https://")):
+            prefix, local = _id.split(":", 1)
+            base = getattr(self, "namespaces", {}).get(prefix)
+            if base:
+                _id = base.rstrip("/") + "/" + local
+
+        # Normalize schema.org variants
+        _id = _id.replace("http://schema.org/", "https://schema.org/")
+        _id = _id.replace("https://www.schema.org/", "https://schema.org/")
+        return _id.rstrip("/")
+
+    def _merge_lists(self, left, right):
+        """
+        Merges two lists into one, removing duplicates.
+        """
+        if not left:
+            return list(right)
+        # If any element is a dict/list, use JSON string as a stable key
+        complex_items = any(isinstance(x, (dict, list)) for x in left + right)
+        out, seen = [], set()
+        for item in left + right:
+            if complex_items:
+                try:
+                    marker = json.dumps(item, sort_keys=True)
+                except TypeError:
+                    # Fallback if something isn’t JSON-serializable
+                    marker = str(item)
+            else:
+                marker = item
+            if marker in seen:
+                continue
+            seen.add(marker)
+            out.append(item)
+        return out
+
     def merge(self, source, destination):
         for key, value in source.items():
             if isinstance(value, dict):
                 # get node or create one
                 node = destination.setdefault(key, {})
                 self.merge(value, node)
+            elif isinstance(value, list):
+                if key not in destination:
+                    destination[key] = copy.deepcopy(value)
+                elif isinstance(destination[key], list):
+                    destination[key] = self._merge_lists(destination[key], value)
             else:
                 if key not in destination:
                     destination[key] = value
-
         return destination
 
     def merge_parent_validations(self, schema, schema_index, parent):
@@ -355,25 +405,45 @@ class SchemaValidator:
                 self.extension_schema["schema"]["@graph"][schema_index][VALIDATION_FIELD],
             )
 
-    def merge_recursive_parents(self, record, schema_index):
-        parent_schema = None
-        parent_index = None
-        if record.get("rdfs:subClassOf"):
+    def merge_recursive_parents(self, record, schema_index, visited=None):
+        if visited is None:
+            visited = set()
+
+        subclass_of = record.get("rdfs:subClassOf")
+        if not subclass_of:
+            return
+
+        if isinstance(subclass_of, dict):
+            subclass_of = [subclass_of]
+
+        graph = self.extension_schema["schema"]["@graph"]
+
+        for parent_ref in subclass_of:
+            raw_parent_id = parent_ref.get("@id")
+            parent_id = self._norm_id(raw_parent_id)
+            if not parent_id or parent_id in visited:
+                continue
+
+            visited.add(parent_id)
+
             parent_index = next(
                 (
-                    parent_index
-                    for parent_index, schema in enumerate(
-                        self.extension_schema["schema"]["@graph"]
-                    )
-                    if schema["@id"] == record.get("rdfs:subClassOf").get("@id")
+                    idx
+                    for idx, schema in enumerate(graph)
+                    if self._norm_id(schema.get("@id")) == parent_id
                 ),
                 None,
             )
-            if parent_index is not None:
-                parent_schema = self.extension_schema["schema"]["@graph"][parent_index]
-        self.merge_parent_validations(record, schema_index, parent_schema)
-        if parent_schema and parent_index and parent_schema.get("rdfs:subClassOf"):
-            self.merge_recursive_parents(parent_schema, parent_index)
+
+            if parent_index is None:
+                continue
+
+            parent_schema = graph[parent_index]
+
+            self.merge_parent_validations(record, schema_index, parent_schema)
+
+            # Recurse up the tree
+            self.merge_recursive_parents(parent_schema, parent_index, visited)
 
     def validate_full_schema(self):
         """Main function to validate schema"""

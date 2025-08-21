@@ -1,1 +1,1 @@
-exclude biothings_schema/tests/*
+exclude tests/*

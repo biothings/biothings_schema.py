@@ -431,12 +431,16 @@ class Schema:
         """Return a SchemaClass instance of the class"""
         uris = self.cls_converter.get_uri(class_name)
         if isinstance(uris, list):
+            if not uris:
+                return []  # stay empty
             warnings.warn(
                 "Found more than 1 classes defined within schema using label {}".format(class_name)
             )
             return [SchemaClass(_item, self, output_type) for _item in uris]
         else:
             return SchemaClass(class_name, self, output_type)
+
+        return []  # None or empty -> empty list
 
     def get_property(self, property_name, output_type="PythonClass"):
         """Return a SchemaProperty instance of the property"""
@@ -577,19 +581,28 @@ class SchemaClass:
         response = check_defined(self, inspect.stack()[0][3])
         if not response:
             return response
-        root_node = list(nx.topological_sort(self.se.full_class_only_graph))
-        # When a schema is not a tree with only one root node
-        # Set "Thing" as the root node by default
-        if "http://schema.org/Thing" in root_node:
-            root_node = "http://schema.org/Thing"
-        else:
-            root_node = root_node[0]
-        paths = nx.all_simple_paths(
+
+        # Determine root
+        topo = list(nx.topological_sort(self.se.full_class_only_graph))
+        root_node = "http://schema.org/Thing" if "http://schema.org/Thing" in topo else topo[0]
+
+        # If the class is the root itself, it has no parents
+        if self.uri == root_node:
+            return []
+
+        # All paths from root to target; strip the target itself
+        raw_paths = list(nx.all_simple_paths(
             self.se.full_class_only_graph, source=root_node, target=self.uri
-        )
-        paths = [_path[:-1] for _path in paths]
-        result = restructure_output(self, paths, inspect.stack()[0][3], self.output_type)
-        return result
+        ))
+
+        # Keep only paths with at least one parent node after stripping target
+        parent_paths = [p[:-1] for p in raw_paths if len(p) > 1]
+
+        if not parent_paths:
+            return []
+
+        return restructure_output(self, parent_paths, inspect.stack()[0][3], self.output_type)
+
 
     def list_properties(self, class_specific=True, group_by_class=True):
         """Find properties of a class

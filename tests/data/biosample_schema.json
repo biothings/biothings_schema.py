@@ -1,0 +1,107 @@
+{
+    "@context": {
+        "schema": "http://schema.org/",
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+        "bioschemastypesdrafts": "https://discovery.biothings.io/ns/bioschemastypesdrafts/"
+    },
+    "@graph": [
+        {
+            "@id": "bioschemastypesdrafts:BioSample",
+            "@type": "rdfs:Class",
+            "rdfs:comment": "A biological material entity that is representative of a whole.\\nComments: Typically samples are intended to be representative of the whole or aspects thereof. Examples of samples include biomedical samples (blood, urine) and plant specimens held at herbaria.\\n\\nVersion: 0.2 \\ncreated by Nick Juty, Sara El-Gebali, Leyla Jael Castro, Helena Schnitzer, Alban Gaignard, Ginger Tsueng, Rita Monteiro and Joana Pauperio. Note, the property `funding` was originally added as `grant`, but was changed to for consistency with schema.org.",
+            "rdfs:label": "BioSample",
+            "schema:additionalType": "https://bioschemas.org/types#nav-draft",
+            "rdfs:subClassOf": [
+                {
+                    "@id": "bioschemastypesdrafts:Sample"
+                },
+                {
+                    "@id": "schema:BioChemEntity"
+                }
+            ],
+            "schema:schemaVersion": [
+                "https://schema.org/docs/releases.html#v23.0"
+            ]
+        },
+        {
+            "@id": "bioschemastypesdrafts:scientificName",
+            "@type": "rdf:Property",
+            "rdfs:comment": "The full scientific name (order, family, subfamily,  genus,specificEpithet).",
+            "rdfs:label": "scientificName",
+            "schema:domainIncludes": {
+                "@id": "bioschemastypesdrafts:BioSample"
+            },
+            "schema:rangeIncludes": [
+                {
+                    "@id": "schema:Text"
+                },
+                {
+                    "@id": "schema:DefinedTerm"
+                }
+            ]
+        },
+        {
+            "@id": "bioschemastypesdrafts:anatomicalSystem",
+            "@type": "rdf:Property",
+            "rdfs:comment": "Indicate the anatomical system from which the sample is collect, e.g. circulatory, digestive, endocrine, immune and other systems.",
+            "rdfs:label": "anatomicalSystem",
+            "schema:domainIncludes": {
+                "@id": "bioschemastypesdrafts:BioSample"
+            },
+            "schema:rangeIncludes": [
+                {
+                    "@id": "schema:AnatomicalSystem"
+                }
+            ]
+        },
+        {
+            "@id": "bioschemastypesdrafts:anatomicalStructure",
+            "@type": "rdf:Property",
+            "rdfs:comment": "Indicate the organ, tissues the sample was collected from.",
+            "rdfs:label": "anatomicalStructure",
+            "schema:domainIncludes": {
+                "@id": "bioschemastypesdrafts:BioSample"
+            },
+            "schema:rangeIncludes": [
+                {
+                    "@id": "schema:AnatomicalStructure"
+                }
+            ]
+        },
+        {
+            "@id": "bioschemastypesdrafts:sex",
+            "@type": "rdf:Property",
+            "rdfs:comment": "The biological sex of the individual from which the sample was obtained.",
+            "rdfs:label": "sex",
+            "schema:domainIncludes": {
+                "@id": "bioschemastypesdrafts:BioSample"
+            },
+            "schema:rangeIncludes": [
+                {
+                    "@id": "schema:Text"
+                }
+            ]
+        },
+        {
+            "@id": "bioschemastypesdrafts:developmentalStage",
+            "@type": "rdf:Property",
+            "rdfs:comment": "A temporal subdivision of a developmental process, indicating the age or stage of the object when the sample was created.",
+            "rdfs:label": "developmentalStage",
+            "schema:domainIncludes": {
+                "@id": "bioschemastypesdrafts:BioSample"
+            },
+            "schema:rangeIncludes": [
+                {
+                    "@id": "schema:Text"
+                },
+                {
+                    "@id": "schema:QuantitativeValue"
+                },
+                {
+                    "@id": "schema:DefinedTerm"
+                }
+            ]
+        }
+    ]
+}
