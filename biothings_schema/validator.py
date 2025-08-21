@@ -236,14 +236,14 @@ class SchemaValidator:
     def validate_schema(self, schema):
         """Validate schema against SchemaORG-style JSON-LD"""
         try:
-            jsonschema.validate(schema, schema_org_json_schema)
+            jsonschema.validate(schema, schema_org_json_schema, format_checker=jsonschema.FormatChecker())
         except jsonschema.ValidationError as err:
             self.report_validation_error(repr(err), long_message=str(err))
 
     def validate_property_schema(self, record):
         """Validate schema against SchemaORG property definition standard"""
         try:
-            jsonschema.validate(record, property_json_schema)
+            jsonschema.validate(record, property_json_schema, format_checker=jsonschema.FormatChecker())
         except jsonschema.ValidationError as err:
             self.report_validation_error(
                 repr(err),
@@ -255,7 +255,7 @@ class SchemaValidator:
     def validate_class_schema(self, record):
         """Validate schema against SchemaORG class definition standard"""
         try:
-            jsonschema.validate(record, class_json_schema)
+            jsonschema.validate(record, class_json_schema, format_checker=jsonschema.FormatChecker())
         except jsonschema.ValidationError as err:
             self.report_validation_error(
                 repr(err),
