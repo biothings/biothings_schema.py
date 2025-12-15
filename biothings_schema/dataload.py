@@ -294,17 +294,17 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
         if record["@id"] in DATATYPES and load_datatype:
             G.add_node(
                 record["@id"],
-                description=record["rdfs:comment"],
+                description=record.get("rdfs:comment"),
                 type="DataType",
             )
             edges += find_parent_child_relation(record)
         elif record["@type"] == "rdfs:Class" and load_class:
             if record["@id"] in classes:
-                classes[record["@id"]]["description"] = record["rdfs:comment"]
+                classes[record["@id"]]["description"] = record.get("rdfs:comment")
                 classes[record["@id"]]["type"] = "Class"
             else:
                 classes[record["@id"]] = {
-                    "description": record["rdfs:comment"],
+                    "description": record.get("rdfs:comment"),
                     "type": "Class",
                     "properties": [],
                     "used_by": [],
@@ -318,14 +318,14 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
                 _inverse = _inverse["@id"]
             G.add_node(
                 record["@id"],
-                description=record["rdfs:comment"],
+                description=record.get("rdfs:comment"),
                 domain=_domain,
                 range=_range,
                 inverse=_inverse,
                 type="Property",
             )
             property_info = {
-                "description": record["rdfs:comment"],
+                "description": record.get("rdfs:comment"),
                 "domain": _domain,
                 "range": _range,
                 "inverse": _inverse,
@@ -367,7 +367,7 @@ def load_schema_class_into_networkx(schema, preload_schemaorg=False):
         G = nx.DiGraph()
     for record in schema["@graph"]:
         if record["@type"] == "rdfs:Class" and record["@id"] not in DATATYPES:
-            G.add_node(record["@id"], description=record["rdfs:comment"])
+            G.add_node(record["@id"], description=record.get("rdfs:comment"))
             if "rdfs:subClassOf" in record:
                 parents = record["rdfs:subClassOf"]
                 if isinstance(parents, list):
@@ -394,7 +394,7 @@ def load_schema_property_into_networkx(schema, preload_schemaorg=False):
             G.add_node(
                 record["@id"],
                 uri=record["@id"],
-                description=record["rdfs:comment"],
+                description=record.get("rdfs:comment"),
             )
             if "rdfs:subPropertyOf" in record:
                 parents = record["rdfs:subPropertyOf"]
@@ -419,7 +419,7 @@ def load_schema_datatype_into_networkx(schema):
             G.add_node(
                 record["@id"],
                 uri=record["@id"],
-                description=record["rdfs:comment"],
+                description=record.get("rdfs:comment"),
             )
             if "rdfs:subClassOf" in record:
                 parents = dict2list(record["rdfs:subClassOf"])
