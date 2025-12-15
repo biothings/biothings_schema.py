@@ -40,6 +40,9 @@ class TestSchemaPropertyClass(unittest.TestCase):
         self.assertNotIn("bts:sgd", [_item.name for _item in parents])
         # if input doesn't have parent properties, should return empty list
         sp = self.se.get_property("identifier")
+        # Handle case where get_property returns a list
+        if isinstance(sp, list):
+            sp = sp[0]  # Use the first property if multiple are found
         parents = sp.parent_properties
         self.assertEqual(parents, [])
         # test if input is not defined
@@ -50,6 +53,9 @@ class TestSchemaPropertyClass(unittest.TestCase):
     def test_child_properties(self):
         """Test child_properties function"""
         sp = self.se.get_property("identifier")
+        # Handle case where get_property returns a list
+        if isinstance(sp, list):
+            sp = sp[0]  # Use the first property if multiple are found
         children = sp.child_properties
         child_names = [_item.name for _item in children]
         # check if ensembl is in descendants

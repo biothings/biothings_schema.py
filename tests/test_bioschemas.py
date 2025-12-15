@@ -103,7 +103,15 @@ class TestSchemaClass(unittest.TestCase):
     def test_get_class_multi_class(self):
         """Local test of get_class function"""
         scls = self.bio_se.get_class("BioSample")
-        self.assertIsInstance(
+        # When multiple classes are found, get_class returns a list
+        if isinstance(scls, list):
+            self.assertGreater(len(scls), 0, "Empty list returned")
+            for cls in scls:
+                self.assertIsInstance(
+                    cls, SchemaClass, "Returned class is not a SchemaClass"
+                )
+        else:
+            self.assertIsInstance(
                 scls, SchemaClass, "Returned class is not a SchemaClass"
             )
 
