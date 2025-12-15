@@ -167,7 +167,7 @@ def preprocess_schema(schema):
         if "http://schema.org/supersededBy" not in record:
             new_record = {}
             # convert rdfs:label to str if its a dict
-            if "rdfs:label" in record and isinstance(record["rdfs:label"], dict):
+            if isinstance(record["rdfs:label"], dict):
                 record["rdfs:label"] = record["rdfs:label"]["@value"]
             for k, v in record.items():
                 if k == VALIDATION_FIELD or k in ALT_VALIDATION_FIELDS:
@@ -207,7 +207,7 @@ def extract_name_from_uri_or_curie(item, schema=None):
     """
     # if schema is provided, look into the schema for the label
     if schema:
-        name = [record.get("rdfs:label") for record in schema["@graph"] if record["@id"] == item and "rdfs:label" in record]
+        name = [record["rdfs:label"] for record in schema["@graph"] if record["@id"] == item]
         if name:
             return name[0]
         else:
