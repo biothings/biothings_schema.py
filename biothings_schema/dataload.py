@@ -95,7 +95,14 @@ def load_schemaorg(version=None, verbose=False):
     if verbose:
         print("Loading Schema.org schema from {}".format(url))
     try:
-        return load_json_or_yaml(url)
+        schema_data = load_json_or_yaml(url)
+        # Filter to only keep schema: prefixed items (removes external OWL/SKOS references)
+        if "@graph" in schema_data:
+            schema_data["@graph"] = [
+                record for record in schema_data["@graph"]
+                if record.get("@id", "").startswith("schema:")
+            ]
+        return schema_data
     except ValueError:
         raise ValueError(
             "version {} is not valid! Current latest version is {}".format(
@@ -165,12 +172,12 @@ class BaseSchemaLoader:
         for _sc in _base:
             if _sc == "schema" or _sc == "schema.org":
                 self.schema_org_version = get_schemaorg_version()
-                _base_schema.append(
-                    load_schemaorg(version=self.schema_org_version, verbose=self.verbose)
-                )
+                schema_data = load_schemaorg(version=self.schema_org_version, verbose=self.verbose)
+                _base_schema.append(schema_data)
                 continue
             elif self.is_a_dde_schema(_sc):
-                _base_schema.append(self.load_dde_schemas(_sc))
+                schema_data = self.load_dde_schemas(_sc)
+                _base_schema.append(schema_data)
 
         _base_schema = merge_schema(*_base_schema)
         return _base_schema
@@ -200,6 +207,8 @@ def load_dde_schemas(schema, verbose=False):
     return load_json_or_yaml(url)["source"]
 
 
+
+
 def load_base_schema(base_schema=None, verbose=False):
     """Load base schema, schema contains base classes for
     sub-classing in user schemas.
@@ -225,10 +234,12 @@ def load_base_schema(base_schema=None, verbose=False):
 
     for _sc in _base:
         if _sc == "schema" or _sc == "schema.org":
-            _base_schema.append(load_schemaorg(verbose=verbose))
+            schema_data = load_schemaorg(verbose=verbose)
+            _base_schema.append(schema_data)
             continue
         elif _sc in registered_dde_schemas():
-            _base_schema.append(load_dde_schemas(_sc, verbose=verbose))
+            schema_data = load_dde_schemas(_sc, verbose=verbose)
+            _base_schema.append(schema_data)
 
     _base_schema = merge_schema(*_base_schema)
     return _base_schema
@@ -284,6 +295,8 @@ def find_domain_range(record):
     return (response["domain"], response["range"])
 
 
+
+
 def load_schema_into_networkx(schema, load_class=True, load_property=True, load_datatype=True):
     """Construct networkx DiGraph based on Schema provided"""
     # initialize DiGraph for classes, properties and data types
@@ -294,17 +307,17 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
         if record["@id"] in DATATYPES and load_datatype:
             G.add_node(
                 record["@id"],
-                description=record.get("rdfs:comment"),
+                description=record["rdfs:comment"],
                 type="DataType",
             )
             edges += find_parent_child_relation(record)
         elif record["@type"] == "rdfs:Class" and load_class:
             if record["@id"] in classes:
-                classes[record["@id"]]["description"] = record.get("rdfs:comment")
+                classes[record["@id"]]["description"] = record["rdfs:comment"]
                 classes[record["@id"]]["type"] = "Class"
             else:
                 classes[record["@id"]] = {
-                    "description": record.get("rdfs:comment"),
+                    "description": record["rdfs:comment"],
                     "type": "Class",
                     "properties": [],
                     "used_by": [],
@@ -318,14 +331,14 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
                 _inverse = _inverse["@id"]
             G.add_node(
                 record["@id"],
-                description=record.get("rdfs:comment"),
+                description=record["rdfs:comment"],
                 domain=_domain,
                 range=_range,
                 inverse=_inverse,
                 type="Property",
             )
             property_info = {
-                "description": record.get("rdfs:comment"),
+                "description": record["rdfs:comment"],
                 "domain": _domain,
                 "range": _range,
                 "inverse": _inverse,
@@ -367,7 +380,7 @@ def load_schema_class_into_networkx(schema, preload_schemaorg=False):
         G = nx.DiGraph()
     for record in schema["@graph"]:
         if record["@type"] == "rdfs:Class" and record["@id"] not in DATATYPES:
-            G.add_node(record["@id"], description=record.get("rdfs:comment"))
+            G.add_node(record["@id"], description=record["rdfs:comment"])
             if "rdfs:subClassOf" in record:
                 parents = record["rdfs:subClassOf"]
                 if isinstance(parents, list):
@@ -394,7 +407,7 @@ def load_schema_property_into_networkx(schema, preload_schemaorg=False):
             G.add_node(
                 record["@id"],
                 uri=record["@id"],
-                description=record.get("rdfs:comment"),
+                description=record["rdfs:comment"],
             )
             if "rdfs:subPropertyOf" in record:
                 parents = record["rdfs:subPropertyOf"]
@@ -419,7 +432,7 @@ def load_schema_datatype_into_networkx(schema):
             G.add_node(
                 record["@id"],
                 uri=record["@id"],
-                description=record.get("rdfs:comment"),
+                description=record["rdfs:comment"],
             )
             if "rdfs:subClassOf" in record:
                 parents = dict2list(record["rdfs:subClassOf"])
