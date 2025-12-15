@@ -119,7 +119,9 @@ class BaseSchemaLoader:
     all schemas registered in Data Discovery Engine (DDE) are extensible.
     """
 
-    schema_org_version = None  # always keep a record of the schemaorg version
+    schema_org_version = None  # used to keep a record of the schemaorg version
+                               # if set to a specific version, e.g. 29.3, load that
+                               # version. Keeping it as None will load the latest version.
 
     def __init__(self, verbose=False):
         self.verbose = verbose
@@ -164,7 +166,7 @@ class BaseSchemaLoader:
         _base_schema = []
         for _sc in _base:
             if _sc == "schema" or _sc == "schema.org":
-                self.schema_org_version = get_schemaorg_version()
+                self.schema_org_version = self.schema_org_version or get_schemaorg_version()
                 _base_schema.append(
                     load_schemaorg(version=self.schema_org_version, verbose=self.verbose)
                 )
