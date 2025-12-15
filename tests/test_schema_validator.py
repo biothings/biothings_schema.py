@@ -339,7 +339,6 @@ class TestSchemaValidator(unittest.TestCase):
 
         # Check if validations are merged correctly
         merged_validations = class_a["$validation"]["required"]
-        print(">>",merged_validations)
 
         self.assertIn("f1", merged_validations, "Validation field 'f1' not inherited")
         self.assertIn("f2", merged_validations, "Validation field 'f2' not inherited")

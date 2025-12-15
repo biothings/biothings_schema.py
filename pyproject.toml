@@ -17,6 +17,7 @@ keywords = ["schema",  "biothings"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -43,6 +44,10 @@ dependencies = [
 [project.optional-dependencies]
 extra = [
     "graphviz>=0.19.1"
+] 
+
+dev = [
+    "pytest>=8"
 ]
 
 [project.urls]
@@ -58,7 +63,7 @@ version = {attr = "biothings_schema.__version__"}
 
 [tool.black]
 line-length = 99
-target-version = [ "py39", "py310", "py311", "py312", "py13"]
+target-version = [ "py38", "py39", "py310", "py311", "py312", "py313"]
 
 [tool.isort]
 profile = "black"

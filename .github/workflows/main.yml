@@ -16,27 +16,39 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
+        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13" ]
     name: Python ${{ matrix.python-version }} sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           # architecture: x64
-      - run: pip install -r requirements.txt
-      - name: Run Tests and Coverage
+      - name: Install base deps (optional)
+        if: hashFiles('requirements.txt') != ''
+        run: pip install -r requirements.txt
+
+      - name: Install package + test tools
         run: |
-          pip install coverage
-          coverage run --source . -m unittest discover tests
-          coverage report -m
-          coverage xml    # generate coverage.xml output
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml    # upload coverage to codacy
+          python -m pip install -U pip
+          pip install -e ".[extra, dev]"
+      - name: Run tests (pytest)
+        run: |
+          python -m pytest -q
+
+      - name: Coverage (pytest-cov) + upload to Codacy
+        if: matrix.python-version == '3.12'
+        run: |
+          pip install pytest-cov coverage
+          python -m pytest -q \
+            --cov=biothings_schema \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml
+          if [ "$CODACY_PROJECT_TOKEN" != "" ]; then
+            bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
+          else
+            echo "CODACY_PROJECT_TOKEN not set, skipping Codacy upload"
+          fi
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        if: matrix.python-version == 3.10
-      - name: Run Tests Only
-        run: |
-          python -m unittest discover tests
-        if: matrix.python-version != 3.10
