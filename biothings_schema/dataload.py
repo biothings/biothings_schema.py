@@ -95,7 +95,14 @@ def load_schemaorg(version=None, verbose=False):
     if verbose:
         print("Loading Schema.org schema from {}".format(url))
     try:
-        return load_json_or_yaml(url)
+        schema_data = load_json_or_yaml(url)
+        # Filter to only keep schema: prefixed items (removes external OWL/SKOS references)
+        if "@graph" in schema_data:
+            schema_data["@graph"] = [
+                record for record in schema_data["@graph"]
+                if record.get("@id", "").startswith("schema:")
+            ]
+        return schema_data
     except ValueError:
         raise ValueError(
             "version {} is not valid! Current latest version is {}".format(
