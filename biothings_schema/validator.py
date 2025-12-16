@@ -320,7 +320,7 @@ class SchemaValidator:
                 for _property in properties:
                     matched = False
                     for _record in self.all_schemas:
-                        if "rdfs:label" in _record and _record["rdfs:label"] == _property:
+                        if _record["rdfs:label"] == _property:
                             domainincludes_value = dict2list(
                                 _record["http://schema.org/domainIncludes"]
                             )

@@ -179,8 +179,7 @@ class BaseSchemaLoader:
                 )
                 continue
             elif self.is_a_dde_schema(_sc):
-                schema_data = self.load_dde_schemas(_sc)
-                _base_schema.append(schema_data)
+                _base_schema.append(self.load_dde_schemas(_sc))
 
         _base_schema = merge_schema(*_base_schema)
         return _base_schema
@@ -210,8 +209,6 @@ def load_dde_schemas(schema, verbose=False):
     return load_json_or_yaml(url)["source"]
 
 
-
-
 def load_base_schema(base_schema=None, verbose=False):
     """Load base schema, schema contains base classes for
     sub-classing in user schemas.
@@ -237,12 +234,10 @@ def load_base_schema(base_schema=None, verbose=False):
 
     for _sc in _base:
         if _sc == "schema" or _sc == "schema.org":
-            schema_data = load_schemaorg(verbose=verbose)
-            _base_schema.append(schema_data)
+            _base_schema.append(load_schemaorg(verbose=verbose))
             continue
         elif _sc in registered_dde_schemas():
-            schema_data = load_dde_schemas(_sc, verbose=verbose)
-            _base_schema.append(schema_data)
+            _base_schema.append(load_dde_schemas(_sc, verbose=verbose))
 
     _base_schema = merge_schema(*_base_schema)
     return _base_schema
@@ -296,8 +291,6 @@ def find_domain_range(record):
                 _item["@id"] for _item in record["http://schema.org/rangeIncludes"]
             ]
     return (response["domain"], response["range"])
-
-
 
 
 def load_schema_into_networkx(schema, load_class=True, load_property=True, load_datatype=True):
