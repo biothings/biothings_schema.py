@@ -12,7 +12,7 @@ SCHEMAORG_VERSION_URL = "https://api.github.com/repos/schemaorg/schemaorg/releas
 # By default we always load the latest version of schema.org, however, we can also
 # set a default schema.org version to load if the latest version failed to load
 # We should update this version after we tested a recent version.
-SCHEMAORG_DEFAULT_VERSION = "15.0"
+SCHEMAORG_DEFAULT_VERSION = "29.3"
 
 DDE_SCHEMA_BASE_URL = "https://discovery.biothings.io/api/registry/"
 
