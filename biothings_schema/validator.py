@@ -443,7 +443,6 @@ class SchemaValidator:
             self.merge_parent_validations(record, schema_index, parent_schema)
 
             # Recurse up the tree
-            # self.merge_recursive_parents(parent_schema, parent_index, visited)
             self.merge_recursive_parents(parent_schema, schema_index, visited)
 
     def validate_full_schema(self):
