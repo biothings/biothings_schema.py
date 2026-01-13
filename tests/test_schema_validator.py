@@ -341,27 +341,6 @@ class TestSchemaValidator(unittest.TestCase):
         self.assertIn("f2", merged_required)
         self.assertIn("f3", merged_required)
 
-        # graph = self.mock_schema["@graph"]
-        # class_a_index = next(
-        #     idx for idx, schema in enumerate(graph)
-        #     if self.mock_sv._norm_id(schema["@id"])
-        #     == self.mock_sv._norm_id("example:Class_A")
-        # )
-        # # next(
-        # #     idx for idx, schema in enumerate(graph) if schema["@id"] == "example:Class_A"
-        # # )
-        # class_a = graph[class_a_index]
-
-        # # Call merge_recursive_parents
-        # self.mock_sv.merge_recursive_parents(class_a, class_a_index)
-
-        # # Check if validations are merged correctly
-        # merged_validations = class_a["$validation"]["required"]
-
-        # self.assertIn("f1", merged_validations, "Validation field 'f1' not inherited")
-        # self.assertIn("f2", merged_validations, "Validation field 'f2' not inherited")
-        # self.assertIn("f3", merged_validations, "Validation field 'f3' not present")
-
     def test_merge_all_parent_validations(self):
         """Test merging of parent validations"""
         graph = self._get_graph(self.mock_sv)
@@ -378,26 +357,6 @@ class TestSchemaValidator(unittest.TestCase):
         merged_required = graph[class_a_index]["$validation"]["required"]
         self.assertIn("f1", merged_required)
         self.assertIn("f3", merged_required)
-        # class_a0_index = next(
-        #     idx for idx, schema in enumerate(graph) if schema["@id"] == "example:Class_A0"
-        # )
-        # class_a0_index = next(
-        #     idx for idx, schema in enumerate(graph)
-        #     if self.mock_sv._norm_id(schema["@id"])
-        #     == self.mock_sv._norm_id("example:Class_A0")
-        # )
-        # class_a0 = graph[class_a0_index]
-
-        # # Call merge_parent_validations
-        # self.mock_sv.merge_parent_validations(class_a, class_a_index, class_a0)
-
-        # # Check if validations are merged correctly
-        # # merged_validations = class_a["$validation"]["required"]
-        # merged_validations = graph[class_a_index]["$validation"]["required"]  # <-- read from graph
-
-        # self.assertIn("f1", merged_validations, "Validation field 'f1' not inherited from Class_A1")
-        # self.assertIn("f2", merged_validations, "Validation field 'f2' not inherited")
-        # self.assertIn("f3", merged_validations, "Validation field 'f3' not present")
 
     def _get_graph(self, sv):
         return sv.extension_schema.get("schema", {}).get("@graph") or sv.extension_schema.get("@graph")
