@@ -226,7 +226,7 @@ class TestSchemaValidator(unittest.TestCase):
             nested_schema["@graph"][3]["$validation"]["properties"]["name"]["type"], "boolean"
         )
 
-        schema_nx = Schema(nested_schema)
+        schema_nx = Schema(nested_schema, validator_options={"validation_merge": True})
         del schema_nx
 
         # make sure schema is correctly merged after
@@ -328,43 +328,93 @@ class TestSchemaValidator(unittest.TestCase):
 
     def test_merge_recursive_parents(self):
         """Test recursive merging of parent validations"""
-        graph = self.mock_schema["@graph"]
-        class_a_index = next(
-            idx for idx, schema in enumerate(graph) if schema["@id"] == "example:Class_A"
-        )
+        graph = self._get_graph(self.mock_sv)
+        self.assertIsNotNone(graph)
+
+        class_a_index = self._find_idx(self.mock_sv, graph, "http://example.org/Class_A")
         class_a = graph[class_a_index]
 
-        # Call merge_recursive_parents
         self.mock_sv.merge_recursive_parents(class_a, class_a_index)
 
-        # Check if validations are merged correctly
-        merged_validations = class_a["$validation"]["required"]
-
-        self.assertIn("f1", merged_validations, "Validation field 'f1' not inherited")
-        self.assertIn("f2", merged_validations, "Validation field 'f2' not inherited")
-        self.assertIn("f3", merged_validations, "Validation field 'f3' not present")
+        merged_required = graph[class_a_index]["$validation"]["required"]
+        self.assertIn("f1", merged_required)
+        self.assertIn("f2", merged_required)
+        self.assertIn("f3", merged_required)
 
     def test_merge_all_parent_validations(self):
         """Test merging of parent validations"""
-        graph = self.mock_schema["@graph"]
-        class_a_index = next(
-            idx for idx, schema in enumerate(graph) if schema["@id"] == "example:Class_A"
-        )
+        graph = self._get_graph(self.mock_sv)
+        self.assertIsNotNone(graph)
+
+        class_a_index = self._find_idx(self.mock_sv, graph, "http://example.org/Class_A")
         class_a = graph[class_a_index]
 
-        class_a0_index = next(
-            idx for idx, schema in enumerate(graph) if schema["@id"] == "example:Class_A0"
+        class_a1_index = self._find_idx(self.mock_sv, graph, "http://example.org/Class_A1")
+        class_a1 = graph[class_a1_index]
+
+        self.mock_sv.merge_parent_validations(class_a, class_a_index, class_a1)
+
+        merged_required = graph[class_a_index]["$validation"]["required"]
+        self.assertIn("f1", merged_required)
+        self.assertIn("f3", merged_required)
+
+    def test_no_duplicate_properties_after_merge(self):
+        """Test that merge_recursive_parents doesn't create duplicate properties from multi-inheritance (issue #354)"""
+        graph = self._get_graph(self.mock_sv)
+        self.assertIsNotNone(graph)
+
+        # Test with Class_A which has multiple parents (Class_A0 and Class_A1)
+        # This tests the scenario that caused issue #354 in dde
+        class_a_index = self._find_idx(self.mock_sv, graph, "http://example.org/Class_A")
+        class_a = graph[class_a_index]
+
+        # Before merge: Class_A should only have f3
+        self.assertEqual(len(graph[class_a_index]["$validation"]["required"]), 1)
+        self.assertIn("f3", graph[class_a_index]["$validation"]["required"])
+
+        # Perform recursive merge from both parents
+        self.mock_sv.merge_recursive_parents(class_a, class_a_index)
+
+        merged_properties = graph[class_a_index]["$validation"]["properties"]
+        merged_required = graph[class_a_index]["$validation"]["required"]
+
+        # After merge: should have f3 (own), f1 (from Class_A1), f2 (from Class_A0)
+        # Total = 3 unique required fields
+        self.assertEqual(
+            len(merged_required),
+            3,
+            f"Expected 3 required fields after multi-parent merge, got {len(merged_required)}: {merged_required}",
         )
-        class_a0 = graph[class_a0_index]
 
-        # Call merge_parent_validations
-        self.mock_sv.merge_parent_validations(class_a, class_a_index, class_a0)
+        # Validate no duplicates in required list
+        self.assertEqual(
+            len(merged_required),
+            len(set(merged_required)),
+            f"Required properties contain duplicates: {merged_required}",
+        )
 
-        # Check if validations are merged correctly
-        merged_validations = class_a["$validation"]["required"]
-        self.assertIn("f1", merged_validations, "Validation field 'f1' not inherited from Class_A1")
-        self.assertIn("f2", merged_validations, "Validation field 'f2' not inherited")
-        self.assertIn("f3", merged_validations, "Validation field 'f3' not present")
+        # Validate all expected fields are present
+        self.assertIn("f1", merged_required, "f1 from Class_A1 should be inherited")
+        self.assertIn("f2", merged_required, "f2 from Class_A0 should be inherited")
+        self.assertIn("f3", merged_required, "f3 from Class_A should be present")
+
+        # Validate each required field exists in properties
+        for req_field in merged_required:
+            self.assertIn(
+                req_field,
+                merged_properties,
+                f"Required field '{req_field}' not found in properties",
+            )
+
+    def _get_graph(self, sv):
+        return sv.extension_schema.get("schema", {}).get("@graph") or sv.extension_schema.get("@graph")
+
+    def _find_idx(self, sv, graph, curie):
+        target = sv._norm_id(curie)
+        for idx, node in enumerate(graph):
+            if sv._norm_id(node.get("@id")) == target:
+                return idx
+        self.fail(f"Could not find {curie} in graph ids: {[n.get('@id') for n in graph]}")
 
 
 if __name__ == "__main__":
