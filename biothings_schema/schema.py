@@ -93,7 +93,10 @@ def restructure_output(scls, response, func_name, output_type):
     elif output_type == "curie":
         if func_name in METHODS_RETURN_LIST:
             if func_name == "parent_classes":
-                return [list(map(scls.se.cls_converter.get_curie, _path)) for _path in response]
+                return [
+                    list(map(scls.se.cls_converter.get_curie, _path))
+                    for _path in response
+                ]
             elif func_name == "list_properties":
                 return [
                     {
@@ -111,7 +114,10 @@ def restructure_output(scls, response, func_name, output_type):
     elif output_type == "label":
         if func_name in METHODS_RETURN_LIST:
             if func_name == "parent_classes":
-                return [list(map(scls.se.cls_converter.get_label, _path)) for _path in response]
+                return [
+                    list(map(scls.se.cls_converter.get_label, _path))
+                    for _path in response
+                ]
             elif func_name == "list_properties":
                 return [
                     {
@@ -130,7 +136,8 @@ def restructure_output(scls, response, func_name, output_type):
         if func_name in METHODS_RETURN_LIST:
             if func_name == "parent_classes":
                 return [
-                    list(map(partial(SchemaClass, schema=scls.se), _path)) for _path in response
+                    list(map(partial(SchemaClass, schema=scls.se), _path))
+                    for _path in response
                 ]
             elif func_name == "list_properties":
                 return [
@@ -144,12 +151,18 @@ def restructure_output(scls, response, func_name, output_type):
                 ]
             elif func_name == "used_by":
                 return transform_property_info_list(scls.se, response, output_type)
-            elif func_name in ["child_properties", "parent_properties", "descendant_properties"]:
+            elif func_name in [
+                "child_properties",
+                "parent_properties",
+                "descendant_properties",
+            ]:
                 return list(map(partial(SchemaProperty, schema=scls.se), response))
             else:
                 return list(map(partial(SchemaClass, schema=scls.se), response))
     else:
-        raise ValueError("output_type wrong. Should be one of uri, curie, label or PythonClass")
+        raise ValueError(
+            "output_type wrong. Should be one of uri, curie, label or PythonClass"
+        )
 
 
 class Schema:
@@ -165,14 +178,18 @@ class Schema:
         base_schema=None,
         validator_options=None,
         base_schema_loader=None,
+        schema_org_version=None,
     ):
         self.validator_options = validator_options or {}
         self.base_schema_loaded = False
         self.schema = None
         self.validator = None
         self.base_schema_loader = base_schema_loader or BaseSchemaLoader()
+        if isinstance(schema_org_version, str) and schema_org_version:
+            # Set a specific schema.org version to load as base schemas.
+            # If not set, the base_schema_loader always loads the latest version.
+            self.base_schema_loader.schema_org_version = schema_org_version
         _schema = load_json_or_yaml(schema) if schema else {}
-        # self.context = self.CONTEXT
         self.context = _schema.get("@context", {})
         if context:
             if not isinstance(context, dict):
@@ -185,7 +202,6 @@ class Schema:
         self.context.setdefault("schema", self.DEFAULT_CONTEXT["schema"])
         self.namespace = self.get_schema_namespace(_schema)
         base_schema = base_schema or self.get_base_schema_list(_schema)
-        # print(self.namespace, base_schema)
         self.load_schema(schema=_schema, base_schema=base_schema)
 
     @property
@@ -238,7 +254,9 @@ class Schema:
         self.schema_nx = load_schema_into_networkx(self.schema)
         # update undefined classes/properties
         undefined_nodes = [
-            node for node, attrdict in self.schema_nx.nodes._nodes.items() if not attrdict
+            node
+            for node, attrdict in self.schema_nx.nodes._nodes.items()
+            if not attrdict
         ]
         attr_dict = {}
         for _node in undefined_nodes:
@@ -294,7 +312,9 @@ class Schema:
         """
         if isinstance(schema, dict) and "@graph" in schema:
             namespace_set = list(
-                set([_doc["@id"].split(":", maxsplit=1)[0] for _doc in schema["@graph"]])
+                set(
+                    [_doc["@id"].split(":", maxsplit=1)[0] for _doc in schema["@graph"]]
+                )
             )
             if len(namespace_set) == 1:
                 return namespace_set[0]
@@ -308,7 +328,9 @@ class Schema:
         Get the list of referenced base schemas based on the "@context" field
         """
         _base_schema = [
-            namespace for namespace in self.context if namespace not in COMMON_NAMESPACES
+            namespace
+            for namespace in self.context
+            if namespace not in COMMON_NAMESPACES
         ]
         if not include_current:
             _current_namespace = self.get_schema_namespace(schema)
@@ -332,11 +354,16 @@ class Schema:
         curie_edges = []
         for _edge in edges:
             curie_edges.append(
-                (self.cls_converter.get_label(_edge[0]), self.cls_converter.get_label(_edge[1]))
+                (
+                    self.cls_converter.get_label(_edge[0]),
+                    self.cls_converter.get_label(_edge[1]),
+                )
             )
         return visualize(curie_edges, size=size)
 
-    def sub_schema_graph(self, source, include_parents=True, include_children=True, size=None):
+    def sub_schema_graph(
+        self, source, include_parents=True, include_children=True, size=None
+    ):
         """Visualize a sub-graph of the schema based on a specific node"""
         scls = SchemaClass(source, self)
         paths = scls.parent_classes
@@ -349,7 +376,9 @@ class Schema:
         # handle cases where user want to get all children
         if include_parents is False and include_children:
             edges = list(
-                nx.edge_bfs(self.full_class_only_graph, [self.cls_converter.get_uri(source)])
+                nx.edge_bfs(
+                    self.full_class_only_graph, [self.cls_converter.get_uri(source)]
+                )
             )
         # handle cases where user want to get all parents
         elif include_parents and include_children is False:
@@ -361,7 +390,9 @@ class Schema:
         # handle cases where user want to get both parents and children
         elif include_parents and include_children:
             edges = list(
-                nx.edge_bfs(self.full_class_only_graph, [self.cls_converter.get_uri(source)])
+                nx.edge_bfs(
+                    self.full_class_only_graph, [self.cls_converter.get_uri(source)]
+                )
             )
             for _path in parents:
                 _path.append(self.cls_converter.get_label(source))
@@ -374,7 +405,10 @@ class Schema:
         curie_edges = []
         for _edge in edges:
             curie_edges.append(
-                (self.cls_converter.get_label(_edge[0]), self.cls_converter.get_label(_edge[1]))
+                (
+                    self.cls_converter.get_label(_edge[0]),
+                    self.cls_converter.get_label(_edge[1]),
+                )
             )
         return visualize(curie_edges, size=size)
 
@@ -383,7 +417,11 @@ class Schema:
         if "include_base" is True, it return every classes from the base_schema
         (e.g. schema.org)
         """
-        _graph = self.full_class_only_graph if include_base else self.extended_class_only_graph
+        _graph = (
+            self.full_class_only_graph
+            if include_base
+            else self.extended_class_only_graph
+        )
         classes = [SchemaClass(_cls, self) for _cls in _graph.nodes()]
         return classes
 
@@ -417,7 +455,8 @@ class Schema:
             and _item["@id"] not in DATATYPES
         ]
         reference_classes = [
-            SchemaClass(_cls, self) for _cls in (set(all_classes) - set(defined_classes))
+            SchemaClass(_cls, self)
+            for _cls in (set(all_classes) - set(defined_classes))
         ]
         return reference_classes
 
@@ -434,7 +473,9 @@ class Schema:
             if not uris:
                 return []  # stay empty
             warnings.warn(
-                "Found more than 1 classes defined within schema using label {}".format(class_name)
+                "Found more than 1 classes defined within schema using label {}".format(
+                    class_name
+                )
             )
             return [SchemaClass(_item, self, output_type) for _item in uris]
         else:
@@ -474,7 +515,9 @@ class Schema:
             "@type": "rdf:Property",
             "rdfs:comment": "description of the property",
             "rdfs:label": "carmel case, should match @id",
-            "schema:domainIncludes": {"@id": "class which use it as a property, could be list"},
+            "schema:domainIncludes": {
+                "@id": "class which use it as a property, could be list"
+            },
             "schema:isPartOf": {"@id": "http://schema.biothings.io"},
             "schema:rangeIncludes": {
                 "@id": "relates a property to a class that constitutes (one of) the expected type(s) for values of the property"
@@ -494,7 +537,9 @@ class Schema:
         self.validator.validate_property_schema(property_info)
         self.schema["@graph"].append(property_info)
         self.load_schema(self.schema)
-        print("Updated the property {} successfully!".format(property_info["rdfs:label"]))
+        print(
+            "Updated the property {} successfully!".format(property_info["rdfs:label"])
+        )
 
     def export_schema(self, file_path):
         with open(file_path, "w") as f:
@@ -512,7 +557,9 @@ class SchemaClass:
         if self.uri not in self.se._all_class_uris:
             # raise ValueError('Class {} is not defined in Schema. Could not access it'.format(self.name))
             warnings.warn(
-                "Class {} is not defined in Schema. Could not access it".format(self.name)
+                "Class {} is not defined in Schema. Could not access it".format(
+                    self.name
+                )
             )
             self.defined_in_schema = False
         self.output_type = output_type
@@ -553,7 +600,9 @@ class SchemaClass:
         if not response:
             return response
         children = self.se.full_class_only_graph.successors(self.uri)
-        result = restructure_output(self, children, inspect.stack()[0][3], self.output_type)
+        result = restructure_output(
+            self, children, inspect.stack()[0][3], self.output_type
+        )
         return result
 
     @property
@@ -563,7 +612,9 @@ class SchemaClass:
         if not response:
             return response
         descendants = nx.descendants(self.se.full_class_only_graph, self.uri)
-        result = restructure_output(self, descendants, inspect.stack()[0][3], self.output_type)
+        result = restructure_output(
+            self, descendants, inspect.stack()[0][3], self.output_type
+        )
         return result
 
     @property
@@ -572,7 +623,9 @@ class SchemaClass:
         if not response:
             return response
         ancestors = nx.ancestors(self.se.full_class_only_graph, self.uri)
-        result = restructure_output(self, ancestors, inspect.stack()[0][3], self.output_type)
+        result = restructure_output(
+            self, ancestors, inspect.stack()[0][3], self.output_type
+        )
         return result
 
     @property
@@ -584,16 +637,20 @@ class SchemaClass:
 
         # Determine root
         topo = list(nx.topological_sort(self.se.full_class_only_graph))
-        root_node = "http://schema.org/Thing" if "http://schema.org/Thing" in topo else topo[0]
+        root_node = (
+            "http://schema.org/Thing" if "http://schema.org/Thing" in topo else topo[0]
+        )
 
         # If the class is the root itself, it has no parents
         if self.uri == root_node:
             return []
 
         # All paths from root to target; strip the target itself
-        raw_paths = list(nx.all_simple_paths(
-            self.se.full_class_only_graph, source=root_node, target=self.uri
-        ))
+        raw_paths = list(
+            nx.all_simple_paths(
+                self.se.full_class_only_graph, source=root_node, target=self.uri
+            )
+        )
 
         # Keep only paths with at least one parent node after stripping target
         parent_paths = [p[:-1] for p in raw_paths if len(p) > 1]
@@ -601,8 +658,9 @@ class SchemaClass:
         if not parent_paths:
             return []
 
-        return restructure_output(self, parent_paths, inspect.stack()[0][3], self.output_type)
-
+        return restructure_output(
+            self, parent_paths, inspect.stack()[0][3], self.output_type
+        )
 
     def list_properties(self, class_specific=True, group_by_class=True):
         """Find properties of a class
@@ -616,7 +674,9 @@ class SchemaClass:
         properties = [
             {
                 "class": self.name,
-                "properties": self.se.full_class_only_graph.nodes[self.uri]["properties"],
+                "properties": self.se.full_class_only_graph.nodes[self.uri][
+                    "properties"
+                ],
             }
         ]
         if not class_specific:
@@ -624,16 +684,23 @@ class SchemaClass:
             if self.output_type == "PythonClass":
                 parents = [_item.uri for _item in self.ancestor_classes]
             else:
-                parents = [self.se.cls_converter.get_uri(_item) for _item in self.ancestor_classes]
+                parents = [
+                    self.se.cls_converter.get_uri(_item)
+                    for _item in self.ancestor_classes
+                ]
             # update properties, each dict represent properties associated with the class
             for _parent in parents:
                 properties.append(
                     {
                         "class": _parent,
-                        "properties": self.se.full_class_only_graph.nodes[_parent]["properties"],
+                        "properties": self.se.full_class_only_graph.nodes[_parent][
+                            "properties"
+                        ],
                     }
                 )
-        result = restructure_output(self, properties, inspect.stack()[0][3], self.output_type)
+        result = restructure_output(
+            self, properties, inspect.stack()[0][3], self.output_type
+        )
         if group_by_class:
             return result
         else:
@@ -649,7 +716,9 @@ class SchemaClass:
             return response
         if "used_by" in self.se.full_class_only_graph.nodes[self.uri]:
             response = self.se.full_class_only_graph.nodes[self.uri]["used_by"]
-            result = restructure_output(self, response, inspect.stack()[0][3], self.output_type)
+            result = restructure_output(
+                self, response, inspect.stack()[0][3], self.output_type
+            )
             return result
         else:
             return []
@@ -689,7 +758,9 @@ class SchemaClass:
                 f"{VALIDATION_FIELD} is not defined for {self.name} field; thus the json document could not be validated"
             )
         else:
-            validate(json_doc, self.se.validation[self.uri], format_checker=FormatChecker())
+            validate(
+                json_doc, self.se.validation[self.uri], format_checker=FormatChecker()
+            )
             print("The JSON document is valid")
 
 
@@ -704,7 +775,9 @@ class SchemaProperty:
         if self.uri not in self.se.property_only_graph:
             # raise ValueError('Property {} is not defined in Schema. Could not access it'.format(self.name))
             warnings.warn(
-                "Property {} is not defined in Schema. Could not access it".format(self.name)
+                "Property {} is not defined in Schema. Could not access it".format(
+                    self.name
+                )
             )
             self.defined_in_schema = False
         self.output_type = output_type
@@ -722,7 +795,9 @@ class SchemaProperty:
             return response
         if "domain" in self.se.property_only_graph.nodes[self.uri]:
             _domain = self.se.property_only_graph.nodes[self.uri]["domain"]
-            result = restructure_output(self, _domain, inspect.stack()[0][3], self.output_type)
+            result = restructure_output(
+                self, _domain, inspect.stack()[0][3], self.output_type
+            )
             return result
         else:
             return []
@@ -734,7 +809,9 @@ class SchemaProperty:
             return response
         if "range" in self.se.property_only_graph.nodes[self.uri]:
             _range = self.se.property_only_graph.nodes[self.uri]["range"]
-            result = restructure_output(self, _range, inspect.stack()[0][3], self.output_type)
+            result = restructure_output(
+                self, _range, inspect.stack()[0][3], self.output_type
+            )
             return result
         else:
             return []
@@ -769,7 +846,9 @@ class SchemaProperty:
         if not response:
             return response
         parents = nx.ancestors(self.se.property_only_graph, self.uri)
-        result = restructure_output(self, parents, inspect.stack()[0][3], self.output_type)
+        result = restructure_output(
+            self, parents, inspect.stack()[0][3], self.output_type
+        )
         return result
 
     @property
@@ -779,7 +858,9 @@ class SchemaProperty:
         if not response:
             return response
         children = self.se.property_only_graph.successors(self.uri)
-        result = restructure_output(self, children, inspect.stack()[0][3], self.output_type)
+        result = restructure_output(
+            self, children, inspect.stack()[0][3], self.output_type
+        )
         return result
 
     @property
@@ -789,7 +870,9 @@ class SchemaProperty:
         if not response:
             return response
         descendants = nx.descendants(self.se.property_only_graph, self.uri)
-        result = restructure_output(self, descendants, inspect.stack()[0][3], self.output_type)
+        result = restructure_output(
+            self, descendants, inspect.stack()[0][3], self.output_type
+        )
         return result
 
     @property
