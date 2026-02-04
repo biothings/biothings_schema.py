@@ -83,6 +83,7 @@ def construct_schemaorg_url(version):
     return url
 
 
+@timed_lru_cache(seconds=3600, maxsize=10)  # caching for 1hr
 def load_schemaorg(version=None, verbose=False):
     """Load SchemaOrg vocabulary
 
