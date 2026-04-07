@@ -56,8 +56,8 @@ def load_json_or_yaml(file_path):
 @timed_lru_cache(seconds=3600, maxsize=10)  # caching for 1hr
 def get_latest_schemaorg_version():
     """Get the latest version of schemaorg from its github"""
-    tag_name = requests.get(SCHEMAORG_VERSION_URL).json()["tag_name"]  # "v13.0-release"
-    mat = re.match(r"v([\d.]+)-release", tag_name)
+    tag_name = requests.get(SCHEMAORG_VERSION_URL).json()["tag_name"]  # "v13.0-release" or "v30.0"
+    mat = re.match(r"v([\d.]+)(?:-release)?", tag_name)
     if not mat:
         raise ValueError(f"Unrecognized release tag name {tag_name}")
     latest = mat.group(1)
