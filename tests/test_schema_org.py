@@ -58,7 +58,7 @@ class TestSchemaOrg(unittest.TestCase):
 
 
 class TestGetSchemaorgVersion(unittest.TestCase):
-    """Test schema.org release tag parsing and fallback behavior."""
+    # Test schema.org release tag parsing and fallback behavior.
 
     def setUp(self):
         get_latest_schemaorg_version.cache_clear()
