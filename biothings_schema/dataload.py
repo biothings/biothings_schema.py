@@ -27,7 +27,7 @@ def load_json_or_yaml(file_path):
         return file_path
     # handle url
     elif file_path.startswith("http"):
-        with requests.get(file_path) as url:
+        with requests.get(file_path, timeout=10) as url:
             # check if http requests returns a success status code
             if url.status_code != 200:
                 raise ValueError(f"Invalid URL [{url.status_code}]: {file_path} !")
@@ -55,9 +55,18 @@ def load_json_or_yaml(file_path):
 
 @timed_lru_cache(seconds=3600, maxsize=10)  # caching for 1hr
 def get_latest_schemaorg_version():
-    """Get the latest version of schemaorg from its github"""
-    tag_name = requests.get(SCHEMAORG_VERSION_URL).json()["tag_name"]  # "v13.0-release" or "v30.0"
+    # This code fetches the schemaorg version from the Github API
+    # - It handles network calls gracefully, with a timeout and exception handling
+    # - It parses the tag name using a regex to extract the version number,
+    # with a regex that can handle both old and new tag formats (e.g. "v13.0-release" and "v30.0")
+    try:
+        tag_name = requests.get(SCHEMAORG_VERSION_URL, timeout=10).json()["tag_name"]
+        # "v13.0-release" or "v30.0"
+    except requests.RequestException as e:
+        raise ValueError(f"Failed to fetch schema.org version: {e}") from e
     mat = re.match(r"v([\d.]+)(?:-release)?", tag_name)
+
+    # If the tag name doesn't match the expected format, raise a ValueError with a clear message
     if not mat:
         raise ValueError(f"Unrecognized release tag name {tag_name}")
     latest = mat.group(1)
