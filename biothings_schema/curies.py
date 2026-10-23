@@ -163,39 +163,35 @@ def preprocess_schema(schema):
     context = schema["@context"]
     new_schema = {"@context": context, "@graph": []}
     for record in schema["@graph"]:
-        # if a class is superseded, no need to load into graph
-        if "http://schema.org/supersededBy" not in record:
-            new_record = {}
-            # convert rdfs:label to str if its a dict
-            if isinstance(record["rdfs:label"], dict):
-                record["rdfs:label"] = record["rdfs:label"]["@value"]
-            for k, v in record.items():
-                if k == VALIDATION_FIELD or k in ALT_VALIDATION_FIELDS:
-                    new_record[k] = v
-                elif isinstance(v, str):
-                    new_record[expand_curie_to_uri(k, context)] = expand_curie_to_uri(v, context)
-                elif isinstance(v, list):
-                    if isinstance(v[0], dict):
-                        new_record[expand_curie_to_uri(k, context)] = []
-                        for _item in v:
-                            new_record[expand_curie_to_uri(k, context)].append(
-                                {"@id": expand_curie_to_uri(_item["@id"], context)}
-                            )
-                    else:
-                        new_record[expand_curie_to_uri(k, context)] = [
-                            expand_curie_to_uri(_item, context) for _item in v
-                        ]
-                elif isinstance(v, dict) and "@id" in v:
-                    new_record[expand_curie_to_uri(k, context)] = {
-                        "@id": expand_curie_to_uri(v["@id"], context)
-                    }
-                elif v is None:
-                    new_record[expand_curie_to_uri(k, context)] = None
+        new_record = {}
+        # convert rdfs:label to str if its a dict
+        if isinstance(record["rdfs:label"], dict):
+            record["rdfs:label"] = record["rdfs:label"]["@value"]
+        for k, v in record.items():
+            if k == VALIDATION_FIELD or k in ALT_VALIDATION_FIELDS:
+                new_record[k] = v
+            elif isinstance(v, str):
+                new_record[expand_curie_to_uri(k, context)] = expand_curie_to_uri(v, context)
+            elif isinstance(v, list):
+                if isinstance(v[0], dict):
+                    new_record[expand_curie_to_uri(k, context)] = []
+                    for _item in v:
+                        new_record[expand_curie_to_uri(k, context)].append(
+                            {"@id": expand_curie_to_uri(_item["@id"], context)}
+                        )
                 else:
-                    new_record[expand_curie_to_uri(k, context)] = v
-            new_schema["@graph"].append(new_record)
-        else:
-            continue
+                    new_record[expand_curie_to_uri(k, context)] = [
+                        expand_curie_to_uri(_item, context) for _item in v
+                    ]
+            elif isinstance(v, dict) and "@id" in v:
+                new_record[expand_curie_to_uri(k, context)] = {
+                    "@id": expand_curie_to_uri(v["@id"], context)
+                }
+            elif v is None:
+                new_record[expand_curie_to_uri(k, context)] = None
+            else:
+                new_record[expand_curie_to_uri(k, context)] = v
+        new_schema["@graph"].append(new_record)
     return new_schema
 
 
