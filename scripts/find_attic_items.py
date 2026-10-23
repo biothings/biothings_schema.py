@@ -1,4 +1,5 @@
-"""Find schema.org items that reference https://attic.schema.org/ (deprecated terms).
+"""
+Find schema.org items that reference https://attic.schema.org/ (deprecated terms).
 
 Loads the latest schema.org JSON-LD (via biothings_schema's own loader), walks every
 record in the @graph, and lists each item that mentions "attic.schema.org" anywhere
@@ -24,7 +25,7 @@ ATTIC_MARKER = "attic.schema.org"
 
 
 def find_attic_refs(value, path=""):
-    """Recursively yield the field paths in `value` whose string values mention the attic"""
+    """Recursively yield the field paths in `value` whose string values mention the attic."""
     if isinstance(value, str):
         if ATTIC_MARKER in value:
             yield path, value
@@ -40,7 +41,7 @@ def find_attic_refs(value, path=""):
 
 
 def item_type(record):
-    """Classify a record as Class / Property / other based on its @type"""
+    """Classify a record as Class / Property / other based on its @type."""
     types = record.get("@type", [])
     if isinstance(types, str):
         types = [types]

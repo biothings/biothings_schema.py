@@ -87,7 +87,7 @@ def transform_property_info_list(se, prop_list, output_type):
 
 
 def transform_superseded_by_lst(se, superseded_by, output_type, python_class):
-    """Transform a list of supersededBy uris, python_class is used for "PythonClass" output"""
+    """Transform a list of supersededBy uris, python_class is used for "PythonClass" output."""
     if output_type == "PythonClass":
         return list(map(partial(python_class, schema=se), superseded_by))
     return transform_schemaclasses_lst(se, superseded_by, output_type)
@@ -606,7 +606,7 @@ class SchemaClass:
 
     @property
     def superseded_by(self):
-        """Find the class(es) that supersede this class (empty if not superseded)"""
+        """Find the class(es) that supersede this class (empty if not superseded)."""
         response = check_defined(self, inspect.stack()[0][3])
         if not response:
             return response
@@ -862,7 +862,7 @@ class SchemaProperty:
 
     @property
     def superseded_by(self):
-        """Find the property(ies) that supersede this property (empty if not superseded)"""
+        """Find the property(ies) that supersede this property (empty if not superseded)."""
         response = check_defined(self, inspect.stack()[0][3])
         if not response:
             return response

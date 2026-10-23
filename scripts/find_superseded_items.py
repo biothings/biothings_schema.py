@@ -1,4 +1,5 @@
-"""Find schema.org items that have a "schema:supersededBy" property.
+"""
+Find schema.org items that have a "schema:supersededBy" property.
 
 Loads the latest schema.org JSON-LD (via biothings_schema's own loader), walks every
 record in the @graph, and lists each item that is superseded along with the value(s)
@@ -24,7 +25,7 @@ SUPERSEDED_KEYS = ("schema:supersededBy", "http://schema.org/supersededBy")
 
 
 def superseded_values(record):
-    """Return the list of supersededBy values for a record (empty if none)"""
+    """Return the list of supersededBy values for a record (empty if none)."""
     values = []
     for key in SUPERSEDED_KEYS:
         if key not in record:
@@ -37,7 +38,7 @@ def superseded_values(record):
 
 
 def item_type(record):
-    """Classify a record as Class / Property / other based on its @type"""
+    """Classify a record as Class / Property / other based on its @type."""
     types = record.get("@type", [])
     if isinstance(types, str):
         types = [types]

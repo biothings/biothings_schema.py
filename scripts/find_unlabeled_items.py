@@ -1,4 +1,5 @@
-"""Find schema.org items that have no "rdfs:label" property.
+"""
+Find schema.org items that have no "rdfs:label" property.
 
 Loads the latest raw schema.org JSON-LD (bypassing load_schemaorg, which drops non "schema:"
 records), walks every record in the @graph, and lists each item missing an rdfs:label. In recent releases these
@@ -31,12 +32,12 @@ LABEL_KEYS = ("rdfs:label", "http://www.w3.org/2000/01/rdf-schema#label")
 
 
 def has_label(record):
-    """Return True if the record has an rdfs:label (in curie or uri form)"""
+    """Return True if the record has an rdfs:label (in curie or uri form)."""
     return any(key in record for key in LABEL_KEYS)
 
 
 def find_id_refs(value, field=None):
-    """Recursively yield (field, @id) pairs for every {"@id": ...} reference in `value`"""
+    """Recursively yield (field, @id) pairs for every {"@id": ...} reference in `value`."""
     if isinstance(value, dict):
         if field is not None and "@id" in value:
             yield field, value["@id"]
@@ -49,7 +50,7 @@ def find_id_refs(value, field=None):
 
 
 def item_type(record):
-    """Classify a record as Class / Property / other based on its @type"""
+    """Classify a record as Class / Property / other based on its @type."""
     types = record.get("@type", [])
     if isinstance(types, str):
         types = [types]
@@ -61,7 +62,7 @@ def item_type(record):
 
 
 def id_prefix(_id):
-    """Return the curie prefix of an @id (or the whole value if it's a full URI)"""
+    """Return the curie prefix of an @id (or the whole value if it's a full URI)."""
     if not _id:
         return "unknown"
     if _id.startswith(("http://", "https://")):

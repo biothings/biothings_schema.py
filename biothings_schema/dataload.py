@@ -304,7 +304,7 @@ def find_domain_range(record):
 
 
 def find_superseded_by(record):
-    """Find the item(s) a record is superseded by (empty list if it's not superseded)"""
+    """Find the item(s) a record is superseded by (empty list if it's not superseded)."""
     for _key in ("http://schema.org/supersededBy", "https://schema.org/supersededBy"):
         if _key in record:
             _values = record[_key] if isinstance(record[_key], list) else [record[_key]]
