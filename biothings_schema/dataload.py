@@ -303,6 +303,15 @@ def find_domain_range(record):
     return (response["domain"], response["range"])
 
 
+def find_superseded_by(record):
+    """Find the item(s) a record is superseded by (empty list if it's not superseded)"""
+    for _key in ("http://schema.org/supersededBy", "https://schema.org/supersededBy"):
+        if _key in record:
+            _values = record[_key] if isinstance(record[_key], list) else [record[_key]]
+            return [_item["@id"] if isinstance(_item, dict) else _item for _item in _values]
+    return []
+
+
 def load_schema_into_networkx(schema, load_class=True, load_property=True, load_datatype=True):
     """Construct networkx DiGraph based on Schema provided"""
     # initialize DiGraph for classes, properties and data types
@@ -321,12 +330,14 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
             if record["@id"] in classes:
                 classes[record["@id"]]["description"] = record["rdfs:comment"]
                 classes[record["@id"]]["type"] = "Class"
+                classes[record["@id"]]["superseded_by"] = find_superseded_by(record)
             else:
                 classes[record["@id"]] = {
                     "description": record["rdfs:comment"],
                     "type": "Class",
                     "properties": [],
                     "used_by": [],
+                    "superseded_by": find_superseded_by(record),
                 }
             # add class edges
             edges += find_parent_child_relation(record)
@@ -335,12 +346,14 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
             _inverse = record.get("http://schema.org/inverseOf")
             if _inverse:
                 _inverse = _inverse["@id"]
+            _superseded_by = find_superseded_by(record)
             G.add_node(
                 record["@id"],
                 description=record["rdfs:comment"],
                 domain=_domain,
                 range=_range,
                 inverse=_inverse,
+                superseded_by=_superseded_by,
                 type="Property",
             )
             property_info = {
@@ -348,6 +361,7 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
                 "domain": _domain,
                 "range": _range,
                 "inverse": _inverse,
+                "superseded_by": _superseded_by,
                 "uri": record["@id"],
             }
             for _id in _domain:

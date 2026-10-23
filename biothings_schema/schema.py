@@ -30,6 +30,7 @@ METHODS_RETURN_LIST = [
     "parent_properties",
     "child_properties",
     "descendant_properties",
+    "superseded_by",
 ]
 
 METHODS_RETURN_DICT = ["describe"]
@@ -75,11 +76,21 @@ def transform_property_info_list(se, prop_list, output_type):
             "curie": se.cls_converter.get_curie(_prop.get("uri")),
             "label": se.cls_converter.get_label(_prop.get("uri")),
             "uri": _prop.get("uri"),
+            "superseded_by": transform_superseded_by_lst(
+                se, _prop.get("superseded_by", []), output_type, SchemaProperty
+            ),
             "object": se.get_property(_prop.get("uri")),
         }
         for _prop in prop_list
     ]
     return props
+
+
+def transform_superseded_by_lst(se, superseded_by, output_type, python_class):
+    """Transform a list of supersededBy uris, python_class is used for "PythonClass" output"""
+    if output_type == "PythonClass":
+        return list(map(partial(python_class, schema=se), superseded_by))
+    return transform_schemaclasses_lst(se, superseded_by, output_type)
 
 
 def restructure_output(scls, response, func_name, output_type):
@@ -594,6 +605,15 @@ class SchemaClass:
             return None
 
     @property
+    def superseded_by(self):
+        """Find the class(es) that supersede this class (empty if not superseded)"""
+        response = check_defined(self, inspect.stack()[0][3])
+        if not response:
+            return response
+        _superseded_by = self.se.full_class_only_graph.nodes[self.uri].get("superseded_by", [])
+        return transform_superseded_by_lst(self.se, _superseded_by, self.output_type, SchemaClass)
+
+    @property
     def child_classes(self):
         """Find schema classes that directly inherit from the given class"""
         response = check_defined(self, inspect.stack()[0][3])
@@ -744,6 +764,7 @@ class SchemaClass:
             "ancestor_classes": self.ancestor_classes,
             "descendant_classes": self.descendant_classes,
             "validation": self.validation,
+            "superseded_by": self.superseded_by,
         }
         return class_info
 
@@ -840,6 +861,15 @@ class SchemaProperty:
             return None
 
     @property
+    def superseded_by(self):
+        """Find the property(ies) that supersede this property (empty if not superseded)"""
+        response = check_defined(self, inspect.stack()[0][3])
+        if not response:
+            return response
+        _superseded_by = self.se.property_only_graph.nodes[self.uri].get("superseded_by", [])
+        return transform_superseded_by_lst(self.se, _superseded_by, self.output_type, SchemaProperty)
+
+    @property
     def parent_properties(self):
         """Find all parents of a specific class"""
         response = check_defined(self, inspect.stack()[0][3])
@@ -900,5 +930,6 @@ class SchemaProperty:
             "uri": self.uri,
             "label": self.label,
             "description": self.description,
+            "superseded_by": self.superseded_by,
         }
         return property_info
