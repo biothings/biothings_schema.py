@@ -13,6 +13,8 @@ SCHEMAORG_VERSION_URL = "https://api.github.com/repos/schemaorg/schemaorg/releas
 # set a default schema.org version to load if the latest version failed to load
 # We should update this version after we tested a recent version.
 SCHEMAORG_DEFAULT_VERSION = "29.3"
+# schema.org marks retired items with schema:isPartOf pointing to its attic
+ATTIC_URIS = ("http://attic.schema.org", "https://attic.schema.org")
 
 DDE_SCHEMA_BASE_URL = "https://discovery.biothings.io/api/registry/"
 

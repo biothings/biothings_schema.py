@@ -6,6 +6,7 @@ import requests
 import yaml
 
 from .settings import (
+    ATTIC_URIS,
     BASE_SCHEMA,
     DATATYPES,
     DDE_SCHEMA_BASE_URL,
@@ -312,6 +313,20 @@ def find_superseded_by(record):
     return []
 
 
+def is_deprecated(record):
+    """Return True if a record is in the schema.org attic or superseded by another item."""
+    if find_superseded_by(record):
+        return True
+    for _key in ("http://schema.org/isPartOf", "https://schema.org/isPartOf"):
+        if _key in record:
+            _values = record[_key] if isinstance(record[_key], list) else [record[_key]]
+            for _item in _values:
+                _id = _item["@id"] if isinstance(_item, dict) else _item
+                if isinstance(_id, str) and _id.rstrip("/") in ATTIC_URIS:
+                    return True
+    return False
+
+
 def load_schema_into_networkx(schema, load_class=True, load_property=True, load_datatype=True):
     """Construct networkx DiGraph based on Schema provided"""
     # initialize DiGraph for classes, properties and data types
@@ -331,6 +346,7 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
                 classes[record["@id"]]["description"] = record["rdfs:comment"]
                 classes[record["@id"]]["type"] = "Class"
                 classes[record["@id"]]["superseded_by"] = find_superseded_by(record)
+                classes[record["@id"]]["deprecated"] = is_deprecated(record)
             else:
                 classes[record["@id"]] = {
                     "description": record["rdfs:comment"],
@@ -338,6 +354,7 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
                     "properties": [],
                     "used_by": [],
                     "superseded_by": find_superseded_by(record),
+                    "deprecated": is_deprecated(record),
                 }
             # add class edges
             edges += find_parent_child_relation(record)
@@ -347,6 +364,7 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
             if _inverse:
                 _inverse = _inverse["@id"]
             _superseded_by = find_superseded_by(record)
+            _deprecated = is_deprecated(record)
             G.add_node(
                 record["@id"],
                 description=record["rdfs:comment"],
@@ -354,6 +372,7 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
                 range=_range,
                 inverse=_inverse,
                 superseded_by=_superseded_by,
+                deprecated=_deprecated,
                 type="Property",
             )
             property_info = {
@@ -362,6 +381,7 @@ def load_schema_into_networkx(schema, load_class=True, load_property=True, load_
                 "range": _range,
                 "inverse": _inverse,
                 "superseded_by": _superseded_by,
+                "deprecated": _deprecated,
                 "uri": record["@id"],
             }
             for _id in _domain:

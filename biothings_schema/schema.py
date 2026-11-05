@@ -79,6 +79,7 @@ def transform_property_info_list(se, prop_list, output_type):
             "superseded_by": transform_superseded_by_lst(
                 se, _prop.get("superseded_by", []), output_type, SchemaProperty
             ),
+            "deprecated": _prop.get("deprecated", False),
             "object": se.get_property(_prop.get("uri")),
         }
         for _prop in prop_list
@@ -614,6 +615,13 @@ class SchemaClass:
         return transform_superseded_by_lst(self.se, _superseded_by, self.output_type, SchemaClass)
 
     @property
+    def deprecated(self):
+        """Return True if this class is in the schema.org attic or superseded by another class."""
+        if not self.defined_in_schema:
+            return False
+        return self.se.full_class_only_graph.nodes[self.uri].get("deprecated", False)
+
+    @property
     def child_classes(self):
         """Find schema classes that directly inherit from the given class"""
         response = check_defined(self, inspect.stack()[0][3])
@@ -765,6 +773,7 @@ class SchemaClass:
             "descendant_classes": self.descendant_classes,
             "validation": self.validation,
             "superseded_by": self.superseded_by,
+            "deprecated": self.deprecated,
         }
         return class_info
 
@@ -870,6 +879,13 @@ class SchemaProperty:
         return transform_superseded_by_lst(self.se, _superseded_by, self.output_type, SchemaProperty)
 
     @property
+    def deprecated(self):
+        """Return True if this property is in the schema.org attic or superseded."""
+        if not self.defined_in_schema:
+            return False
+        return self.se.property_only_graph.nodes[self.uri].get("deprecated", False)
+
+    @property
     def parent_properties(self):
         """Find all parents of a specific class"""
         response = check_defined(self, inspect.stack()[0][3])
@@ -931,5 +947,6 @@ class SchemaProperty:
             "label": self.label,
             "description": self.description,
             "superseded_by": self.superseded_by,
+            "deprecated": self.deprecated,
         }
         return property_info
